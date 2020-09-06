@@ -1,0 +1,49 @@
+# GraphQL schema example
+# Do we want id?
+# TODO: Split schema into multiple files per domain
+
+# Customer
+type Identity {
+  id: ID!
+  name: String!
+  email: String!
+  address: String!
+}
+
+input IdentityInput {
+  name: String!
+  email: String!
+  address: String!
+}
+
+type Customer {
+  identity: Identity!
+  favoriteRestaurants: [Restaurant!]!
+}
+
+type Restaurant {
+  id: ID!
+  name: String!
+  address: [String!]
+}
+
+type Address {
+  addressLine: String!
+  longitude: String!
+  latitude: String!
+}
+
+type Product {
+  id: ID!
+  name: String!
+  description: String!
+}
+
+type Query {
+  getCustomerByEmail(email: String!): Customer!
+  getRestaurantOffers(restaurantId: ID!): [Restaurant!]
+}
+
+type Mutation {
+  setUserIdentity(input:IdentityInput!): ID!
+}
