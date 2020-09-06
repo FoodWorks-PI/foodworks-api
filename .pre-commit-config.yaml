@@ -13,4 +13,4 @@ repos:
     -   id: trailing-whitespace
     -   id: double-quote-string-fixer
     -   id: check-added-large-files
-    -   id: mixed-line-ending
+    # -   id: mixed-line-ending
