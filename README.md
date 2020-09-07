@@ -6,12 +6,12 @@
  - Clone of [FoodWorks Auth](https://github.com/FoodWorks-PI/foodworks-auth)
 ### Running with docker
 **TODO**
-### Running locally 
+### Running locally
 - Start the [FoodWorks Auth](https://github.com/FoodWorks-PI/foodworks-auth) services following the instructions on the repo.
 - VsCode:
     -  Run -> Start/Run without debugging
-- Goland: 
-    - Install the Envfile plugin 
+- Goland:
+    - Install the Envfile plugin
     - Open main.go and click on the green arrow, afterwards you should be able to run the project from the toolbar.
 - Console:
     - **TODO**
@@ -22,15 +22,15 @@
 :.
 ├───.github              # CI/CD for github actions
 ├───docker               # Docker build files
-├───internal    
+├───internal
 │   ├───api              # Http and route-controller mapping
 │   ├───auth
-│   ├───generated        # Genrated code for Ent and GQLGen, do not modify 
+│   ├───generated        # Genrated code for Ent and GQLGen, do not modify
 │   │   ├───ent
 │   │   └───graphql
-│   ├───platform         # Support code 
+│   ├───platform         # Support code
 │   └───resolver         # GraphQL
-├───schema                  
+├───schema
 │   ├───db               # DB schema consumed by Ent
 │   └───graphql          # GraphQL schema
 └───test                 # Integration tests
@@ -43,5 +43,5 @@
  1. Test your code using `go test./...`
  1. Push your changes and submit a PR
 ### Pre-commit
-For format standarization, this repo uses [Pre-Commit](https://pre-commit.com/#installation), if your code does not pass the format checks, the PR will be automatically rejected. 
+For format standarization, this repo uses [Pre-Commit](https://pre-commit.com/#installation), if your code does not pass the format checks, the PR will be automatically rejected.
 You can run the checks locally by installing the tool: [Pre-Commit Installation](https://pre-commit.com/#installation) and running `pre-commit` on the root of the project. After making sure your project passes the tests, you can commit, push your changes, and submit a PR.
