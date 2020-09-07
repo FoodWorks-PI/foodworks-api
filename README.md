@@ -8,12 +8,14 @@
 **TODO**
 ### Running locally 
 - Start the [FoodWorks Auth](https://github.com/FoodWorks-PI/foodworks-auth) services following the instructions on the repo.
-- From VsCode: Run -> Run (With/Without) debugging
+- VsCode:
+    -  Run -> Start/Run without debugging
 - Goland: 
     - Install the Envfile plugin 
     - Open main.go and click on the green arrow, afterwards you should be able to run the project from the toolbar.
 - Console:
     - **TODO**
+- If you see a message relating to db connection, make sure you are running the auth services and loading `.env.development` when running this project (this should be handle by VsCode or Goland).
 ## Contributing
 ### Project Structrure
 ```
