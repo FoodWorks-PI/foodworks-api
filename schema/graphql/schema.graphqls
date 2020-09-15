@@ -42,8 +42,11 @@ type Product {
 type Query {
   getCustomerByEmail(email: String!): Customer!
   getRestaurantOffers(restaurantId: ID!): [Restaurant!]
+  getRestaurantOffers(restaurantId: ID!): [Restaurant!]
 }
 
 type Mutation {
-  setUserIdentity(input:IdentityInput!): ID!
+  setUserProfile(input:IdentityInput!): ID!
+  addProduct(input:ProductInput!): ID!
+  createOfferFromProduct(input:OfferInput!): ID!
 }
