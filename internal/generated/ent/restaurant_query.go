@@ -54,23 +54,23 @@ func (rq *RestaurantQuery) Order(o ...OrderFunc) *RestaurantQuery {
 
 // First returns the first Restaurant entity in the query. Returns *NotFoundError when no restaurant was found.
 func (rq *RestaurantQuery) First(ctx context.Context) (*Restaurant, error) {
-	rs, err := rq.Limit(1).All(ctx)
+	nodes, err := rq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(rs) == 0 {
+	if len(nodes) == 0 {
 		return nil, &NotFoundError{restaurant.Label}
 	}
-	return rs[0], nil
+	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
 func (rq *RestaurantQuery) FirstX(ctx context.Context) *Restaurant {
-	r, err := rq.First(ctx)
+	node, err := rq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
-	return r
+	return node
 }
 
 // FirstID returns the first Restaurant id in the query. Returns *NotFoundError when no id was found.
@@ -97,13 +97,13 @@ func (rq *RestaurantQuery) FirstXID(ctx context.Context) int {
 
 // Only returns the only Restaurant entity in the query, returns an error if not exactly one entity was returned.
 func (rq *RestaurantQuery) Only(ctx context.Context) (*Restaurant, error) {
-	rs, err := rq.Limit(2).All(ctx)
+	nodes, err := rq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	switch len(rs) {
+	switch len(nodes) {
 	case 1:
-		return rs[0], nil
+		return nodes[0], nil
 	case 0:
 		return nil, &NotFoundError{restaurant.Label}
 	default:
@@ -113,11 +113,11 @@ func (rq *RestaurantQuery) Only(ctx context.Context) (*Restaurant, error) {
 
 // OnlyX is like Only, but panics if an error occurs.
 func (rq *RestaurantQuery) OnlyX(ctx context.Context) *Restaurant {
-	r, err := rq.Only(ctx)
+	node, err := rq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return r
+	return node
 }
 
 // OnlyID returns the only Restaurant id in the query, returns an error if not exactly one id was returned.
@@ -156,11 +156,11 @@ func (rq *RestaurantQuery) All(ctx context.Context) ([]*Restaurant, error) {
 
 // AllX is like All, but panics if an error occurs.
 func (rq *RestaurantQuery) AllX(ctx context.Context) []*Restaurant {
-	rs, err := rq.All(ctx)
+	nodes, err := rq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return rs
+	return nodes
 }
 
 // IDs executes the query and returns a list of Restaurant ids.
@@ -338,7 +338,7 @@ func (rq *RestaurantQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := rq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector)
+				ps[i](selector, restaurant.ValidColumn)
 			}
 		}
 	}
@@ -357,7 +357,7 @@ func (rq *RestaurantQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range rq.order {
-		p(selector)
+		p(selector, restaurant.ValidColumn)
 	}
 	if offset := rq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -592,8 +592,17 @@ func (rgb *RestaurantGroupBy) BoolX(ctx context.Context) bool {
 }
 
 func (rgb *RestaurantGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range rgb.fields {
+		if !restaurant.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
+		}
+	}
+	selector := rgb.sqlQuery()
+	if err := selector.Err(); err != nil {
+		return err
+	}
 	rows := &sql.Rows{}
-	query, args := rgb.sqlQuery().Query()
+	query, args := selector.Query()
 	if err := rgb.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
@@ -606,7 +615,7 @@ func (rgb *RestaurantGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(rgb.fields)+len(rgb.fns))
 	columns = append(columns, rgb.fields...)
 	for _, fn := range rgb.fns {
-		columns = append(columns, fn(selector))
+		columns = append(columns, fn(selector, restaurant.ValidColumn))
 	}
 	return selector.Select(columns...).GroupBy(rgb.fields...)
 }
@@ -826,6 +835,11 @@ func (rs *RestaurantSelect) BoolX(ctx context.Context) bool {
 }
 
 func (rs *RestaurantSelect) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range rs.fields {
+		if !restaurant.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
+		}
+	}
 	rows := &sql.Rows{}
 	query, args := rs.sqlQuery().Query()
 	if err := rs.driver.Query(ctx, query, args, rows); err != nil {

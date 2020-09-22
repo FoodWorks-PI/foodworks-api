@@ -54,23 +54,23 @@ func (oq *OrderQuery) Order(o ...OrderFunc) *OrderQuery {
 
 // First returns the first Order entity in the query. Returns *NotFoundError when no order was found.
 func (oq *OrderQuery) First(ctx context.Context) (*Order, error) {
-	os, err := oq.Limit(1).All(ctx)
+	nodes, err := oq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(os) == 0 {
+	if len(nodes) == 0 {
 		return nil, &NotFoundError{order.Label}
 	}
-	return os[0], nil
+	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
 func (oq *OrderQuery) FirstX(ctx context.Context) *Order {
-	o, err := oq.First(ctx)
+	node, err := oq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
-	return o
+	return node
 }
 
 // FirstID returns the first Order id in the query. Returns *NotFoundError when no id was found.
@@ -97,13 +97,13 @@ func (oq *OrderQuery) FirstXID(ctx context.Context) int {
 
 // Only returns the only Order entity in the query, returns an error if not exactly one entity was returned.
 func (oq *OrderQuery) Only(ctx context.Context) (*Order, error) {
-	os, err := oq.Limit(2).All(ctx)
+	nodes, err := oq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	switch len(os) {
+	switch len(nodes) {
 	case 1:
-		return os[0], nil
+		return nodes[0], nil
 	case 0:
 		return nil, &NotFoundError{order.Label}
 	default:
@@ -113,11 +113,11 @@ func (oq *OrderQuery) Only(ctx context.Context) (*Order, error) {
 
 // OnlyX is like Only, but panics if an error occurs.
 func (oq *OrderQuery) OnlyX(ctx context.Context) *Order {
-	o, err := oq.Only(ctx)
+	node, err := oq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return o
+	return node
 }
 
 // OnlyID returns the only Order id in the query, returns an error if not exactly one id was returned.
@@ -156,11 +156,11 @@ func (oq *OrderQuery) All(ctx context.Context) ([]*Order, error) {
 
 // AllX is like All, but panics if an error occurs.
 func (oq *OrderQuery) AllX(ctx context.Context) []*Order {
-	os, err := oq.All(ctx)
+	nodes, err := oq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return os
+	return nodes
 }
 
 // IDs executes the query and returns a list of Order ids.
@@ -338,7 +338,7 @@ func (oq *OrderQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := oq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector)
+				ps[i](selector, order.ValidColumn)
 			}
 		}
 	}
@@ -357,7 +357,7 @@ func (oq *OrderQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range oq.order {
-		p(selector)
+		p(selector, order.ValidColumn)
 	}
 	if offset := oq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -592,8 +592,17 @@ func (ogb *OrderGroupBy) BoolX(ctx context.Context) bool {
 }
 
 func (ogb *OrderGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range ogb.fields {
+		if !order.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
+		}
+	}
+	selector := ogb.sqlQuery()
+	if err := selector.Err(); err != nil {
+		return err
+	}
 	rows := &sql.Rows{}
-	query, args := ogb.sqlQuery().Query()
+	query, args := selector.Query()
 	if err := ogb.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
@@ -606,7 +615,7 @@ func (ogb *OrderGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(ogb.fields)+len(ogb.fns))
 	columns = append(columns, ogb.fields...)
 	for _, fn := range ogb.fns {
-		columns = append(columns, fn(selector))
+		columns = append(columns, fn(selector, order.ValidColumn))
 	}
 	return selector.Select(columns...).GroupBy(ogb.fields...)
 }
@@ -826,6 +835,11 @@ func (os *OrderSelect) BoolX(ctx context.Context) bool {
 }
 
 func (os *OrderSelect) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range os.fields {
+		if !order.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
+		}
+	}
 	rows := &sql.Rows{}
 	query, args := os.sqlQuery().Query()
 	if err := os.driver.Query(ctx, query, args, rows); err != nil {

@@ -213,11 +213,11 @@ func (c *OrderClient) Get(ctx context.Context, id int) (*Order, error) {
 
 // GetX is like Get, but panics if an error occurs.
 func (c *OrderClient) GetX(ctx context.Context, id int) *Order {
-	o, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return o
+	return obj
 }
 
 // Hooks returns the client hooks.
@@ -301,11 +301,11 @@ func (c *ProductClient) Get(ctx context.Context, id int) (*Product, error) {
 
 // GetX is like Get, but panics if an error occurs.
 func (c *ProductClient) GetX(ctx context.Context, id int) *Product {
-	pr, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return pr
+	return obj
 }
 
 // Hooks returns the client hooks.
@@ -389,11 +389,11 @@ func (c *RestaurantClient) Get(ctx context.Context, id int) (*Restaurant, error)
 
 // GetX is like Get, but panics if an error occurs.
 func (c *RestaurantClient) GetX(ctx context.Context, id int) *Restaurant {
-	r, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return r
+	return obj
 }
 
 // Hooks returns the client hooks.
@@ -477,11 +477,11 @@ func (c *UserClient) Get(ctx context.Context, id int) (*User, error) {
 
 // GetX is like Get, but panics if an error occurs.
 func (c *UserClient) GetX(ctx context.Context, id int) *User {
-	u, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return u
+	return obj
 }
 
 // Hooks returns the client hooks.

@@ -36,22 +36,22 @@ func (a *API) SetupRoutes(entClient *ent.Client, redisClient *redis.Client) {
 	// init server
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer)
-	router.Use(middleware.DefaultCompress)
+	router.Use(middleware.Compress(5))
 	// Add CORS middleware around every request
 	router.Use(cors.New(cors.Options{
-		// AllowedOrigins:   []string{"*"},
-		AllowCredentials: true,
-		// Debug:            true,
-		AllowOriginFunc: func(origin string) bool {
-			return true
-		},
+		AllowedOrigins: []string{"*"},
+		// AllowCredentials: true,
+		// TODO: Only for development
+		// AllowOriginFunc: func(origin string) bool {
+		// return true
+		// },
 	}).Handler)
 	// router.Use(auth.Middleware())
-	router.Use(render.SetContentType(render.ContentTypeJSON))
 
 	srv := newGraphQLServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{Client: entClient, Redis: redisClient}}))
 
 	router.Route("/graphql", func(router chi.Router) {
+		router.Use(render.SetContentType(render.ContentTypeJSON))
 		router.Handle("/", srv)
 		router.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 	})

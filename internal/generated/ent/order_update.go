@@ -155,11 +155,11 @@ func (ouo *OrderUpdateOne) Save(ctx context.Context) (*Order, error) {
 
 // SaveX is like Save, but panics if an error occurs.
 func (ouo *OrderUpdateOne) SaveX(ctx context.Context) *Order {
-	o, err := ouo.Save(ctx)
+	node, err := ouo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return o
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -175,7 +175,7 @@ func (ouo *OrderUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (o *Order, err error) {
+func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   order.Table,
@@ -191,9 +191,9 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (o *Order, err error) {
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Order.ID for update")}
 	}
 	_spec.Node.ID.Value = id
-	o = &Order{config: ouo.config}
-	_spec.Assign = o.assignValues
-	_spec.ScanValues = o.scanValues()
+	_node = &Order{config: ouo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, ouo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{order.Label}
@@ -202,5 +202,5 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (o *Order, err error) {
 		}
 		return nil, err
 	}
-	return o, nil
+	return _node, nil
 }

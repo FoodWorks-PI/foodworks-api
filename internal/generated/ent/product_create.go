@@ -25,20 +25,23 @@ func (pc *ProductCreate) Mutation() *ProductMutation {
 
 // Save creates the Product in the database.
 func (pc *ProductCreate) Save(ctx context.Context) (*Product, error) {
-	if err := pc.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *Product
 	)
 	if len(pc.hooks) == 0 {
+		if err = pc.check(); err != nil {
+			return nil, err
+		}
 		node, err = pc.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*ProductMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = pc.check(); err != nil {
+				return nil, err
 			}
 			pc.mutation = mutation
 			node, err = pc.sqlSave(ctx)
@@ -64,12 +67,13 @@ func (pc *ProductCreate) SaveX(ctx context.Context) *Product {
 	return v
 }
 
-func (pc *ProductCreate) preSave() error {
+// check runs all checks and user-defined validators on the builder.
+func (pc *ProductCreate) check() error {
 	return nil
 }
 
 func (pc *ProductCreate) sqlSave(ctx context.Context) (*Product, error) {
-	pr, _spec := pc.createSpec()
+	_node, _spec := pc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pc.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
@@ -77,13 +81,13 @@ func (pc *ProductCreate) sqlSave(ctx context.Context) (*Product, error) {
 		return nil, err
 	}
 	id := _spec.ID.Value.(int64)
-	pr.ID = int(id)
-	return pr, nil
+	_node.ID = int(id)
+	return _node, nil
 }
 
 func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	var (
-		pr    = &Product{config: pc.config}
+		_node = &Product{config: pc.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: product.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -92,7 +96,7 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
-	return pr, _spec
+	return _node, _spec
 }
 
 // ProductCreateBulk is the builder for creating a bulk of Product entities.
@@ -110,12 +114,12 @@ func (pcb *ProductCreateBulk) Save(ctx context.Context) ([]*Product, error) {
 		func(i int, root context.Context) {
 			builder := pcb.builders[i]
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*ProductMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()

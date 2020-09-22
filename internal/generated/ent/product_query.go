@@ -54,23 +54,23 @@ func (pq *ProductQuery) Order(o ...OrderFunc) *ProductQuery {
 
 // First returns the first Product entity in the query. Returns *NotFoundError when no product was found.
 func (pq *ProductQuery) First(ctx context.Context) (*Product, error) {
-	prs, err := pq.Limit(1).All(ctx)
+	nodes, err := pq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(prs) == 0 {
+	if len(nodes) == 0 {
 		return nil, &NotFoundError{product.Label}
 	}
-	return prs[0], nil
+	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
 func (pq *ProductQuery) FirstX(ctx context.Context) *Product {
-	pr, err := pq.First(ctx)
+	node, err := pq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
-	return pr
+	return node
 }
 
 // FirstID returns the first Product id in the query. Returns *NotFoundError when no id was found.
@@ -97,13 +97,13 @@ func (pq *ProductQuery) FirstXID(ctx context.Context) int {
 
 // Only returns the only Product entity in the query, returns an error if not exactly one entity was returned.
 func (pq *ProductQuery) Only(ctx context.Context) (*Product, error) {
-	prs, err := pq.Limit(2).All(ctx)
+	nodes, err := pq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	switch len(prs) {
+	switch len(nodes) {
 	case 1:
-		return prs[0], nil
+		return nodes[0], nil
 	case 0:
 		return nil, &NotFoundError{product.Label}
 	default:
@@ -113,11 +113,11 @@ func (pq *ProductQuery) Only(ctx context.Context) (*Product, error) {
 
 // OnlyX is like Only, but panics if an error occurs.
 func (pq *ProductQuery) OnlyX(ctx context.Context) *Product {
-	pr, err := pq.Only(ctx)
+	node, err := pq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pr
+	return node
 }
 
 // OnlyID returns the only Product id in the query, returns an error if not exactly one id was returned.
@@ -156,11 +156,11 @@ func (pq *ProductQuery) All(ctx context.Context) ([]*Product, error) {
 
 // AllX is like All, but panics if an error occurs.
 func (pq *ProductQuery) AllX(ctx context.Context) []*Product {
-	prs, err := pq.All(ctx)
+	nodes, err := pq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return prs
+	return nodes
 }
 
 // IDs executes the query and returns a list of Product ids.
@@ -338,7 +338,7 @@ func (pq *ProductQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := pq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector)
+				ps[i](selector, product.ValidColumn)
 			}
 		}
 	}
@@ -357,7 +357,7 @@ func (pq *ProductQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range pq.order {
-		p(selector)
+		p(selector, product.ValidColumn)
 	}
 	if offset := pq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -592,8 +592,17 @@ func (pgb *ProductGroupBy) BoolX(ctx context.Context) bool {
 }
 
 func (pgb *ProductGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range pgb.fields {
+		if !product.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
+		}
+	}
+	selector := pgb.sqlQuery()
+	if err := selector.Err(); err != nil {
+		return err
+	}
 	rows := &sql.Rows{}
-	query, args := pgb.sqlQuery().Query()
+	query, args := selector.Query()
 	if err := pgb.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
@@ -606,7 +615,7 @@ func (pgb *ProductGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(pgb.fields)+len(pgb.fns))
 	columns = append(columns, pgb.fields...)
 	for _, fn := range pgb.fns {
-		columns = append(columns, fn(selector))
+		columns = append(columns, fn(selector, product.ValidColumn))
 	}
 	return selector.Select(columns...).GroupBy(pgb.fields...)
 }
@@ -826,6 +835,11 @@ func (ps *ProductSelect) BoolX(ctx context.Context) bool {
 }
 
 func (ps *ProductSelect) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range ps.fields {
+		if !product.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
+		}
+	}
 	rows := &sql.Rows{}
 	query, args := ps.sqlQuery().Query()
 	if err := ps.driver.Query(ctx, query, args, rows); err != nil {

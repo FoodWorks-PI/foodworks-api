@@ -155,11 +155,11 @@ func (puo *ProductUpdateOne) Save(ctx context.Context) (*Product, error) {
 
 // SaveX is like Save, but panics if an error occurs.
 func (puo *ProductUpdateOne) SaveX(ctx context.Context) *Product {
-	pr, err := puo.Save(ctx)
+	node, err := puo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pr
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -175,7 +175,7 @@ func (puo *ProductUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (pr *Product, err error) {
+func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   product.Table,
@@ -191,9 +191,9 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (pr *Product, err erro
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Product.ID for update")}
 	}
 	_spec.Node.ID.Value = id
-	pr = &Product{config: puo.config}
-	_spec.Assign = pr.assignValues
-	_spec.ScanValues = pr.scanValues()
+	_node = &Product{config: puo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, puo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{product.Label}
@@ -202,5 +202,5 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (pr *Product, err erro
 		}
 		return nil, err
 	}
-	return pr, nil
+	return _node, nil
 }
