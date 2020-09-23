@@ -45,5 +45,5 @@ type Query {
 }
 
 type Mutation {
-  setUserIdentity(input:IdentityInput!): ID!
+  setUserProfile(input:IdentityInput!): ID!
 }

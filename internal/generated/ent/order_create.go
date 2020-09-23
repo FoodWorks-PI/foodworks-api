@@ -25,20 +25,23 @@ func (oc *OrderCreate) Mutation() *OrderMutation {
 
 // Save creates the Order in the database.
 func (oc *OrderCreate) Save(ctx context.Context) (*Order, error) {
-	if err := oc.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *Order
 	)
 	if len(oc.hooks) == 0 {
+		if err = oc.check(); err != nil {
+			return nil, err
+		}
 		node, err = oc.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*OrderMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = oc.check(); err != nil {
+				return nil, err
 			}
 			oc.mutation = mutation
 			node, err = oc.sqlSave(ctx)
@@ -64,12 +67,13 @@ func (oc *OrderCreate) SaveX(ctx context.Context) *Order {
 	return v
 }
 
-func (oc *OrderCreate) preSave() error {
+// check runs all checks and user-defined validators on the builder.
+func (oc *OrderCreate) check() error {
 	return nil
 }
 
 func (oc *OrderCreate) sqlSave(ctx context.Context) (*Order, error) {
-	o, _spec := oc.createSpec()
+	_node, _spec := oc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, oc.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
@@ -77,13 +81,13 @@ func (oc *OrderCreate) sqlSave(ctx context.Context) (*Order, error) {
 		return nil, err
 	}
 	id := _spec.ID.Value.(int64)
-	o.ID = int(id)
-	return o, nil
+	_node.ID = int(id)
+	return _node, nil
 }
 
 func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	var (
-		o     = &Order{config: oc.config}
+		_node = &Order{config: oc.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: order.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -92,7 +96,7 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
-	return o, _spec
+	return _node, _spec
 }
 
 // OrderCreateBulk is the builder for creating a bulk of Order entities.
@@ -110,12 +114,12 @@ func (ocb *OrderCreateBulk) Save(ctx context.Context) ([]*Order, error) {
 		func(i int, root context.Context) {
 			builder := ocb.builders[i]
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*OrderMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()

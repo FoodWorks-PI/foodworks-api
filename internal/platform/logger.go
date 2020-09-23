@@ -10,5 +10,4 @@ import (
 func SetupLog() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
-
 }

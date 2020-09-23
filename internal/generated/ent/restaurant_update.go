@@ -155,11 +155,11 @@ func (ruo *RestaurantUpdateOne) Save(ctx context.Context) (*Restaurant, error) {
 
 // SaveX is like Save, but panics if an error occurs.
 func (ruo *RestaurantUpdateOne) SaveX(ctx context.Context) *Restaurant {
-	r, err := ruo.Save(ctx)
+	node, err := ruo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return r
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -175,7 +175,7 @@ func (ruo *RestaurantUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (ruo *RestaurantUpdateOne) sqlSave(ctx context.Context) (r *Restaurant, err error) {
+func (ruo *RestaurantUpdateOne) sqlSave(ctx context.Context) (_node *Restaurant, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   restaurant.Table,
@@ -191,9 +191,9 @@ func (ruo *RestaurantUpdateOne) sqlSave(ctx context.Context) (r *Restaurant, err
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Restaurant.ID for update")}
 	}
 	_spec.Node.ID.Value = id
-	r = &Restaurant{config: ruo.config}
-	_spec.Assign = r.assignValues
-	_spec.ScanValues = r.scanValues()
+	_node = &Restaurant{config: ruo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, ruo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{restaurant.Label}
@@ -202,5 +202,5 @@ func (ruo *RestaurantUpdateOne) sqlSave(ctx context.Context) (r *Restaurant, err
 		}
 		return nil, err
 	}
-	return r, nil
+	return _node, nil
 }

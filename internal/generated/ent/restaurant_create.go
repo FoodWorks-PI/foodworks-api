@@ -25,20 +25,23 @@ func (rc *RestaurantCreate) Mutation() *RestaurantMutation {
 
 // Save creates the Restaurant in the database.
 func (rc *RestaurantCreate) Save(ctx context.Context) (*Restaurant, error) {
-	if err := rc.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *Restaurant
 	)
 	if len(rc.hooks) == 0 {
+		if err = rc.check(); err != nil {
+			return nil, err
+		}
 		node, err = rc.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*RestaurantMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = rc.check(); err != nil {
+				return nil, err
 			}
 			rc.mutation = mutation
 			node, err = rc.sqlSave(ctx)
@@ -64,12 +67,13 @@ func (rc *RestaurantCreate) SaveX(ctx context.Context) *Restaurant {
 	return v
 }
 
-func (rc *RestaurantCreate) preSave() error {
+// check runs all checks and user-defined validators on the builder.
+func (rc *RestaurantCreate) check() error {
 	return nil
 }
 
 func (rc *RestaurantCreate) sqlSave(ctx context.Context) (*Restaurant, error) {
-	r, _spec := rc.createSpec()
+	_node, _spec := rc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, rc.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
@@ -77,13 +81,13 @@ func (rc *RestaurantCreate) sqlSave(ctx context.Context) (*Restaurant, error) {
 		return nil, err
 	}
 	id := _spec.ID.Value.(int64)
-	r.ID = int(id)
-	return r, nil
+	_node.ID = int(id)
+	return _node, nil
 }
 
 func (rc *RestaurantCreate) createSpec() (*Restaurant, *sqlgraph.CreateSpec) {
 	var (
-		r     = &Restaurant{config: rc.config}
+		_node = &Restaurant{config: rc.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: restaurant.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -92,7 +96,7 @@ func (rc *RestaurantCreate) createSpec() (*Restaurant, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
-	return r, _spec
+	return _node, _spec
 }
 
 // RestaurantCreateBulk is the builder for creating a bulk of Restaurant entities.
@@ -110,12 +114,12 @@ func (rcb *RestaurantCreateBulk) Save(ctx context.Context) ([]*Restaurant, error
 		func(i int, root context.Context) {
 			builder := rcb.builders[i]
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*RestaurantMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()
