@@ -4,9 +4,11 @@ go 1.15
 
 require (
 	github.com/99designs/gqlgen v0.13.0
+	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/PaesslerAG/gval v1.0.1 // indirect
 	github.com/PuerkitoBio/goquery v1.5.1 // indirect
 	github.com/agnivade/levenshtein v1.1.0 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dgryski/trifles v0.0.0-20200830180326-aaf60a07f6a3 // indirect
 	github.com/facebook/ent v0.4.3
 	github.com/go-chi/chi v4.1.2+incompatible

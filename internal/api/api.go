@@ -2,7 +2,6 @@ package api
 
 import (
 	"flag"
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -37,40 +36,30 @@ func (a *API) SetupRoutes(entClient *ent.Client, redisClient *redis.Client) {
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Compress(5))
-	// Add CORS middleware around every request
+	router.Use(middleware.Heartbeat("/health"))
 	router.Use(cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
-		// AllowCredentials: true,
-		// TODO: Only for development
-		// AllowOriginFunc: func(origin string) bool {
-		// return true
-		// },
 	}).Handler)
 	// router.Use(auth.Middleware())
 
-	srv := newGraphQLServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{Client: entClient, Redis: redisClient}}))
-
-	router.Route("/graphql", func(router chi.Router) {
-		router.Use(render.SetContentType(render.ContentTypeJSON))
-		router.Handle("/", srv)
-		router.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
-	})
-
-	router.Route("/", func(router chi.Router) {
-		router.HandleFunc("/echo", EchoRequest)
-	})
-
 	router.Group(func(router chi.Router) {
 		//TODO: Verify works with unit tests
+		router.Use(render.SetContentType(render.ContentTypeJSON))
 		if flag.Lookup("test.v") == nil {
 			auth.InitAuth()
 			router.Use(jwtauth.Verifier(auth.TokenAuth))
 			router.Use(jwtauth.Authenticator)
-			fmt.Println("normal run")
+			router.Use(auth.Middleware())
+			log.Info().Msg("Auth Enabled")
 		} else {
-			fmt.Println("run under go test")
+			log.Info().Msg("Auth Disabled")
 		}
 		router.HandleFunc("/echoAuth", EchoRequest)
+		router.Route("/graphql", func(router chi.Router) {
+			srv := newGraphQLServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{Client: entClient, Redis: redisClient}}))
+			router.Handle("/", srv)
+			router.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
+		})
 	})
 	a.Router = router
 }
