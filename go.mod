@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/Jeffail/gabs/v2 v2.6.0
-	github.com/PaesslerAG/gval v1.0.1 // indirect
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dgryski/trifles v0.0.0-20200830180326-aaf60a07f6a3 // indirect
@@ -27,7 +26,6 @@ require (
 	github.com/rs/cors v1.7.0
 	github.com/rs/zerolog v1.20.0
 	github.com/steinfletcher/apitest v1.4.10
-	github.com/steinfletcher/apitest-jsonpath v1.5.1
 	github.com/stretchr/testify v1.6.1
 	github.com/vektah/gqlparser/v2 v2.1.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect

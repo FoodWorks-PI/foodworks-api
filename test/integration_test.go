@@ -15,7 +15,6 @@ import (
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/ory/dockertest/v3"
 	"github.com/steinfletcher/apitest"
-	jsonpath "github.com/steinfletcher/apitest-jsonpath"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -126,16 +125,6 @@ func TestIntegrationTestSuite(t *testing.T) {
 }
 
 //TODO: Dummy test, need to seed db
-func (suite *IntegrationTestSuite) Test_Dummy() {
-	apitest.New().
-		Handler(suite.TestSupport.Handler).
-		Post("/graphql").
-		GraphQLQuery(`query { getCustomerByEmail(email:"example@example.org") {identity{name}} }`).
-		Expect(suite.T()).
-		Status(http.StatusOK).
-		Assert(jsonpath.Equal(`$.data`, nil)).
-		End()
-}
 
 func (suite *IntegrationTestSuite) Test_Auth_Disabled() {
 	apitest.New().
