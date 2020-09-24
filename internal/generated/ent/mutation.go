@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	"foodworks.ml/m/internal/generated/ent/user"
+	"foodworks.ml/m/internal/generated/ent/customer"
 
 	"github.com/facebook/ent"
 )
@@ -21,729 +21,36 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeOrder      = "Order"
-	TypeProduct    = "Product"
-	TypeRestaurant = "Restaurant"
-	TypeUser       = "User"
+	TypeCustomer = "Customer"
 )
 
-// OrderMutation represents an operation that mutate the Orders
+// CustomerMutation represents an operation that mutate the Customers
 // nodes in the graph.
-type OrderMutation struct {
+type CustomerMutation struct {
 	config
 	op            Op
 	typ           string
 	id            *int
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Order, error)
-}
-
-var _ ent.Mutation = (*OrderMutation)(nil)
-
-// orderOption allows to manage the mutation configuration using functional options.
-type orderOption func(*OrderMutation)
-
-// newOrderMutation creates new mutation for $n.Name.
-func newOrderMutation(c config, op Op, opts ...orderOption) *OrderMutation {
-	m := &OrderMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeOrder,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withOrderID sets the id field of the mutation.
-func withOrderID(id int) orderOption {
-	return func(m *OrderMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *Order
-		)
-		m.oldValue = func(ctx context.Context) (*Order, error) {
-			once.Do(func() {
-				if m.done {
-					err = fmt.Errorf("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().Order.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withOrder sets the old Order of the mutation.
-func withOrder(node *Order) orderOption {
-	return func(m *OrderMutation) {
-		m.oldValue = func(context.Context) (*Order, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m OrderMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m OrderMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// ID returns the id value in the mutation. Note that, the id
-// is available only if it was provided to the builder.
-func (m *OrderMutation) ID() (id int, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// Op returns the operation name.
-func (m *OrderMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (Order).
-func (m *OrderMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during
-// this mutation. Note that, in order to get all numeric
-// fields that were in/decremented, call AddedFields().
-func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 0)
-	return fields
-}
-
-// Field returns the value of a field with the given name.
-// The second boolean value indicates that this field was
-// not set, or was not define in the schema.
-func (m *OrderMutation) Field(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database.
-// An error is returned if the mutation operation is not UpdateOne,
-// or the query to the database was failed.
-func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	return nil, fmt.Errorf("unknown Order field %s", name)
-}
-
-// SetField sets the value for the given name. It returns an
-// error if the field is not defined in the schema, or if the
-// type mismatch the field type.
-func (m *OrderMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown Order field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented
-// or decremented during this mutation.
-func (m *OrderMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was in/decremented
-// from a field with the given name. The second value indicates
-// that this field was not set, or was not define in the schema.
-func (m *OrderMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value for the given name. It returns an
-// error if the field is not defined in the schema, or if the
-// type mismatch the field type.
-func (m *OrderMutation) AddField(name string, value ent.Value) error {
-	return fmt.Errorf("unknown Order numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared
-// during this mutation.
-func (m *OrderMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicates if this field was
-// cleared in this mutation.
-func (m *OrderMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value for the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *OrderMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown Order nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation regarding the
-// given field name. It returns an error if the field is not
-// defined in the schema.
-func (m *OrderMutation) ResetField(name string) error {
-	return fmt.Errorf("unknown Order field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this
-// mutation.
-func (m *OrderMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// AddedIDs returns all ids (to other nodes) that were added for
-// the given edge name.
-func (m *OrderMutation) AddedIDs(name string) []ent.Value {
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this
-// mutation.
-func (m *OrderMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// RemovedIDs returns all ids (to other nodes) that were removed for
-// the given edge name.
-func (m *OrderMutation) RemovedIDs(name string) []ent.Value {
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this
-// mutation.
-func (m *OrderMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// EdgeCleared returns a boolean indicates if this edge was
-// cleared in this mutation.
-func (m *OrderMutation) EdgeCleared(name string) bool {
-	return false
-}
-
-// ClearEdge clears the value for the given name. It returns an
-// error if the edge name is not defined in the schema.
-func (m *OrderMutation) ClearEdge(name string) error {
-	return fmt.Errorf("unknown Order unique edge %s", name)
-}
-
-// ResetEdge resets all changes in the mutation regarding the
-// given edge name. It returns an error if the edge is not
-// defined in the schema.
-func (m *OrderMutation) ResetEdge(name string) error {
-	return fmt.Errorf("unknown Order edge %s", name)
-}
-
-// ProductMutation represents an operation that mutate the Products
-// nodes in the graph.
-type ProductMutation struct {
-	config
-	op            Op
-	typ           string
-	id            *int
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Product, error)
-}
-
-var _ ent.Mutation = (*ProductMutation)(nil)
-
-// productOption allows to manage the mutation configuration using functional options.
-type productOption func(*ProductMutation)
-
-// newProductMutation creates new mutation for $n.Name.
-func newProductMutation(c config, op Op, opts ...productOption) *ProductMutation {
-	m := &ProductMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeProduct,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withProductID sets the id field of the mutation.
-func withProductID(id int) productOption {
-	return func(m *ProductMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *Product
-		)
-		m.oldValue = func(ctx context.Context) (*Product, error) {
-			once.Do(func() {
-				if m.done {
-					err = fmt.Errorf("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().Product.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withProduct sets the old Product of the mutation.
-func withProduct(node *Product) productOption {
-	return func(m *ProductMutation) {
-		m.oldValue = func(context.Context) (*Product, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m ProductMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m ProductMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// ID returns the id value in the mutation. Note that, the id
-// is available only if it was provided to the builder.
-func (m *ProductMutation) ID() (id int, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// Op returns the operation name.
-func (m *ProductMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (Product).
-func (m *ProductMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during
-// this mutation. Note that, in order to get all numeric
-// fields that were in/decremented, call AddedFields().
-func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 0)
-	return fields
-}
-
-// Field returns the value of a field with the given name.
-// The second boolean value indicates that this field was
-// not set, or was not define in the schema.
-func (m *ProductMutation) Field(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database.
-// An error is returned if the mutation operation is not UpdateOne,
-// or the query to the database was failed.
-func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	return nil, fmt.Errorf("unknown Product field %s", name)
-}
-
-// SetField sets the value for the given name. It returns an
-// error if the field is not defined in the schema, or if the
-// type mismatch the field type.
-func (m *ProductMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown Product field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented
-// or decremented during this mutation.
-func (m *ProductMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was in/decremented
-// from a field with the given name. The second value indicates
-// that this field was not set, or was not define in the schema.
-func (m *ProductMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value for the given name. It returns an
-// error if the field is not defined in the schema, or if the
-// type mismatch the field type.
-func (m *ProductMutation) AddField(name string, value ent.Value) error {
-	return fmt.Errorf("unknown Product numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared
-// during this mutation.
-func (m *ProductMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicates if this field was
-// cleared in this mutation.
-func (m *ProductMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value for the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *ProductMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown Product nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation regarding the
-// given field name. It returns an error if the field is not
-// defined in the schema.
-func (m *ProductMutation) ResetField(name string) error {
-	return fmt.Errorf("unknown Product field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this
-// mutation.
-func (m *ProductMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// AddedIDs returns all ids (to other nodes) that were added for
-// the given edge name.
-func (m *ProductMutation) AddedIDs(name string) []ent.Value {
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this
-// mutation.
-func (m *ProductMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// RemovedIDs returns all ids (to other nodes) that were removed for
-// the given edge name.
-func (m *ProductMutation) RemovedIDs(name string) []ent.Value {
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this
-// mutation.
-func (m *ProductMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// EdgeCleared returns a boolean indicates if this edge was
-// cleared in this mutation.
-func (m *ProductMutation) EdgeCleared(name string) bool {
-	return false
-}
-
-// ClearEdge clears the value for the given name. It returns an
-// error if the edge name is not defined in the schema.
-func (m *ProductMutation) ClearEdge(name string) error {
-	return fmt.Errorf("unknown Product unique edge %s", name)
-}
-
-// ResetEdge resets all changes in the mutation regarding the
-// given edge name. It returns an error if the edge is not
-// defined in the schema.
-func (m *ProductMutation) ResetEdge(name string) error {
-	return fmt.Errorf("unknown Product edge %s", name)
-}
-
-// RestaurantMutation represents an operation that mutate the Restaurants
-// nodes in the graph.
-type RestaurantMutation struct {
-	config
-	op            Op
-	typ           string
-	id            *int
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Restaurant, error)
-}
-
-var _ ent.Mutation = (*RestaurantMutation)(nil)
-
-// restaurantOption allows to manage the mutation configuration using functional options.
-type restaurantOption func(*RestaurantMutation)
-
-// newRestaurantMutation creates new mutation for $n.Name.
-func newRestaurantMutation(c config, op Op, opts ...restaurantOption) *RestaurantMutation {
-	m := &RestaurantMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeRestaurant,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withRestaurantID sets the id field of the mutation.
-func withRestaurantID(id int) restaurantOption {
-	return func(m *RestaurantMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *Restaurant
-		)
-		m.oldValue = func(ctx context.Context) (*Restaurant, error) {
-			once.Do(func() {
-				if m.done {
-					err = fmt.Errorf("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().Restaurant.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withRestaurant sets the old Restaurant of the mutation.
-func withRestaurant(node *Restaurant) restaurantOption {
-	return func(m *RestaurantMutation) {
-		m.oldValue = func(context.Context) (*Restaurant, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m RestaurantMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m RestaurantMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// ID returns the id value in the mutation. Note that, the id
-// is available only if it was provided to the builder.
-func (m *RestaurantMutation) ID() (id int, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// Op returns the operation name.
-func (m *RestaurantMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (Restaurant).
-func (m *RestaurantMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during
-// this mutation. Note that, in order to get all numeric
-// fields that were in/decremented, call AddedFields().
-func (m *RestaurantMutation) Fields() []string {
-	fields := make([]string, 0, 0)
-	return fields
-}
-
-// Field returns the value of a field with the given name.
-// The second boolean value indicates that this field was
-// not set, or was not define in the schema.
-func (m *RestaurantMutation) Field(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database.
-// An error is returned if the mutation operation is not UpdateOne,
-// or the query to the database was failed.
-func (m *RestaurantMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	return nil, fmt.Errorf("unknown Restaurant field %s", name)
-}
-
-// SetField sets the value for the given name. It returns an
-// error if the field is not defined in the schema, or if the
-// type mismatch the field type.
-func (m *RestaurantMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown Restaurant field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented
-// or decremented during this mutation.
-func (m *RestaurantMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was in/decremented
-// from a field with the given name. The second value indicates
-// that this field was not set, or was not define in the schema.
-func (m *RestaurantMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value for the given name. It returns an
-// error if the field is not defined in the schema, or if the
-// type mismatch the field type.
-func (m *RestaurantMutation) AddField(name string, value ent.Value) error {
-	return fmt.Errorf("unknown Restaurant numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared
-// during this mutation.
-func (m *RestaurantMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicates if this field was
-// cleared in this mutation.
-func (m *RestaurantMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value for the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *RestaurantMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown Restaurant nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation regarding the
-// given field name. It returns an error if the field is not
-// defined in the schema.
-func (m *RestaurantMutation) ResetField(name string) error {
-	return fmt.Errorf("unknown Restaurant field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this
-// mutation.
-func (m *RestaurantMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// AddedIDs returns all ids (to other nodes) that were added for
-// the given edge name.
-func (m *RestaurantMutation) AddedIDs(name string) []ent.Value {
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this
-// mutation.
-func (m *RestaurantMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// RemovedIDs returns all ids (to other nodes) that were removed for
-// the given edge name.
-func (m *RestaurantMutation) RemovedIDs(name string) []ent.Value {
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this
-// mutation.
-func (m *RestaurantMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
-	return edges
-}
-
-// EdgeCleared returns a boolean indicates if this edge was
-// cleared in this mutation.
-func (m *RestaurantMutation) EdgeCleared(name string) bool {
-	return false
-}
-
-// ClearEdge clears the value for the given name. It returns an
-// error if the edge name is not defined in the schema.
-func (m *RestaurantMutation) ClearEdge(name string) error {
-	return fmt.Errorf("unknown Restaurant unique edge %s", name)
-}
-
-// ResetEdge resets all changes in the mutation regarding the
-// given edge name. It returns an error if the edge is not
-// defined in the schema.
-func (m *RestaurantMutation) ResetEdge(name string) error {
-	return fmt.Errorf("unknown Restaurant edge %s", name)
-}
-
-// UserMutation represents an operation that mutate the Users
-// nodes in the graph.
-type UserMutation struct {
-	config
-	op            Op
-	typ           string
-	id            *int
-	first_name    *string
-	last_name     *string
-	address       *string
+	kratos_id     *string
+	name          *string
 	email         *string
+	phone         *string
 	clearedFields map[string]struct{}
 	done          bool
-	oldValue      func(context.Context) (*User, error)
+	oldValue      func(context.Context) (*Customer, error)
 }
 
-var _ ent.Mutation = (*UserMutation)(nil)
+var _ ent.Mutation = (*CustomerMutation)(nil)
 
-// userOption allows to manage the mutation configuration using functional options.
-type userOption func(*UserMutation)
+// customerOption allows to manage the mutation configuration using functional options.
+type customerOption func(*CustomerMutation)
 
-// newUserMutation creates new mutation for $n.Name.
-func newUserMutation(c config, op Op, opts ...userOption) *UserMutation {
-	m := &UserMutation{
+// newCustomerMutation creates new mutation for $n.Name.
+func newCustomerMutation(c config, op Op, opts ...customerOption) *CustomerMutation {
+	m := &CustomerMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeUser,
+		typ:           TypeCustomer,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -752,20 +59,20 @@ func newUserMutation(c config, op Op, opts ...userOption) *UserMutation {
 	return m
 }
 
-// withUserID sets the id field of the mutation.
-func withUserID(id int) userOption {
-	return func(m *UserMutation) {
+// withCustomerID sets the id field of the mutation.
+func withCustomerID(id int) customerOption {
+	return func(m *CustomerMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *User
+			value *Customer
 		)
-		m.oldValue = func(ctx context.Context) (*User, error) {
+		m.oldValue = func(ctx context.Context) (*Customer, error) {
 			once.Do(func() {
 				if m.done {
 					err = fmt.Errorf("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().User.Get(ctx, id)
+					value, err = m.Client().Customer.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -774,10 +81,10 @@ func withUserID(id int) userOption {
 	}
 }
 
-// withUser sets the old User of the mutation.
-func withUser(node *User) userOption {
-	return func(m *UserMutation) {
-		m.oldValue = func(context.Context) (*User, error) {
+// withCustomer sets the old Customer of the mutation.
+func withCustomer(node *Customer) customerOption {
+	return func(m *CustomerMutation) {
+		m.oldValue = func(context.Context) (*Customer, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -786,7 +93,7 @@ func withUser(node *User) userOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m UserMutation) Client() *Client {
+func (m CustomerMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -794,7 +101,7 @@ func (m UserMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m UserMutation) Tx() (*Tx, error) {
+func (m CustomerMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
 	}
@@ -805,131 +112,94 @@ func (m UserMutation) Tx() (*Tx, error) {
 
 // ID returns the id value in the mutation. Note that, the id
 // is available only if it was provided to the builder.
-func (m *UserMutation) ID() (id int, exists bool) {
+func (m *CustomerMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
 	return *m.id, true
 }
 
-// SetFirstName sets the first_name field.
-func (m *UserMutation) SetFirstName(s string) {
-	m.first_name = &s
+// SetKratosID sets the kratos_id field.
+func (m *CustomerMutation) SetKratosID(s string) {
+	m.kratos_id = &s
 }
 
-// FirstName returns the first_name value in the mutation.
-func (m *UserMutation) FirstName() (r string, exists bool) {
-	v := m.first_name
+// KratosID returns the kratos_id value in the mutation.
+func (m *CustomerMutation) KratosID() (r string, exists bool) {
+	v := m.kratos_id
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldFirstName returns the old first_name value of the User.
-// If the User object wasn't provided to the builder, the object is fetched
+// OldKratosID returns the old kratos_id value of the Customer.
+// If the Customer object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *UserMutation) OldFirstName(ctx context.Context) (v string, err error) {
+func (m *CustomerMutation) OldKratosID(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldFirstName is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldKratosID is allowed only on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldFirstName requires an ID field in the mutation")
+		return v, fmt.Errorf("OldKratosID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldFirstName: %w", err)
+		return v, fmt.Errorf("querying old value for OldKratosID: %w", err)
 	}
-	return oldValue.FirstName, nil
+	return oldValue.KratosID, nil
 }
 
-// ResetFirstName reset all changes of the "first_name" field.
-func (m *UserMutation) ResetFirstName() {
-	m.first_name = nil
+// ResetKratosID reset all changes of the "kratos_id" field.
+func (m *CustomerMutation) ResetKratosID() {
+	m.kratos_id = nil
 }
 
-// SetLastName sets the last_name field.
-func (m *UserMutation) SetLastName(s string) {
-	m.last_name = &s
+// SetName sets the name field.
+func (m *CustomerMutation) SetName(s string) {
+	m.name = &s
 }
 
-// LastName returns the last_name value in the mutation.
-func (m *UserMutation) LastName() (r string, exists bool) {
-	v := m.last_name
+// Name returns the name value in the mutation.
+func (m *CustomerMutation) Name() (r string, exists bool) {
+	v := m.name
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldLastName returns the old last_name value of the User.
-// If the User object wasn't provided to the builder, the object is fetched
+// OldName returns the old name value of the Customer.
+// If the Customer object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *UserMutation) OldLastName(ctx context.Context) (v string, err error) {
+func (m *CustomerMutation) OldName(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldLastName is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldName is allowed only on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldLastName requires an ID field in the mutation")
+		return v, fmt.Errorf("OldName requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastName: %w", err)
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
 	}
-	return oldValue.LastName, nil
+	return oldValue.Name, nil
 }
 
-// ResetLastName reset all changes of the "last_name" field.
-func (m *UserMutation) ResetLastName() {
-	m.last_name = nil
-}
-
-// SetAddress sets the address field.
-func (m *UserMutation) SetAddress(s string) {
-	m.address = &s
-}
-
-// Address returns the address value in the mutation.
-func (m *UserMutation) Address() (r string, exists bool) {
-	v := m.address
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAddress returns the old address value of the User.
-// If the User object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *UserMutation) OldAddress(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldAddress is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldAddress requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAddress: %w", err)
-	}
-	return oldValue.Address, nil
-}
-
-// ResetAddress reset all changes of the "address" field.
-func (m *UserMutation) ResetAddress() {
-	m.address = nil
+// ResetName reset all changes of the "name" field.
+func (m *CustomerMutation) ResetName() {
+	m.name = nil
 }
 
 // SetEmail sets the email field.
-func (m *UserMutation) SetEmail(s string) {
+func (m *CustomerMutation) SetEmail(s string) {
 	m.email = &s
 }
 
 // Email returns the email value in the mutation.
-func (m *UserMutation) Email() (r string, exists bool) {
+func (m *CustomerMutation) Email() (r string, exists bool) {
 	v := m.email
 	if v == nil {
 		return
@@ -937,11 +207,11 @@ func (m *UserMutation) Email() (r string, exists bool) {
 	return *v, true
 }
 
-// OldEmail returns the old email value of the User.
-// If the User object wasn't provided to the builder, the object is fetched
+// OldEmail returns the old email value of the Customer.
+// If the Customer object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *UserMutation) OldEmail(ctx context.Context) (v string, err error) {
+func (m *CustomerMutation) OldEmail(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldEmail is allowed only on UpdateOne operations")
 	}
@@ -956,36 +226,73 @@ func (m *UserMutation) OldEmail(ctx context.Context) (v string, err error) {
 }
 
 // ResetEmail reset all changes of the "email" field.
-func (m *UserMutation) ResetEmail() {
+func (m *CustomerMutation) ResetEmail() {
 	m.email = nil
 }
 
+// SetPhone sets the phone field.
+func (m *CustomerMutation) SetPhone(s string) {
+	m.phone = &s
+}
+
+// Phone returns the phone value in the mutation.
+func (m *CustomerMutation) Phone() (r string, exists bool) {
+	v := m.phone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPhone returns the old phone value of the Customer.
+// If the Customer object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *CustomerMutation) OldPhone(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldPhone is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldPhone requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPhone: %w", err)
+	}
+	return oldValue.Phone, nil
+}
+
+// ResetPhone reset all changes of the "phone" field.
+func (m *CustomerMutation) ResetPhone() {
+	m.phone = nil
+}
+
 // Op returns the operation name.
-func (m *UserMutation) Op() Op {
+func (m *CustomerMutation) Op() Op {
 	return m.op
 }
 
-// Type returns the node type of this mutation (User).
-func (m *UserMutation) Type() string {
+// Type returns the node type of this mutation (Customer).
+func (m *CustomerMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
-func (m *UserMutation) Fields() []string {
+func (m *CustomerMutation) Fields() []string {
 	fields := make([]string, 0, 4)
-	if m.first_name != nil {
-		fields = append(fields, user.FieldFirstName)
+	if m.kratos_id != nil {
+		fields = append(fields, customer.FieldKratosID)
 	}
-	if m.last_name != nil {
-		fields = append(fields, user.FieldLastName)
-	}
-	if m.address != nil {
-		fields = append(fields, user.FieldAddress)
+	if m.name != nil {
+		fields = append(fields, customer.FieldName)
 	}
 	if m.email != nil {
-		fields = append(fields, user.FieldEmail)
+		fields = append(fields, customer.FieldEmail)
+	}
+	if m.phone != nil {
+		fields = append(fields, customer.FieldPhone)
 	}
 	return fields
 }
@@ -993,16 +300,16 @@ func (m *UserMutation) Fields() []string {
 // Field returns the value of a field with the given name.
 // The second boolean value indicates that this field was
 // not set, or was not define in the schema.
-func (m *UserMutation) Field(name string) (ent.Value, bool) {
+func (m *CustomerMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case user.FieldFirstName:
-		return m.FirstName()
-	case user.FieldLastName:
-		return m.LastName()
-	case user.FieldAddress:
-		return m.Address()
-	case user.FieldEmail:
+	case customer.FieldKratosID:
+		return m.KratosID()
+	case customer.FieldName:
+		return m.Name()
+	case customer.FieldEmail:
 		return m.Email()
+	case customer.FieldPhone:
+		return m.Phone()
 	}
 	return nil, false
 }
@@ -1010,167 +317,167 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database.
 // An error is returned if the mutation operation is not UpdateOne,
 // or the query to the database was failed.
-func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *CustomerMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case user.FieldFirstName:
-		return m.OldFirstName(ctx)
-	case user.FieldLastName:
-		return m.OldLastName(ctx)
-	case user.FieldAddress:
-		return m.OldAddress(ctx)
-	case user.FieldEmail:
+	case customer.FieldKratosID:
+		return m.OldKratosID(ctx)
+	case customer.FieldName:
+		return m.OldName(ctx)
+	case customer.FieldEmail:
 		return m.OldEmail(ctx)
+	case customer.FieldPhone:
+		return m.OldPhone(ctx)
 	}
-	return nil, fmt.Errorf("unknown User field %s", name)
+	return nil, fmt.Errorf("unknown Customer field %s", name)
 }
 
 // SetField sets the value for the given name. It returns an
 // error if the field is not defined in the schema, or if the
 // type mismatch the field type.
-func (m *UserMutation) SetField(name string, value ent.Value) error {
+func (m *CustomerMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case user.FieldFirstName:
+	case customer.FieldKratosID:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetFirstName(v)
+		m.SetKratosID(v)
 		return nil
-	case user.FieldLastName:
+	case customer.FieldName:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetLastName(v)
+		m.SetName(v)
 		return nil
-	case user.FieldAddress:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAddress(v)
-		return nil
-	case user.FieldEmail:
+	case customer.FieldEmail:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEmail(v)
 		return nil
+	case customer.FieldPhone:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPhone(v)
+		return nil
 	}
-	return fmt.Errorf("unknown User field %s", name)
+	return fmt.Errorf("unknown Customer field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented
 // or decremented during this mutation.
-func (m *UserMutation) AddedFields() []string {
+func (m *CustomerMutation) AddedFields() []string {
 	return nil
 }
 
 // AddedField returns the numeric value that was in/decremented
 // from a field with the given name. The second value indicates
 // that this field was not set, or was not define in the schema.
-func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
+func (m *CustomerMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
 // AddField adds the value for the given name. It returns an
 // error if the field is not defined in the schema, or if the
 // type mismatch the field type.
-func (m *UserMutation) AddField(name string, value ent.Value) error {
+func (m *CustomerMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	}
-	return fmt.Errorf("unknown User numeric field %s", name)
+	return fmt.Errorf("unknown Customer numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared
 // during this mutation.
-func (m *UserMutation) ClearedFields() []string {
+func (m *CustomerMutation) ClearedFields() []string {
 	return nil
 }
 
 // FieldCleared returns a boolean indicates if this field was
 // cleared in this mutation.
-func (m *UserMutation) FieldCleared(name string) bool {
+func (m *CustomerMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value for the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *UserMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown User nullable field %s", name)
+func (m *CustomerMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Customer nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation regarding the
 // given field name. It returns an error if the field is not
 // defined in the schema.
-func (m *UserMutation) ResetField(name string) error {
+func (m *CustomerMutation) ResetField(name string) error {
 	switch name {
-	case user.FieldFirstName:
-		m.ResetFirstName()
+	case customer.FieldKratosID:
+		m.ResetKratosID()
 		return nil
-	case user.FieldLastName:
-		m.ResetLastName()
+	case customer.FieldName:
+		m.ResetName()
 		return nil
-	case user.FieldAddress:
-		m.ResetAddress()
-		return nil
-	case user.FieldEmail:
+	case customer.FieldEmail:
 		m.ResetEmail()
 		return nil
+	case customer.FieldPhone:
+		m.ResetPhone()
+		return nil
 	}
-	return fmt.Errorf("unknown User field %s", name)
+	return fmt.Errorf("unknown Customer field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
-func (m *UserMutation) AddedEdges() []string {
+func (m *CustomerMutation) AddedEdges() []string {
 	edges := make([]string, 0, 0)
 	return edges
 }
 
 // AddedIDs returns all ids (to other nodes) that were added for
 // the given edge name.
-func (m *UserMutation) AddedIDs(name string) []ent.Value {
+func (m *CustomerMutation) AddedIDs(name string) []ent.Value {
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
-func (m *UserMutation) RemovedEdges() []string {
+func (m *CustomerMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 0)
 	return edges
 }
 
 // RemovedIDs returns all ids (to other nodes) that were removed for
 // the given edge name.
-func (m *UserMutation) RemovedIDs(name string) []ent.Value {
+func (m *CustomerMutation) RemovedIDs(name string) []ent.Value {
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
-func (m *UserMutation) ClearedEdges() []string {
+func (m *CustomerMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 0)
 	return edges
 }
 
 // EdgeCleared returns a boolean indicates if this edge was
 // cleared in this mutation.
-func (m *UserMutation) EdgeCleared(name string) bool {
+func (m *CustomerMutation) EdgeCleared(name string) bool {
 	return false
 }
 
 // ClearEdge clears the value for the given name. It returns an
 // error if the edge name is not defined in the schema.
-func (m *UserMutation) ClearEdge(name string) error {
-	return fmt.Errorf("unknown User unique edge %s", name)
+func (m *CustomerMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown Customer unique edge %s", name)
 }
 
 // ResetEdge resets all changes in the mutation regarding the
 // given edge name. It returns an error if the edge is not
 // defined in the schema.
-func (m *UserMutation) ResetEdge(name string) error {
-	return fmt.Errorf("unknown User edge %s", name)
+func (m *CustomerMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown Customer edge %s", name)
 }

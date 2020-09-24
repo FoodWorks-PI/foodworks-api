@@ -7,78 +7,47 @@ import (
 	"context"
 	"fmt"
 
+	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent"
-	"foodworks.ml/m/internal/generated/ent/user"
 	generated "foodworks.ml/m/internal/generated/graphql"
 	"foodworks.ml/m/internal/generated/graphql/model"
-	"github.com/99designs/gqlgen/graphql"
 )
 
-func (r *mutationResolver) SetUserProfile(ctx context.Context, input model.IdentityInput) (int, error) {
+func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (string, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *productResolver) Name(ctx context.Context, obj *ent.Product) (string, error) {
-	panic(fmt.Errorf("not implemented"))
-}
+func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input model.RegisterCustomerInput) (int, error) {
+	currentUser := auth.ForContext(ctx)
 
-func (r *productResolver) Description(ctx context.Context, obj *ent.Product) (string, error) {
-	panic(fmt.Errorf("not implemented"))
-}
+	newCustomer, err := r.Client.Customer.
+		Create().
+		SetName(input.Name).
+		SetEmail(currentUser.Email).
+		SetKratosID(currentUser.Id).
+		SetPhone(input.Phone).
+		Save(ctx)
 
-func (r *queryResolver) GetCustomerByEmail(ctx context.Context, email string) (*model.Customer, error) {
-	user, err := r.Client.User.
-		Query().
-		Where(user.EmailEQ(email)).
-		First(ctx)
 	if err != nil {
-		graphql.AddErrorf(ctx, "Error %d", err)
-		return nil, err
+		return -1, err
 	}
-	pIdentity := &model.Identity{
-		Email: user.Email,
-	}
-	customer := &model.Customer{
-		Identity: pIdentity,
-	}
-	return customer, nil
+
+	return newCustomer.ID, nil
 }
 
-func (r *queryResolver) GetRestaurantOffers(ctx context.Context, restaurantID int) ([]*ent.Restaurant, error) {
+func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *restaurantResolver) Name(ctx context.Context, obj *ent.Restaurant) (string, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *restaurantResolver) Address(ctx context.Context, obj *ent.Restaurant) ([]string, error) {
-	panic(fmt.Errorf("not implemented"))
-}
+// Customer returns generated.CustomerResolver implementation.
+func (r *Resolver) Customer() generated.CustomerResolver { return &customerResolver{r} }
 
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
-// Product returns generated.ProductResolver implementation.
-func (r *Resolver) Product() generated.ProductResolver { return &productResolver{r} }
-
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-// Restaurant returns generated.RestaurantResolver implementation.
-func (r *Resolver) Restaurant() generated.RestaurantResolver { return &restaurantResolver{r} }
-
+type customerResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
-type productResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-type restaurantResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *mutationResolver) SetUserIdentity(ctx context.Context, input model.IdentityInput) (int, error) {
-	panic(fmt.Errorf("not implemented"))
-}

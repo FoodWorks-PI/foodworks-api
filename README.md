@@ -42,6 +42,9 @@
  1. Optional: Add an integration test for the feature
  1. Test your code using `go test./...`
  1. Push your changes and submit a PR
+### Adding a DB entity
+ 1. `entc init --target schema/db ENTITY_NAME`
+ 1. Update the package name of the generated file(s) to `db`
 ### Pre-commit
 For format standarization, this repo uses [Pre-Commit](https://pre-commit.com/#installation), if your code does not pass the format checks, the PR will be automatically rejected.
 You can run the checks locally by installing the tool: [Pre-Commit Installation](https://pre-commit.com/#installation) and running `pre-commit` on the root of the project. After making sure your project passes the tests, you can commit, push your changes, and submit a PR.

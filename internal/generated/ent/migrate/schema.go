@@ -8,60 +8,24 @@ import (
 )
 
 var (
-	// OrdersColumns holds the columns for the "orders" table.
-	OrdersColumns = []*schema.Column{
+	// CustomersColumns holds the columns for the "customers" table.
+	CustomersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "kratos_id", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "email", Type: field.TypeString},
+		{Name: "phone", Type: field.TypeString},
 	}
-	// OrdersTable holds the schema information for the "orders" table.
-	OrdersTable = &schema.Table{
-		Name:        "orders",
-		Columns:     OrdersColumns,
-		PrimaryKey:  []*schema.Column{OrdersColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
-	}
-	// ProductsColumns holds the columns for the "products" table.
-	ProductsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// ProductsTable holds the schema information for the "products" table.
-	ProductsTable = &schema.Table{
-		Name:        "products",
-		Columns:     ProductsColumns,
-		PrimaryKey:  []*schema.Column{ProductsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
-	}
-	// RestaurantsColumns holds the columns for the "restaurants" table.
-	RestaurantsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// RestaurantsTable holds the schema information for the "restaurants" table.
-	RestaurantsTable = &schema.Table{
-		Name:        "restaurants",
-		Columns:     RestaurantsColumns,
-		PrimaryKey:  []*schema.Column{RestaurantsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
-	}
-	// UsersColumns holds the columns for the "users" table.
-	UsersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "first_name", Type: field.TypeString},
-		{Name: "last_name", Type: field.TypeString},
-		{Name: "address", Type: field.TypeString},
-		{Name: "email", Type: field.TypeString, Unique: true},
-	}
-	// UsersTable holds the schema information for the "users" table.
-	UsersTable = &schema.Table{
-		Name:        "users",
-		Columns:     UsersColumns,
-		PrimaryKey:  []*schema.Column{UsersColumns[0]},
+	// CustomersTable holds the schema information for the "customers" table.
+	CustomersTable = &schema.Table{
+		Name:        "customers",
+		Columns:     CustomersColumns,
+		PrimaryKey:  []*schema.Column{CustomersColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
-		OrdersTable,
-		ProductsTable,
-		RestaurantsTable,
-		UsersTable,
+		CustomersTable,
 	}
 )
 

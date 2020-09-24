@@ -9,54 +9,15 @@ import (
 	"foodworks.ml/m/internal/generated/ent"
 )
 
-// The OrderFunc type is an adapter to allow the use of ordinary
-// function as Order mutator.
-type OrderFunc func(context.Context, *ent.OrderMutation) (ent.Value, error)
+// The CustomerFunc type is an adapter to allow the use of ordinary
+// function as Customer mutator.
+type CustomerFunc func(context.Context, *ent.CustomerMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f OrderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.OrderMutation)
+func (f CustomerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.CustomerMutation)
 	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrderMutation", m)
-	}
-	return f(ctx, mv)
-}
-
-// The ProductFunc type is an adapter to allow the use of ordinary
-// function as Product mutator.
-type ProductFunc func(context.Context, *ent.ProductMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f ProductFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.ProductMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProductMutation", m)
-	}
-	return f(ctx, mv)
-}
-
-// The RestaurantFunc type is an adapter to allow the use of ordinary
-// function as Restaurant mutator.
-type RestaurantFunc func(context.Context, *ent.RestaurantMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f RestaurantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.RestaurantMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RestaurantMutation", m)
-	}
-	return f(ctx, mv)
-}
-
-// The UserFunc type is an adapter to allow the use of ordinary
-// function as User mutator.
-type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.UserMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CustomerMutation", m)
 	}
 	return f(ctx, mv)
 }
