@@ -9,10 +9,7 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/migrate"
 
-	"foodworks.ml/m/internal/generated/ent/order"
-	"foodworks.ml/m/internal/generated/ent/product"
-	"foodworks.ml/m/internal/generated/ent/restaurant"
-	"foodworks.ml/m/internal/generated/ent/user"
+	"foodworks.ml/m/internal/generated/ent/customer"
 
 	"github.com/facebook/ent/dialect"
 	"github.com/facebook/ent/dialect/sql"
@@ -23,14 +20,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// Order is the client for interacting with the Order builders.
-	Order *OrderClient
-	// Product is the client for interacting with the Product builders.
-	Product *ProductClient
-	// Restaurant is the client for interacting with the Restaurant builders.
-	Restaurant *RestaurantClient
-	// User is the client for interacting with the User builders.
-	User *UserClient
+	// Customer is the client for interacting with the Customer builders.
+	Customer *CustomerClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -44,10 +35,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.Order = NewOrderClient(c.config)
-	c.Product = NewProductClient(c.config)
-	c.Restaurant = NewRestaurantClient(c.config)
-	c.User = NewUserClient(c.config)
+	c.Customer = NewCustomerClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -78,12 +66,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	}
 	cfg := config{driver: tx, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Order:      NewOrderClient(cfg),
-		Product:    NewProductClient(cfg),
-		Restaurant: NewRestaurantClient(cfg),
-		User:       NewUserClient(cfg),
+		ctx:      ctx,
+		config:   cfg,
+		Customer: NewCustomerClient(cfg),
 	}, nil
 }
 
@@ -98,18 +83,15 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	}
 	cfg := config{driver: &txDriver{tx: tx, drv: c.driver}, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		config:     cfg,
-		Order:      NewOrderClient(cfg),
-		Product:    NewProductClient(cfg),
-		Restaurant: NewRestaurantClient(cfg),
-		User:       NewUserClient(cfg),
+		config:   cfg,
+		Customer: NewCustomerClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Order.
+//		Customer.
 //		Query().
 //		Count(ctx)
 //
@@ -131,88 +113,85 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Order.Use(hooks...)
-	c.Product.Use(hooks...)
-	c.Restaurant.Use(hooks...)
-	c.User.Use(hooks...)
+	c.Customer.Use(hooks...)
 }
 
-// OrderClient is a client for the Order schema.
-type OrderClient struct {
+// CustomerClient is a client for the Customer schema.
+type CustomerClient struct {
 	config
 }
 
-// NewOrderClient returns a client for the Order from the given config.
-func NewOrderClient(c config) *OrderClient {
-	return &OrderClient{config: c}
+// NewCustomerClient returns a client for the Customer from the given config.
+func NewCustomerClient(c config) *CustomerClient {
+	return &CustomerClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `order.Hooks(f(g(h())))`.
-func (c *OrderClient) Use(hooks ...Hook) {
-	c.hooks.Order = append(c.hooks.Order, hooks...)
+// A call to `Use(f, g, h)` equals to `customer.Hooks(f(g(h())))`.
+func (c *CustomerClient) Use(hooks ...Hook) {
+	c.hooks.Customer = append(c.hooks.Customer, hooks...)
 }
 
-// Create returns a create builder for Order.
-func (c *OrderClient) Create() *OrderCreate {
-	mutation := newOrderMutation(c.config, OpCreate)
-	return &OrderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a create builder for Customer.
+func (c *CustomerClient) Create() *CustomerCreate {
+	mutation := newCustomerMutation(c.config, OpCreate)
+	return &CustomerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// BulkCreate returns a builder for creating a bulk of Order entities.
-func (c *OrderClient) CreateBulk(builders ...*OrderCreate) *OrderCreateBulk {
-	return &OrderCreateBulk{config: c.config, builders: builders}
+// BulkCreate returns a builder for creating a bulk of Customer entities.
+func (c *CustomerClient) CreateBulk(builders ...*CustomerCreate) *CustomerCreateBulk {
+	return &CustomerCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Order.
-func (c *OrderClient) Update() *OrderUpdate {
-	mutation := newOrderMutation(c.config, OpUpdate)
-	return &OrderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for Customer.
+func (c *CustomerClient) Update() *CustomerUpdate {
+	mutation := newCustomerMutation(c.config, OpUpdate)
+	return &CustomerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *OrderClient) UpdateOne(o *Order) *OrderUpdateOne {
-	mutation := newOrderMutation(c.config, OpUpdateOne, withOrder(o))
-	return &OrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *CustomerClient) UpdateOne(cu *Customer) *CustomerUpdateOne {
+	mutation := newCustomerMutation(c.config, OpUpdateOne, withCustomer(cu))
+	return &CustomerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *OrderClient) UpdateOneID(id int) *OrderUpdateOne {
-	mutation := newOrderMutation(c.config, OpUpdateOne, withOrderID(id))
-	return &OrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *CustomerClient) UpdateOneID(id int) *CustomerUpdateOne {
+	mutation := newCustomerMutation(c.config, OpUpdateOne, withCustomerID(id))
+	return &CustomerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Order.
-func (c *OrderClient) Delete() *OrderDelete {
-	mutation := newOrderMutation(c.config, OpDelete)
-	return &OrderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for Customer.
+func (c *CustomerClient) Delete() *CustomerDelete {
+	mutation := newCustomerMutation(c.config, OpDelete)
+	return &CustomerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a delete builder for the given entity.
-func (c *OrderClient) DeleteOne(o *Order) *OrderDeleteOne {
-	return c.DeleteOneID(o.ID)
+func (c *CustomerClient) DeleteOne(cu *Customer) *CustomerDeleteOne {
+	return c.DeleteOneID(cu.ID)
 }
 
 // DeleteOneID returns a delete builder for the given id.
-func (c *OrderClient) DeleteOneID(id int) *OrderDeleteOne {
-	builder := c.Delete().Where(order.ID(id))
+func (c *CustomerClient) DeleteOneID(id int) *CustomerDeleteOne {
+	builder := c.Delete().Where(customer.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &OrderDeleteOne{builder}
+	return &CustomerDeleteOne{builder}
 }
 
-// Query returns a query builder for Order.
-func (c *OrderClient) Query() *OrderQuery {
-	return &OrderQuery{config: c.config}
+// Query returns a query builder for Customer.
+func (c *CustomerClient) Query() *CustomerQuery {
+	return &CustomerQuery{config: c.config}
 }
 
-// Get returns a Order entity by its id.
-func (c *OrderClient) Get(ctx context.Context, id int) (*Order, error) {
-	return c.Query().Where(order.ID(id)).Only(ctx)
+// Get returns a Customer entity by its id.
+func (c *CustomerClient) Get(ctx context.Context, id int) (*Customer, error) {
+	return c.Query().Where(customer.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *OrderClient) GetX(ctx context.Context, id int) *Order {
+func (c *CustomerClient) GetX(ctx context.Context, id int) *Customer {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -221,270 +200,6 @@ func (c *OrderClient) GetX(ctx context.Context, id int) *Order {
 }
 
 // Hooks returns the client hooks.
-func (c *OrderClient) Hooks() []Hook {
-	return c.hooks.Order
-}
-
-// ProductClient is a client for the Product schema.
-type ProductClient struct {
-	config
-}
-
-// NewProductClient returns a client for the Product from the given config.
-func NewProductClient(c config) *ProductClient {
-	return &ProductClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `product.Hooks(f(g(h())))`.
-func (c *ProductClient) Use(hooks ...Hook) {
-	c.hooks.Product = append(c.hooks.Product, hooks...)
-}
-
-// Create returns a create builder for Product.
-func (c *ProductClient) Create() *ProductCreate {
-	mutation := newProductMutation(c.config, OpCreate)
-	return &ProductCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// BulkCreate returns a builder for creating a bulk of Product entities.
-func (c *ProductClient) CreateBulk(builders ...*ProductCreate) *ProductCreateBulk {
-	return &ProductCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Product.
-func (c *ProductClient) Update() *ProductUpdate {
-	mutation := newProductMutation(c.config, OpUpdate)
-	return &ProductUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ProductClient) UpdateOne(pr *Product) *ProductUpdateOne {
-	mutation := newProductMutation(c.config, OpUpdateOne, withProduct(pr))
-	return &ProductUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ProductClient) UpdateOneID(id int) *ProductUpdateOne {
-	mutation := newProductMutation(c.config, OpUpdateOne, withProductID(id))
-	return &ProductUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Product.
-func (c *ProductClient) Delete() *ProductDelete {
-	mutation := newProductMutation(c.config, OpDelete)
-	return &ProductDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a delete builder for the given entity.
-func (c *ProductClient) DeleteOne(pr *Product) *ProductDeleteOne {
-	return c.DeleteOneID(pr.ID)
-}
-
-// DeleteOneID returns a delete builder for the given id.
-func (c *ProductClient) DeleteOneID(id int) *ProductDeleteOne {
-	builder := c.Delete().Where(product.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ProductDeleteOne{builder}
-}
-
-// Query returns a query builder for Product.
-func (c *ProductClient) Query() *ProductQuery {
-	return &ProductQuery{config: c.config}
-}
-
-// Get returns a Product entity by its id.
-func (c *ProductClient) Get(ctx context.Context, id int) (*Product, error) {
-	return c.Query().Where(product.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ProductClient) GetX(ctx context.Context, id int) *Product {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *ProductClient) Hooks() []Hook {
-	return c.hooks.Product
-}
-
-// RestaurantClient is a client for the Restaurant schema.
-type RestaurantClient struct {
-	config
-}
-
-// NewRestaurantClient returns a client for the Restaurant from the given config.
-func NewRestaurantClient(c config) *RestaurantClient {
-	return &RestaurantClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `restaurant.Hooks(f(g(h())))`.
-func (c *RestaurantClient) Use(hooks ...Hook) {
-	c.hooks.Restaurant = append(c.hooks.Restaurant, hooks...)
-}
-
-// Create returns a create builder for Restaurant.
-func (c *RestaurantClient) Create() *RestaurantCreate {
-	mutation := newRestaurantMutation(c.config, OpCreate)
-	return &RestaurantCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// BulkCreate returns a builder for creating a bulk of Restaurant entities.
-func (c *RestaurantClient) CreateBulk(builders ...*RestaurantCreate) *RestaurantCreateBulk {
-	return &RestaurantCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Restaurant.
-func (c *RestaurantClient) Update() *RestaurantUpdate {
-	mutation := newRestaurantMutation(c.config, OpUpdate)
-	return &RestaurantUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *RestaurantClient) UpdateOne(r *Restaurant) *RestaurantUpdateOne {
-	mutation := newRestaurantMutation(c.config, OpUpdateOne, withRestaurant(r))
-	return &RestaurantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *RestaurantClient) UpdateOneID(id int) *RestaurantUpdateOne {
-	mutation := newRestaurantMutation(c.config, OpUpdateOne, withRestaurantID(id))
-	return &RestaurantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Restaurant.
-func (c *RestaurantClient) Delete() *RestaurantDelete {
-	mutation := newRestaurantMutation(c.config, OpDelete)
-	return &RestaurantDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a delete builder for the given entity.
-func (c *RestaurantClient) DeleteOne(r *Restaurant) *RestaurantDeleteOne {
-	return c.DeleteOneID(r.ID)
-}
-
-// DeleteOneID returns a delete builder for the given id.
-func (c *RestaurantClient) DeleteOneID(id int) *RestaurantDeleteOne {
-	builder := c.Delete().Where(restaurant.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &RestaurantDeleteOne{builder}
-}
-
-// Query returns a query builder for Restaurant.
-func (c *RestaurantClient) Query() *RestaurantQuery {
-	return &RestaurantQuery{config: c.config}
-}
-
-// Get returns a Restaurant entity by its id.
-func (c *RestaurantClient) Get(ctx context.Context, id int) (*Restaurant, error) {
-	return c.Query().Where(restaurant.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *RestaurantClient) GetX(ctx context.Context, id int) *Restaurant {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *RestaurantClient) Hooks() []Hook {
-	return c.hooks.Restaurant
-}
-
-// UserClient is a client for the User schema.
-type UserClient struct {
-	config
-}
-
-// NewUserClient returns a client for the User from the given config.
-func NewUserClient(c config) *UserClient {
-	return &UserClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `user.Hooks(f(g(h())))`.
-func (c *UserClient) Use(hooks ...Hook) {
-	c.hooks.User = append(c.hooks.User, hooks...)
-}
-
-// Create returns a create builder for User.
-func (c *UserClient) Create() *UserCreate {
-	mutation := newUserMutation(c.config, OpCreate)
-	return &UserCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// BulkCreate returns a builder for creating a bulk of User entities.
-func (c *UserClient) CreateBulk(builders ...*UserCreate) *UserCreateBulk {
-	return &UserCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for User.
-func (c *UserClient) Update() *UserUpdate {
-	mutation := newUserMutation(c.config, OpUpdate)
-	return &UserUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *UserClient) UpdateOne(u *User) *UserUpdateOne {
-	mutation := newUserMutation(c.config, OpUpdateOne, withUser(u))
-	return &UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *UserClient) UpdateOneID(id int) *UserUpdateOne {
-	mutation := newUserMutation(c.config, OpUpdateOne, withUserID(id))
-	return &UserUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for User.
-func (c *UserClient) Delete() *UserDelete {
-	mutation := newUserMutation(c.config, OpDelete)
-	return &UserDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a delete builder for the given entity.
-func (c *UserClient) DeleteOne(u *User) *UserDeleteOne {
-	return c.DeleteOneID(u.ID)
-}
-
-// DeleteOneID returns a delete builder for the given id.
-func (c *UserClient) DeleteOneID(id int) *UserDeleteOne {
-	builder := c.Delete().Where(user.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &UserDeleteOne{builder}
-}
-
-// Query returns a query builder for User.
-func (c *UserClient) Query() *UserQuery {
-	return &UserQuery{config: c.config}
-}
-
-// Get returns a User entity by its id.
-func (c *UserClient) Get(ctx context.Context, id int) (*User, error) {
-	return c.Query().Where(user.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *UserClient) GetX(ctx context.Context, id int) *User {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *UserClient) Hooks() []Hook {
-	return c.hooks.User
+func (c *CustomerClient) Hooks() []Hook {
+	return c.hooks.Customer
 }

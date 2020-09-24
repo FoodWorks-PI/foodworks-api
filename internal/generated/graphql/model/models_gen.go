@@ -2,30 +2,13 @@
 
 package model
 
-import (
-	"foodworks.ml/m/internal/generated/ent"
-)
-
 type Address struct {
-	AddressLine string `json:"addressLine"`
-	Longitude   string `json:"longitude"`
-	Latitude    string `json:"latitude"`
+	Latitude   *string `json:"latitude"`
+	Longitude  *string `json:"longitude"`
+	StreetLine *string `json:"streetLine"`
 }
 
-type Customer struct {
-	Identity            *Identity         `json:"identity"`
-	FavoriteRestaurants []*ent.Restaurant `json:"favoriteRestaurants"`
-}
-
-type Identity struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Address string `json:"address"`
-}
-
-type IdentityInput struct {
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Address string `json:"address"`
+type RegisterCustomerInput struct {
+	Name  string `json:"Name"`
+	Phone string `json:"Phone"`
 }

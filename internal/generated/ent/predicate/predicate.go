@@ -6,14 +6,5 @@ import (
 	"github.com/facebook/ent/dialect/sql"
 )
 
-// Order is the predicate function for order builders.
-type Order func(*sql.Selector)
-
-// Product is the predicate function for product builders.
-type Product func(*sql.Selector)
-
-// Restaurant is the predicate function for restaurant builders.
-type Restaurant func(*sql.Selector)
-
-// User is the predicate function for user builders.
-type User func(*sql.Selector)
+// Customer is the predicate function for customer builders.
+type Customer func(*sql.Selector)

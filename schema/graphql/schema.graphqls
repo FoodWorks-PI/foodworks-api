@@ -3,47 +3,38 @@
 # TODO: Split schema into multiple files per domain
 
 # Customer
-type Identity {
-  id: ID!
-  name: String!
-  email: String!
-  address: String!
-}
 
-input IdentityInput {
-  name: String!
-  email: String!
-  address: String!
-}
+# interface User {
+#   ID: ID!
+#   Name: String!
+#   Email: String!
+# }
 
-type Customer {
-  identity: Identity!
-  favoriteRestaurants: [Restaurant!]!
-}
-
-type Restaurant {
-  id: ID!
-  name: String!
-  address: [String!]
+input RegisterCustomerInput {
+  Name: String!
+  Phone: String!
+  # address: Address!
 }
 
 type Address {
-  addressLine: String!
-  longitude: String!
-  latitude: String!
+  latitude: String
+  longitude: String
+  streetLine: String
 }
 
-type Product {
-  id: ID!
-  name: String!
-  description: String!
+type Customer {
+  ID: ID!
+  Name: String!
+  Email: String!
+  Address: String!
+  Phone: String!
+  # favoriteProducts: [Product]
 }
 
 type Query {
-  getCustomerByEmail(email: String!): Customer!
-  getRestaurantOffers(restaurantId: ID!): [Restaurant!]
+  getCurrentCustomer: Customer!
 }
 
 type Mutation {
-  setUserProfile(input:IdentityInput!): ID!
+  createCustomerProfile(input:RegisterCustomerInput!): ID!
 }
