@@ -4,6 +4,7 @@ package resolver
 // will be copied through when generating and any unknown code will be moved to the end.
 
 import (
+	"foodworks.ml/m/internal/generated/ent/customer"
 	"context"
 	"fmt"
 
@@ -52,7 +53,18 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 }
 
 func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, error) {
-	panic(fmt.Errorf("not implemented"))
+	kratosUser := auth.ForContext(ctx)
+
+	currentUser, err := r.Client.Customer.
+	Query().
+	Where(customer.KratosID(kratosUser.Id)).
+	First(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return currentUser, nil
 }
 
 // Address returns generated.AddressResolver implementation.
