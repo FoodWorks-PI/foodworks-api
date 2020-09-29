@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"github.com/facebook/ent/dialect/sql"
@@ -51,9 +52,45 @@ func (cu *CustomerUpdate) SetPhone(s string) *CustomerUpdate {
 	return cu
 }
 
+// AddAddresIDs adds the address edge to Address by ids.
+func (cu *CustomerUpdate) AddAddresIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.AddAddresIDs(ids...)
+	return cu
+}
+
+// AddAddress adds the address edges to Address.
+func (cu *CustomerUpdate) AddAddress(a ...*Address) *CustomerUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return cu.AddAddresIDs(ids...)
+}
+
 // Mutation returns the CustomerMutation object of the builder.
 func (cu *CustomerUpdate) Mutation() *CustomerMutation {
 	return cu.mutation
+}
+
+// ClearAddress clears all "address" edges to type Address.
+func (cu *CustomerUpdate) ClearAddress() *CustomerUpdate {
+	cu.mutation.ClearAddress()
+	return cu
+}
+
+// RemoveAddresIDs removes the address edge to Address by ids.
+func (cu *CustomerUpdate) RemoveAddresIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.RemoveAddresIDs(ids...)
+	return cu
+}
+
+// RemoveAddress removes address edges to Address.
+func (cu *CustomerUpdate) RemoveAddress(a ...*Address) *CustomerUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return cu.RemoveAddresIDs(ids...)
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -153,6 +190,60 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: customer.FieldPhone,
 		})
 	}
+	if cu.mutation.AddressCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.AddressTable,
+			Columns: []string{customer.AddressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.RemovedAddressIDs(); len(nodes) > 0 && !cu.mutation.AddressCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.AddressTable,
+			Columns: []string{customer.AddressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.AddressIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.AddressTable,
+			Columns: []string{customer.AddressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, cu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{customer.Label}
@@ -195,9 +286,45 @@ func (cuo *CustomerUpdateOne) SetPhone(s string) *CustomerUpdateOne {
 	return cuo
 }
 
+// AddAddresIDs adds the address edge to Address by ids.
+func (cuo *CustomerUpdateOne) AddAddresIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.AddAddresIDs(ids...)
+	return cuo
+}
+
+// AddAddress adds the address edges to Address.
+func (cuo *CustomerUpdateOne) AddAddress(a ...*Address) *CustomerUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return cuo.AddAddresIDs(ids...)
+}
+
 // Mutation returns the CustomerMutation object of the builder.
 func (cuo *CustomerUpdateOne) Mutation() *CustomerMutation {
 	return cuo.mutation
+}
+
+// ClearAddress clears all "address" edges to type Address.
+func (cuo *CustomerUpdateOne) ClearAddress() *CustomerUpdateOne {
+	cuo.mutation.ClearAddress()
+	return cuo
+}
+
+// RemoveAddresIDs removes the address edge to Address by ids.
+func (cuo *CustomerUpdateOne) RemoveAddresIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.RemoveAddresIDs(ids...)
+	return cuo
+}
+
+// RemoveAddress removes address edges to Address.
+func (cuo *CustomerUpdateOne) RemoveAddress(a ...*Address) *CustomerUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return cuo.RemoveAddresIDs(ids...)
 }
 
 // Save executes the query and returns the updated entity.
@@ -294,6 +421,60 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Value:  value,
 			Column: customer.FieldPhone,
 		})
+	}
+	if cuo.mutation.AddressCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.AddressTable,
+			Columns: []string{customer.AddressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.RemovedAddressIDs(); len(nodes) > 0 && !cuo.mutation.AddressCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.AddressTable,
+			Columns: []string{customer.AddressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.AddressIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.AddressTable,
+			Columns: []string{customer.AddressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Customer{config: cuo.config}
 	_spec.Assign = _node.assignValues

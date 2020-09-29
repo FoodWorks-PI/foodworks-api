@@ -8,6 +8,29 @@ import (
 )
 
 var (
+	// AddressesColumns holds the columns for the "addresses" table.
+	AddressesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "latitude", Type: field.TypeString},
+		{Name: "longitude", Type: field.TypeString},
+		{Name: "street", Type: field.TypeString},
+		{Name: "customer_address", Type: field.TypeInt, Nullable: true},
+	}
+	// AddressesTable holds the schema information for the "addresses" table.
+	AddressesTable = &schema.Table{
+		Name:       "addresses",
+		Columns:    AddressesColumns,
+		PrimaryKey: []*schema.Column{AddressesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "addresses_customers_address",
+				Columns: []*schema.Column{AddressesColumns[4]},
+
+				RefColumns: []*schema.Column{CustomersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// CustomersColumns holds the columns for the "customers" table.
 	CustomersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -25,9 +48,11 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		AddressesTable,
 		CustomersTable,
 	}
 )
 
 func init() {
+	AddressesTable.ForeignKeys[0].RefTable = CustomersTable
 }

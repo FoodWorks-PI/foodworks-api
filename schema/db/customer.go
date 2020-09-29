@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/facebook/ent"
+	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
 )
 
@@ -22,5 +23,7 @@ func (Customer) Fields() []ent.Field {
 
 // Edges of the Customer.
 func (Customer) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("address", Address.Type),
+	}
 }

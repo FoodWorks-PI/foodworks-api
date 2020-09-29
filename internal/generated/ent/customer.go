@@ -23,6 +23,27 @@ type Customer struct {
 	Email string `json:"email,omitempty"`
 	// Phone holds the value of the "phone" field.
 	Phone string `json:"phone,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the CustomerQuery when eager-loading is set.
+	Edges CustomerEdges `json:"edges"`
+}
+
+// CustomerEdges holds the relations/edges for other nodes in the graph.
+type CustomerEdges struct {
+	// Address holds the value of the address edge.
+	Address []*Address
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// AddressOrErr returns the Address value or an error if the edge
+// was not loaded in eager-loading.
+func (e CustomerEdges) AddressOrErr() ([]*Address, error) {
+	if e.loadedTypes[0] {
+		return e.Address, nil
+	}
+	return nil, &NotLoadedError{edge: "address"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -69,6 +90,11 @@ func (c *Customer) assignValues(values ...interface{}) error {
 		c.Phone = value.String
 	}
 	return nil
+}
+
+// QueryAddress queries the address edge of the Customer.
+func (c *Customer) QueryAddress() *AddressQuery {
+	return (&CustomerClient{config: c.config}).QueryAddress(c)
 }
 
 // Update returns a builder for updating this Customer.

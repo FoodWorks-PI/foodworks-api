@@ -13,12 +13,27 @@ import (
 	"foodworks.ml/m/internal/generated/graphql/model"
 )
 
-func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (string, error) {
+func (r *addressResolver) StreetLine(ctx context.Context, obj *ent.Address) (string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (*ent.Address, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input model.RegisterCustomerInput) (int, error) {
 	currentUser := auth.ForContext(ctx)
+
+	newAddress, err := r.Client.Address.
+		Create().
+		SetLatitude(input.Address.Latitude).
+		SetLongitude(input.Address.Longitude).
+		SetStreet(input.Address.StreetLine).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
 
 	newCustomer, err := r.Client.Customer.
 		Create().
@@ -26,6 +41,7 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 		SetEmail(currentUser.Email).
 		SetKratosID(currentUser.Id).
 		SetPhone(input.Phone).
+		AddAddress(newAddress).
 		Save(ctx)
 
 	if err != nil {
@@ -39,6 +55,9 @@ func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, 
 	panic(fmt.Errorf("not implemented"))
 }
 
+// Address returns generated.AddressResolver implementation.
+func (r *Resolver) Address() generated.AddressResolver { return &addressResolver{r} }
+
 // Customer returns generated.CustomerResolver implementation.
 func (r *Resolver) Customer() generated.CustomerResolver { return &customerResolver{r} }
 
@@ -48,6 +67,7 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+type addressResolver struct{ *Resolver }
 type customerResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

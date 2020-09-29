@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -41,6 +42,21 @@ func (cc *CustomerCreate) SetEmail(s string) *CustomerCreate {
 func (cc *CustomerCreate) SetPhone(s string) *CustomerCreate {
 	cc.mutation.SetPhone(s)
 	return cc
+}
+
+// AddAddresIDs adds the address edge to Address by ids.
+func (cc *CustomerCreate) AddAddresIDs(ids ...int) *CustomerCreate {
+	cc.mutation.AddAddresIDs(ids...)
+	return cc
+}
+
+// AddAddress adds the address edges to Address.
+func (cc *CustomerCreate) AddAddress(a ...*Address) *CustomerCreate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return cc.AddAddresIDs(ids...)
 }
 
 // Mutation returns the CustomerMutation object of the builder.
@@ -164,6 +180,25 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 			Column: customer.FieldPhone,
 		})
 		_node.Phone = value
+	}
+	if nodes := cc.mutation.AddressIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.AddressTable,
+			Columns: []string{customer.AddressColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

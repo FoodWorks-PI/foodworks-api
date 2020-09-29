@@ -36,6 +36,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Address() AddressResolver
 	Customer() CustomerResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -68,8 +69,11 @@ type ComplexityRoot struct {
 	}
 }
 
+type AddressResolver interface {
+	StreetLine(ctx context.Context, obj *ent.Address) (string, error)
+}
 type CustomerResolver interface {
-	Address(ctx context.Context, obj *ent.Customer) (string, error)
+	Address(ctx context.Context, obj *ent.Customer) (*ent.Address, error)
 }
 type MutationResolver interface {
 	CreateCustomerProfile(ctx context.Context, input model.RegisterCustomerInput) (int, error)
@@ -244,27 +248,45 @@ var sources = []*ast.Source{
 #   Email: String!
 # }
 
+input RegisterAddressInput {
+  Latitude: String!
+  Longitude: String!
+  StreetLine: String!
+}
+
 input RegisterCustomerInput {
   Name: String!
   Phone: String!
-  # address: Address!
+  Address: RegisterAddressInput!
 }
+
+#input RegisterRestaurantOwnerInput {
+#  Name: String!
+#  Phone: String!
+#  address: Address
+#}
 
 type Address {
-  latitude: String
-  longitude: String
-  streetLine: String
+  latitude: String!
+  longitude: String!
+  streetLine: String!
 }
-
 
 type Customer {
   ID: ID!
   Name: String!
   Email: String!
-  Address: String!
+  Address: Address!
   Phone: String!
   # favoriteProducts: [Product]
 }
+
+#type Owner {
+#  ID: ID!
+#  Name: String!
+#  Email: String!
+#  Phone: String!
+#}
 
 type Query {
   getCurrentCustomer: Customer!
@@ -272,6 +294,7 @@ type Query {
 
 type Mutation {
   createCustomerProfile(input:RegisterCustomerInput!): ID!
+# createOwnerProfile(input:RegisterRestaurantOwnerInput!): ID! 
 }
 `, BuiltIn: false},
 }
@@ -349,7 +372,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Address_latitude(ctx context.Context, field graphql.CollectedField, obj *model.Address) (ret graphql.Marshaler) {
+func (ec *executionContext) _Address_latitude(ctx context.Context, field graphql.CollectedField, obj *ent.Address) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -374,14 +397,17 @@ func (ec *executionContext) _Address_latitude(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Address_longitude(ctx context.Context, field graphql.CollectedField, obj *model.Address) (ret graphql.Marshaler) {
+func (ec *executionContext) _Address_longitude(ctx context.Context, field graphql.CollectedField, obj *ent.Address) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -406,14 +432,17 @@ func (ec *executionContext) _Address_longitude(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Address_streetLine(ctx context.Context, field graphql.CollectedField, obj *model.Address) (ret graphql.Marshaler) {
+func (ec *executionContext) _Address_streetLine(ctx context.Context, field graphql.CollectedField, obj *ent.Address) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -424,25 +453,28 @@ func (ec *executionContext) _Address_streetLine(ctx context.Context, field graph
 		Object:     "Address",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.StreetLine, nil
+		return ec.resolvers.Address().StreetLine(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Customer_ID(ctx context.Context, field graphql.CollectedField, obj *ent.Customer) (ret graphql.Marshaler) {
@@ -580,9 +612,9 @@ func (ec *executionContext) _Customer_Address(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*ent.Address)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAddress2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐAddress(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Customer_Phone(ctx context.Context, field graphql.CollectedField, obj *ent.Customer) (ret graphql.Marshaler) {
@@ -1855,6 +1887,42 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputRegisterAddressInput(ctx context.Context, obj interface{}) (model.RegisterAddressInput, error) {
+	var it model.RegisterAddressInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "Latitude":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Latitude"))
+			it.Latitude, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "Longitude":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Longitude"))
+			it.Longitude, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "StreetLine":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("StreetLine"))
+			it.StreetLine, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRegisterCustomerInput(ctx context.Context, obj interface{}) (model.RegisterCustomerInput, error) {
 	var it model.RegisterCustomerInput
 	var asMap = obj.(map[string]interface{})
@@ -1877,6 +1945,14 @@ func (ec *executionContext) unmarshalInputRegisterCustomerInput(ctx context.Cont
 			if err != nil {
 				return it, err
 			}
+		case "Address":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Address"))
+			it.Address, err = ec.unmarshalNRegisterAddressInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterAddressInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -1893,7 +1969,7 @@ func (ec *executionContext) unmarshalInputRegisterCustomerInput(ctx context.Cont
 
 var addressImplementors = []string{"Address"}
 
-func (ec *executionContext) _Address(ctx context.Context, sel ast.SelectionSet, obj *model.Address) graphql.Marshaler {
+func (ec *executionContext) _Address(ctx context.Context, sel ast.SelectionSet, obj *ent.Address) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, addressImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -1904,10 +1980,28 @@ func (ec *executionContext) _Address(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = graphql.MarshalString("Address")
 		case "latitude":
 			out.Values[i] = ec._Address_latitude(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "longitude":
 			out.Values[i] = ec._Address_longitude(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "streetLine":
-			out.Values[i] = ec._Address_streetLine(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Address_streetLine(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2295,6 +2389,20 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) marshalNAddress2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐAddress(ctx context.Context, sel ast.SelectionSet, v ent.Address) graphql.Marshaler {
+	return ec._Address(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAddress2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐAddress(ctx context.Context, sel ast.SelectionSet, v *ent.Address) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Address(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2337,6 +2445,11 @@ func (ec *executionContext) marshalNID2int(ctx context.Context, sel ast.Selectio
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNRegisterAddressInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterAddressInput(ctx context.Context, v interface{}) (*model.RegisterAddressInput, error) {
+	res, err := ec.unmarshalInputRegisterAddressInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNRegisterCustomerInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterCustomerInput(ctx context.Context, v interface{}) (model.RegisterCustomerInput, error) {

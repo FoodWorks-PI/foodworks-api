@@ -210,6 +210,30 @@ func DenyMutationOperationRule(op ent.Op) MutationRule {
 	return OnMutationOperation(rule, op)
 }
 
+// The AddressQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type AddressQueryRuleFunc func(context.Context, *ent.AddressQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f AddressQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.AddressQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.AddressQuery", q)
+}
+
+// The AddressMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type AddressMutationRuleFunc func(context.Context, *ent.AddressMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f AddressMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.AddressMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AddressMutation", m)
+}
+
 // The CustomerQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type CustomerQueryRuleFunc func(context.Context, *ent.CustomerQuery) error

@@ -10,26 +10,45 @@
 #   Email: String!
 # }
 
+input RegisterAddressInput {
+  Latitude: String!
+  Longitude: String!
+  StreetLine: String!
+}
+
 input RegisterCustomerInput {
   Name: String!
   Phone: String!
-  # address: Address!
+  Address: RegisterAddressInput!
 }
 
+#input RegisterRestaurantOwnerInput {
+#  Name: String!
+#  Phone: String!
+#  address: Address
+#}
+
 type Address {
-  latitude: String
-  longitude: String
-  streetLine: String
+  latitude: String!
+  longitude: String!
+  streetLine: String!
 }
 
 type Customer {
   ID: ID!
   Name: String!
   Email: String!
-  Address: String!
+  Address: Address!
   Phone: String!
   # favoriteProducts: [Product]
 }
+
+#type Owner {
+#  ID: ID!
+#  Name: String!
+#  Email: String!
+#  Phone: String!
+#}
 
 type Query {
   getCurrentCustomer: Customer!
@@ -37,4 +56,5 @@ type Query {
 
 type Mutation {
   createCustomerProfile(input:RegisterCustomerInput!): ID!
+# createOwnerProfile(input:RegisterRestaurantOwnerInput!): ID! 
 }

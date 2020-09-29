@@ -2,13 +2,14 @@
 
 package model
 
-type Address struct {
-	Latitude   *string `json:"latitude"`
-	Longitude  *string `json:"longitude"`
-	StreetLine *string `json:"streetLine"`
+type RegisterAddressInput struct {
+	Latitude   string `json:"Latitude"`
+	Longitude  string `json:"Longitude"`
+	StreetLine string `json:"StreetLine"`
 }
 
 type RegisterCustomerInput struct {
-	Name  string `json:"Name"`
-	Phone string `json:"Phone"`
+	Name    string                `json:"Name"`
+	Phone   string                `json:"Phone"`
+	Address *RegisterAddressInput `json:"Address"`
 }
