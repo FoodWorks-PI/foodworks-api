@@ -14,6 +14,7 @@ func main() {
 
 	dataStoreConfig := platform.DataStoreConfig{
 		DatabaseURL: os.Getenv("POSTGRES_URL"),
+		JWKSURL:     os.Getenv("JWKS_URL"),
 		RedisAddr:   os.Getenv("REDIS_ADDR"),
 		RedisPass:   os.Getenv("REDIS_PASS"),
 	}
@@ -23,7 +24,7 @@ func main() {
 	rdb := platform.NewRedisClient(dataStoreConfig)
 
 	api := api.API{}
-	api.SetupRoutes(client, rdb)
+	api.SetupRoutes(client, rdb, dataStoreConfig)
 	api.StartServer()
 
 	// Cleanup

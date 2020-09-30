@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 
+	"foodworks.ml/m/internal/generated/ent/customer"
+
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent"
 	generated "foodworks.ml/m/internal/generated/graphql"
@@ -36,7 +38,15 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 }
 
 func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, error) {
-	panic(fmt.Errorf("not implemented"))
+	currentUser := auth.ForContext(ctx)
+	currentCustomer, err := r.Client.Customer.
+		Query().
+		Where(customer.KratosIDEQ(currentUser.Id)).
+		First(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return currentCustomer, nil
 }
 
 // Customer returns generated.CustomerResolver implementation.

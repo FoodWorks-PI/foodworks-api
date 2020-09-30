@@ -14,6 +14,7 @@ import (
 
 type DataStoreConfig struct {
 	DatabaseURL string
+	JWKSURL     string
 	RedisAddr   string
 	RedisPass   string
 }

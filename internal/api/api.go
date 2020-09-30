@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"foodworks.ml/m/internal/platform"
+
 	"foodworks.ml/m/internal/auth"
 	"github.com/go-chi/jwtauth"
 
@@ -31,7 +33,7 @@ type API struct {
 	Router *chi.Mux
 }
 
-func (a *API) SetupRoutes(entClient *ent.Client, redisClient *redis.Client) {
+func (a *API) SetupRoutes(entClient *ent.Client, redisClient *redis.Client, dataStoreConfig platform.DataStoreConfig) {
 	// init server
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer)
@@ -46,7 +48,7 @@ func (a *API) SetupRoutes(entClient *ent.Client, redisClient *redis.Client) {
 		//TODO: Verify works with unit tests
 		router.Use(render.SetContentType(render.ContentTypeJSON))
 		if flag.Lookup("test.v") == nil {
-			auth.InitAuth()
+			auth.InitAuth(dataStoreConfig.JWKSURL)
 			router.Use(jwtauth.Verifier(auth.TokenAuth))
 			router.Use(jwtauth.Authenticator)
 			router.Use(auth.Middleware())
