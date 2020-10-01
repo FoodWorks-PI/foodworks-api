@@ -290,7 +290,7 @@ type Query {
 
 type Mutation {
   createCustomerProfile(input:RegisterCustomerInput!): ID!
-# createOwnerProfile(input:RegisterRestaurantOwnerInput!): ID! 
+# createOwnerProfile(input:RegisterRestaurantOwnerInput!): ID!
 }
 `, BuiltIn: false},
 }
