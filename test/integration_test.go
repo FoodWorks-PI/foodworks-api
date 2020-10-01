@@ -161,6 +161,6 @@ func SetupAPI(support *TestSupport) {
 	rdb := platform.NewRedisClient(*support.Config)
 
 	api := api.API{}
-	api.SetupRoutes(client, rdb)
+	api.SetupRoutes(client, rdb, *support.Config)
 	support.Handler = api.Router
 }
