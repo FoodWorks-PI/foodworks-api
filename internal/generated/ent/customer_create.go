@@ -44,19 +44,23 @@ func (cc *CustomerCreate) SetPhone(s string) *CustomerCreate {
 	return cc
 }
 
-// AddAddresIDs adds the address edge to Address by ids.
-func (cc *CustomerCreate) AddAddresIDs(ids ...int) *CustomerCreate {
-	cc.mutation.AddAddresIDs(ids...)
+// SetAddressID sets the address edge to Address by id.
+func (cc *CustomerCreate) SetAddressID(id int) *CustomerCreate {
+	cc.mutation.SetAddressID(id)
 	return cc
 }
 
-// AddAddress adds the address edges to Address.
-func (cc *CustomerCreate) AddAddress(a ...*Address) *CustomerCreate {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// SetNillableAddressID sets the address edge to Address by id if the given value is not nil.
+func (cc *CustomerCreate) SetNillableAddressID(id *int) *CustomerCreate {
+	if id != nil {
+		cc = cc.SetAddressID(*id)
 	}
-	return cc.AddAddresIDs(ids...)
+	return cc
+}
+
+// SetAddress sets the address edge to Address.
+func (cc *CustomerCreate) SetAddress(a *Address) *CustomerCreate {
+	return cc.SetAddressID(a.ID)
 }
 
 // Mutation returns the CustomerMutation object of the builder.
@@ -183,7 +187,7 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 	}
 	if nodes := cc.mutation.AddressIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   customer.AddressTable,
 			Columns: []string{customer.AddressColumn},

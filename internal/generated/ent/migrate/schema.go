@@ -13,23 +13,14 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "latitude", Type: field.TypeString},
 		{Name: "longitude", Type: field.TypeString},
-		{Name: "street", Type: field.TypeString},
-		{Name: "customer_address", Type: field.TypeInt, Nullable: true},
+		{Name: "street_line", Type: field.TypeString},
 	}
 	// AddressesTable holds the schema information for the "addresses" table.
 	AddressesTable = &schema.Table{
-		Name:       "addresses",
-		Columns:    AddressesColumns,
-		PrimaryKey: []*schema.Column{AddressesColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:  "addresses_customers_address",
-				Columns: []*schema.Column{AddressesColumns[4]},
-
-				RefColumns: []*schema.Column{CustomersColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
+		Name:        "addresses",
+		Columns:     AddressesColumns,
+		PrimaryKey:  []*schema.Column{AddressesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{},
 	}
 	// CustomersColumns holds the columns for the "customers" table.
 	CustomersColumns = []*schema.Column{
@@ -38,13 +29,29 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "email", Type: field.TypeString},
 		{Name: "phone", Type: field.TypeString},
+		{Name: "customer_address", Type: field.TypeInt, Nullable: true},
 	}
 	// CustomersTable holds the schema information for the "customers" table.
 	CustomersTable = &schema.Table{
-		Name:        "customers",
-		Columns:     CustomersColumns,
-		PrimaryKey:  []*schema.Column{CustomersColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
+		Name:       "customers",
+		Columns:    CustomersColumns,
+		PrimaryKey: []*schema.Column{CustomersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "customers_addresses_address",
+				Columns: []*schema.Column{CustomersColumns[5]},
+
+				RefColumns: []*schema.Column{AddressesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "customer_kratos_id_email",
+				Unique:  true,
+				Columns: []*schema.Column{CustomersColumns[1], CustomersColumns[3]},
+			},
+		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
@@ -54,5 +61,5 @@ var (
 )
 
 func init() {
-	AddressesTable.ForeignKeys[0].RefTable = CustomersTable
+	CustomersTable.ForeignKeys[0].RefTable = AddressesTable
 }

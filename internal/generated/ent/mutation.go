@@ -35,7 +35,7 @@ type AddressMutation struct {
 	id            *int
 	latitude      *string
 	longitude     *string
-	_Street       *string
+	streetLine    *string
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*Address, error)
@@ -194,41 +194,41 @@ func (m *AddressMutation) ResetLongitude() {
 	m.longitude = nil
 }
 
-// SetStreet sets the Street field.
-func (m *AddressMutation) SetStreet(s string) {
-	m._Street = &s
+// SetStreetLine sets the streetLine field.
+func (m *AddressMutation) SetStreetLine(s string) {
+	m.streetLine = &s
 }
 
-// Street returns the Street value in the mutation.
-func (m *AddressMutation) Street() (r string, exists bool) {
-	v := m._Street
+// StreetLine returns the streetLine value in the mutation.
+func (m *AddressMutation) StreetLine() (r string, exists bool) {
+	v := m.streetLine
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldStreet returns the old Street value of the Address.
+// OldStreetLine returns the old streetLine value of the Address.
 // If the Address object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *AddressMutation) OldStreet(ctx context.Context) (v string, err error) {
+func (m *AddressMutation) OldStreetLine(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldStreet is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldStreetLine is allowed only on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldStreet requires an ID field in the mutation")
+		return v, fmt.Errorf("OldStreetLine requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldStreet: %w", err)
+		return v, fmt.Errorf("querying old value for OldStreetLine: %w", err)
 	}
-	return oldValue.Street, nil
+	return oldValue.StreetLine, nil
 }
 
-// ResetStreet reset all changes of the "Street" field.
-func (m *AddressMutation) ResetStreet() {
-	m._Street = nil
+// ResetStreetLine reset all changes of the "streetLine" field.
+func (m *AddressMutation) ResetStreetLine() {
+	m.streetLine = nil
 }
 
 // Op returns the operation name.
@@ -252,8 +252,8 @@ func (m *AddressMutation) Fields() []string {
 	if m.longitude != nil {
 		fields = append(fields, address.FieldLongitude)
 	}
-	if m._Street != nil {
-		fields = append(fields, address.FieldStreet)
+	if m.streetLine != nil {
+		fields = append(fields, address.FieldStreetLine)
 	}
 	return fields
 }
@@ -267,8 +267,8 @@ func (m *AddressMutation) Field(name string) (ent.Value, bool) {
 		return m.Latitude()
 	case address.FieldLongitude:
 		return m.Longitude()
-	case address.FieldStreet:
-		return m.Street()
+	case address.FieldStreetLine:
+		return m.StreetLine()
 	}
 	return nil, false
 }
@@ -282,8 +282,8 @@ func (m *AddressMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldLatitude(ctx)
 	case address.FieldLongitude:
 		return m.OldLongitude(ctx)
-	case address.FieldStreet:
-		return m.OldStreet(ctx)
+	case address.FieldStreetLine:
+		return m.OldStreetLine(ctx)
 	}
 	return nil, fmt.Errorf("unknown Address field %s", name)
 }
@@ -307,12 +307,12 @@ func (m *AddressMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLongitude(v)
 		return nil
-	case address.FieldStreet:
+	case address.FieldStreetLine:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetStreet(v)
+		m.SetStreetLine(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Address field %s", name)
@@ -370,8 +370,8 @@ func (m *AddressMutation) ResetField(name string) error {
 	case address.FieldLongitude:
 		m.ResetLongitude()
 		return nil
-	case address.FieldStreet:
-		m.ResetStreet()
+	case address.FieldStreetLine:
+		m.ResetStreetLine()
 		return nil
 	}
 	return fmt.Errorf("unknown Address field %s", name)
@@ -441,8 +441,7 @@ type CustomerMutation struct {
 	email          *string
 	phone          *string
 	clearedFields  map[string]struct{}
-	address        map[int]struct{}
-	removedaddress map[int]struct{}
+	address        *int
 	clearedaddress bool
 	done           bool
 	oldValue       func(context.Context) (*Customer, error)
@@ -675,14 +674,9 @@ func (m *CustomerMutation) ResetPhone() {
 	m.phone = nil
 }
 
-// AddAddresIDs adds the address edge to Address by ids.
-func (m *CustomerMutation) AddAddresIDs(ids ...int) {
-	if m.address == nil {
-		m.address = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.address[ids[i]] = struct{}{}
-	}
+// SetAddressID sets the address edge to Address by id.
+func (m *CustomerMutation) SetAddressID(id int) {
+	m.address = &id
 }
 
 // ClearAddress clears the address edge to Address.
@@ -695,28 +689,20 @@ func (m *CustomerMutation) AddressCleared() bool {
 	return m.clearedaddress
 }
 
-// RemoveAddresIDs removes the address edge to Address by ids.
-func (m *CustomerMutation) RemoveAddresIDs(ids ...int) {
-	if m.removedaddress == nil {
-		m.removedaddress = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.removedaddress[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedAddress returns the removed ids of address.
-func (m *CustomerMutation) RemovedAddressIDs() (ids []int) {
-	for id := range m.removedaddress {
-		ids = append(ids, id)
+// AddressID returns the address id in the mutation.
+func (m *CustomerMutation) AddressID() (id int, exists bool) {
+	if m.address != nil {
+		return *m.address, true
 	}
 	return
 }
 
 // AddressIDs returns the address ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// AddressID instead. It exists only for internal usage by the builders.
 func (m *CustomerMutation) AddressIDs() (ids []int) {
-	for id := range m.address {
-		ids = append(ids, id)
+	if id := m.address; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -725,7 +711,6 @@ func (m *CustomerMutation) AddressIDs() (ids []int) {
 func (m *CustomerMutation) ResetAddress() {
 	m.address = nil
 	m.clearedaddress = false
-	m.removedaddress = nil
 }
 
 // Op returns the operation name.
@@ -906,11 +891,9 @@ func (m *CustomerMutation) AddedEdges() []string {
 func (m *CustomerMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case customer.EdgeAddress:
-		ids := make([]ent.Value, 0, len(m.address))
-		for id := range m.address {
-			ids = append(ids, id)
+		if id := m.address; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	}
 	return nil
 }
@@ -919,9 +902,6 @@ func (m *CustomerMutation) AddedIDs(name string) []ent.Value {
 // mutation.
 func (m *CustomerMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.removedaddress != nil {
-		edges = append(edges, customer.EdgeAddress)
-	}
 	return edges
 }
 
@@ -929,12 +909,6 @@ func (m *CustomerMutation) RemovedEdges() []string {
 // the given edge name.
 func (m *CustomerMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case customer.EdgeAddress:
-		ids := make([]ent.Value, 0, len(m.removedaddress))
-		for id := range m.removedaddress {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
@@ -963,6 +937,9 @@ func (m *CustomerMutation) EdgeCleared(name string) bool {
 // error if the edge name is not defined in the schema.
 func (m *CustomerMutation) ClearEdge(name string) error {
 	switch name {
+	case customer.EdgeAddress:
+		m.ClearAddress()
+		return nil
 	}
 	return fmt.Errorf("unknown Customer unique edge %s", name)
 }

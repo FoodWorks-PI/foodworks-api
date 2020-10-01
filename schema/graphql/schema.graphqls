@@ -1,4 +1,4 @@
-# GraphQL schema example
+ # GraphQL schema example
 # Do we want id?
 # TODO: Split schema into multiple files per domain
 
@@ -29,9 +29,9 @@ input RegisterCustomerInput {
 #}
 
 type Address {
-  latitude: String!
-  longitude: String!
-  streetLine: String!
+  Latitude: String!
+  Longitude: String!
+  StreetLine: String!
 }
 
 type Customer {

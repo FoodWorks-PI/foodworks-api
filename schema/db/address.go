@@ -15,7 +15,7 @@ func (Address) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("latitude"),
 		field.String("longitude"),
-		field.String("Street"),
+		field.String("streetLine"),
 	}
 }
 

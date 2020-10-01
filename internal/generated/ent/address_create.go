@@ -31,9 +31,9 @@ func (ac *AddressCreate) SetLongitude(s string) *AddressCreate {
 	return ac
 }
 
-// SetStreet sets the Street field.
-func (ac *AddressCreate) SetStreet(s string) *AddressCreate {
-	ac.mutation.SetStreet(s)
+// SetStreetLine sets the streetLine field.
+func (ac *AddressCreate) SetStreetLine(s string) *AddressCreate {
+	ac.mutation.SetStreetLine(s)
 	return ac
 }
 
@@ -94,8 +94,8 @@ func (ac *AddressCreate) check() error {
 	if _, ok := ac.mutation.Longitude(); !ok {
 		return &ValidationError{Name: "longitude", err: errors.New("ent: missing required field \"longitude\"")}
 	}
-	if _, ok := ac.mutation.Street(); !ok {
-		return &ValidationError{Name: "Street", err: errors.New("ent: missing required field \"Street\"")}
+	if _, ok := ac.mutation.StreetLine(); !ok {
+		return &ValidationError{Name: "streetLine", err: errors.New("ent: missing required field \"streetLine\"")}
 	}
 	return nil
 }
@@ -140,13 +140,13 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 		})
 		_node.Longitude = value
 	}
-	if value, ok := ac.mutation.Street(); ok {
+	if value, ok := ac.mutation.StreetLine(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: address.FieldStreet,
+			Column: address.FieldStreetLine,
 		})
-		_node.Street = value
+		_node.StreetLine = value
 	}
 	return _node, _spec
 }

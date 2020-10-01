@@ -4,22 +4,18 @@ package resolver
 // will be copied through when generating and any unknown code will be moved to the end.
 
 import (
-	"foodworks.ml/m/internal/generated/ent/customer"
 	"context"
-	"fmt"
 
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent"
+	"foodworks.ml/m/internal/generated/ent/customer"
 	generated "foodworks.ml/m/internal/generated/graphql"
 	"foodworks.ml/m/internal/generated/graphql/model"
 )
 
-func (r *addressResolver) StreetLine(ctx context.Context, obj *ent.Address) (string, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
 func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (*ent.Address, error) {
-	panic(fmt.Errorf("not implemented"))
+	address, err := r.Client.Customer.QueryAddress(obj).First(ctx)
+	return address, ent.MaskNotFound(err)
 }
 
 func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input model.RegisterCustomerInput) (int, error) {
@@ -29,7 +25,7 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 		Create().
 		SetLatitude(input.Address.Latitude).
 		SetLongitude(input.Address.Longitude).
-		SetStreet(input.Address.StreetLine).
+		SetStreetLine(input.Address.StreetLine).
 		Save(ctx)
 
 	if err != nil {
@@ -42,7 +38,7 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 		SetEmail(currentUser.Email).
 		SetKratosID(currentUser.Id).
 		SetPhone(input.Phone).
-		AddAddress(newAddress).
+		SetAddress(newAddress).
 		Save(ctx)
 
 	if err != nil {
@@ -56,9 +52,10 @@ func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, 
 	kratosUser := auth.ForContext(ctx)
 
 	currentUser, err := r.Client.Customer.
-	Query().
-	Where(customer.KratosID(kratosUser.Id)).
-	First(ctx)
+		Query().
+		Where(customer.KratosID(kratosUser.Id)).
+		WithAddress().
+		First(ctx)
 
 	if err != nil {
 		return nil, err
@@ -66,9 +63,6 @@ func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, 
 
 	return currentUser, nil
 }
-
-// Address returns generated.AddressResolver implementation.
-func (r *Resolver) Address() generated.AddressResolver { return &addressResolver{r} }
 
 // Customer returns generated.CustomerResolver implementation.
 func (r *Resolver) Customer() generated.CustomerResolver { return &customerResolver{r} }
@@ -79,7 +73,6 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-type addressResolver struct{ *Resolver }
 type customerResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

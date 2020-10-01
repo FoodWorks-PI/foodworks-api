@@ -23,7 +23,6 @@ type AddressQuery struct {
 	order      []OrderFunc
 	unique     []string
 	predicates []predicate.Address
-	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -296,20 +295,13 @@ func (aq *AddressQuery) prepareQuery(ctx context.Context) error {
 
 func (aq *AddressQuery) sqlAll(ctx context.Context) ([]*Address, error) {
 	var (
-		nodes   = []*Address{}
-		withFKs = aq.withFKs
-		_spec   = aq.querySpec()
+		nodes = []*Address{}
+		_spec = aq.querySpec()
 	)
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, address.ForeignKeys...)
-	}
 	_spec.ScanValues = func() []interface{} {
 		node := &Address{config: aq.config}
 		nodes = append(nodes, node)
 		values := node.scanValues()
-		if withFKs {
-			values = append(values, node.fkValues()...)
-		}
 		return values
 	}
 	_spec.Assign = func(values ...interface{}) error {

@@ -104,10 +104,10 @@ func Longitude(v string) predicate.Address {
 	})
 }
 
-// Street applies equality check predicate on the "Street" field. It's identical to StreetEQ.
-func Street(v string) predicate.Address {
+// StreetLine applies equality check predicate on the "streetLine" field. It's identical to StreetLineEQ.
+func StreetLine(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldStreet), v))
+		s.Where(sql.EQ(s.C(FieldStreetLine), v))
 	})
 }
 
@@ -333,22 +333,22 @@ func LongitudeContainsFold(v string) predicate.Address {
 	})
 }
 
-// StreetEQ applies the EQ predicate on the "Street" field.
-func StreetEQ(v string) predicate.Address {
+// StreetLineEQ applies the EQ predicate on the "streetLine" field.
+func StreetLineEQ(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldStreet), v))
+		s.Where(sql.EQ(s.C(FieldStreetLine), v))
 	})
 }
 
-// StreetNEQ applies the NEQ predicate on the "Street" field.
-func StreetNEQ(v string) predicate.Address {
+// StreetLineNEQ applies the NEQ predicate on the "streetLine" field.
+func StreetLineNEQ(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldStreet), v))
+		s.Where(sql.NEQ(s.C(FieldStreetLine), v))
 	})
 }
 
-// StreetIn applies the In predicate on the "Street" field.
-func StreetIn(vs ...string) predicate.Address {
+// StreetLineIn applies the In predicate on the "streetLine" field.
+func StreetLineIn(vs ...string) predicate.Address {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -360,12 +360,12 @@ func StreetIn(vs ...string) predicate.Address {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldStreet), v...))
+		s.Where(sql.In(s.C(FieldStreetLine), v...))
 	})
 }
 
-// StreetNotIn applies the NotIn predicate on the "Street" field.
-func StreetNotIn(vs ...string) predicate.Address {
+// StreetLineNotIn applies the NotIn predicate on the "streetLine" field.
+func StreetLineNotIn(vs ...string) predicate.Address {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -377,70 +377,70 @@ func StreetNotIn(vs ...string) predicate.Address {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldStreet), v...))
+		s.Where(sql.NotIn(s.C(FieldStreetLine), v...))
 	})
 }
 
-// StreetGT applies the GT predicate on the "Street" field.
-func StreetGT(v string) predicate.Address {
+// StreetLineGT applies the GT predicate on the "streetLine" field.
+func StreetLineGT(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldStreet), v))
+		s.Where(sql.GT(s.C(FieldStreetLine), v))
 	})
 }
 
-// StreetGTE applies the GTE predicate on the "Street" field.
-func StreetGTE(v string) predicate.Address {
+// StreetLineGTE applies the GTE predicate on the "streetLine" field.
+func StreetLineGTE(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldStreet), v))
+		s.Where(sql.GTE(s.C(FieldStreetLine), v))
 	})
 }
 
-// StreetLT applies the LT predicate on the "Street" field.
-func StreetLT(v string) predicate.Address {
+// StreetLineLT applies the LT predicate on the "streetLine" field.
+func StreetLineLT(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldStreet), v))
+		s.Where(sql.LT(s.C(FieldStreetLine), v))
 	})
 }
 
-// StreetLTE applies the LTE predicate on the "Street" field.
-func StreetLTE(v string) predicate.Address {
+// StreetLineLTE applies the LTE predicate on the "streetLine" field.
+func StreetLineLTE(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldStreet), v))
+		s.Where(sql.LTE(s.C(FieldStreetLine), v))
 	})
 }
 
-// StreetContains applies the Contains predicate on the "Street" field.
-func StreetContains(v string) predicate.Address {
+// StreetLineContains applies the Contains predicate on the "streetLine" field.
+func StreetLineContains(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldStreet), v))
+		s.Where(sql.Contains(s.C(FieldStreetLine), v))
 	})
 }
 
-// StreetHasPrefix applies the HasPrefix predicate on the "Street" field.
-func StreetHasPrefix(v string) predicate.Address {
+// StreetLineHasPrefix applies the HasPrefix predicate on the "streetLine" field.
+func StreetLineHasPrefix(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldStreet), v))
+		s.Where(sql.HasPrefix(s.C(FieldStreetLine), v))
 	})
 }
 
-// StreetHasSuffix applies the HasSuffix predicate on the "Street" field.
-func StreetHasSuffix(v string) predicate.Address {
+// StreetLineHasSuffix applies the HasSuffix predicate on the "streetLine" field.
+func StreetLineHasSuffix(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldStreet), v))
+		s.Where(sql.HasSuffix(s.C(FieldStreetLine), v))
 	})
 }
 
-// StreetEqualFold applies the EqualFold predicate on the "Street" field.
-func StreetEqualFold(v string) predicate.Address {
+// StreetLineEqualFold applies the EqualFold predicate on the "streetLine" field.
+func StreetLineEqualFold(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldStreet), v))
+		s.Where(sql.EqualFold(s.C(FieldStreetLine), v))
 	})
 }
 
-// StreetContainsFold applies the ContainsFold predicate on the "Street" field.
-func StreetContainsFold(v string) predicate.Address {
+// StreetLineContainsFold applies the ContainsFold predicate on the "streetLine" field.
+func StreetLineContainsFold(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldStreet), v))
+		s.Where(sql.ContainsFold(s.C(FieldStreetLine), v))
 	})
 }
 

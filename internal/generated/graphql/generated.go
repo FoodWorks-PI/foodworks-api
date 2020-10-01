@@ -36,7 +36,6 @@ type Config struct {
 }
 
 type ResolverRoot interface {
-	Address() AddressResolver
 	Customer() CustomerResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -69,9 +68,6 @@ type ComplexityRoot struct {
 	}
 }
 
-type AddressResolver interface {
-	StreetLine(ctx context.Context, obj *ent.Address) (string, error)
-}
 type CustomerResolver interface {
 	Address(ctx context.Context, obj *ent.Customer) (*ent.Address, error)
 }
@@ -97,21 +93,21 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Address.latitude":
+	case "Address.Latitude":
 		if e.complexity.Address.Latitude == nil {
 			break
 		}
 
 		return e.complexity.Address.Latitude(childComplexity), true
 
-	case "Address.longitude":
+	case "Address.Longitude":
 		if e.complexity.Address.Longitude == nil {
 			break
 		}
 
 		return e.complexity.Address.Longitude(childComplexity), true
 
-	case "Address.streetLine":
+	case "Address.StreetLine":
 		if e.complexity.Address.StreetLine == nil {
 			break
 		}
@@ -236,7 +232,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema/graphql/schema.graphqls", Input: `# GraphQL schema example
+	{Name: "schema/graphql/schema.graphqls", Input: ` # GraphQL schema example
 # Do we want id?
 # TODO: Split schema into multiple files per domain
 
@@ -267,9 +263,9 @@ input RegisterCustomerInput {
 #}
 
 type Address {
-  latitude: String!
-  longitude: String!
-  streetLine: String!
+  Latitude: String!
+  Longitude: String!
+  StreetLine: String!
 }
 
 type Customer {
@@ -372,7 +368,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Address_latitude(ctx context.Context, field graphql.CollectedField, obj *ent.Address) (ret graphql.Marshaler) {
+func (ec *executionContext) _Address_Latitude(ctx context.Context, field graphql.CollectedField, obj *ent.Address) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -407,7 +403,7 @@ func (ec *executionContext) _Address_latitude(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Address_longitude(ctx context.Context, field graphql.CollectedField, obj *ent.Address) (ret graphql.Marshaler) {
+func (ec *executionContext) _Address_Longitude(ctx context.Context, field graphql.CollectedField, obj *ent.Address) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -442,7 +438,7 @@ func (ec *executionContext) _Address_longitude(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Address_streetLine(ctx context.Context, field graphql.CollectedField, obj *ent.Address) (ret graphql.Marshaler) {
+func (ec *executionContext) _Address_StreetLine(ctx context.Context, field graphql.CollectedField, obj *ent.Address) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -453,14 +449,14 @@ func (ec *executionContext) _Address_streetLine(ctx context.Context, field graph
 		Object:     "Address",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Address().StreetLine(rctx, obj)
+		return obj.StreetLine, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1978,30 +1974,21 @@ func (ec *executionContext) _Address(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Address")
-		case "latitude":
-			out.Values[i] = ec._Address_latitude(ctx, field, obj)
+		case "Latitude":
+			out.Values[i] = ec._Address_Latitude(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
-		case "longitude":
-			out.Values[i] = ec._Address_longitude(ctx, field, obj)
+		case "Longitude":
+			out.Values[i] = ec._Address_Longitude(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
-		case "streetLine":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Address_streetLine(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+		case "StreetLine":
+			out.Values[i] = ec._Address_StreetLine(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

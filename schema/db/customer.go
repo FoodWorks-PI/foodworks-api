@@ -4,6 +4,7 @@ import (
 	"github.com/facebook/ent"
 	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
+	"github.com/facebook/ent/schema/index"
 )
 
 // Customer holds the schema definition for the Customer entity.
@@ -24,6 +25,16 @@ func (Customer) Fields() []ent.Field {
 // Edges of the Customer.
 func (Customer) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("address", Address.Type),
+		edge.To("address", Address.Type).
+			Unique(),
+	}
+}
+
+// Indexes of the Customer
+func (Customer) Indexes() []ent.Index {
+	return []ent.Index{
+		// unique index.
+		index.Fields("kratos_id", "email").
+			Unique(),
 	}
 }

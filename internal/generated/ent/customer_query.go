@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -27,6 +26,7 @@ type CustomerQuery struct {
 	predicates []predicate.Customer
 	// eager-loading edges.
 	withAddress *AddressQuery
+	withFKs     bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -70,7 +70,7 @@ func (cq *CustomerQuery) QueryAddress() *AddressQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(customer.Table, customer.FieldID, selector),
 			sqlgraph.To(address.Table, address.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, customer.AddressTable, customer.AddressColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, customer.AddressTable, customer.AddressColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -333,15 +333,25 @@ func (cq *CustomerQuery) prepareQuery(ctx context.Context) error {
 func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 	var (
 		nodes       = []*Customer{}
+		withFKs     = cq.withFKs
 		_spec       = cq.querySpec()
 		loadedTypes = [1]bool{
 			cq.withAddress != nil,
 		}
 	)
+	if cq.withAddress != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, customer.ForeignKeys...)
+	}
 	_spec.ScanValues = func() []interface{} {
 		node := &Customer{config: cq.config}
 		nodes = append(nodes, node)
 		values := node.scanValues()
+		if withFKs {
+			values = append(values, node.fkValues()...)
+		}
 		return values
 	}
 	_spec.Assign = func(values ...interface{}) error {
@@ -360,30 +370,27 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 	}
 
 	if query := cq.withAddress; query != nil {
-		fks := make([]driver.Value, 0, len(nodes))
-		nodeids := make(map[int]*Customer)
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*Customer)
 		for i := range nodes {
-			fks = append(fks, nodes[i].ID)
-			nodeids[nodes[i].ID] = nodes[i]
+			if fk := nodes[i].customer_address; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
 		}
-		query.withFKs = true
-		query.Where(predicate.Address(func(s *sql.Selector) {
-			s.Where(sql.InValues(customer.AddressColumn, fks...))
-		}))
+		query.Where(address.IDIn(ids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			fk := n.customer_address
-			if fk == nil {
-				return nil, fmt.Errorf(`foreign-key "customer_address" is nil for node %v`, n.ID)
-			}
-			node, ok := nodeids[*fk]
+			nodes, ok := nodeids[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "customer_address" returned %v for node %v`, *fk, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "customer_address" returned %v`, n.ID)
 			}
-			node.Edges.Address = append(node.Edges.Address, n)
+			for i := range nodes {
+				nodes[i].Edges.Address = n
+			}
 		}
 	}
 

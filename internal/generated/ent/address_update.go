@@ -39,9 +39,9 @@ func (au *AddressUpdate) SetLongitude(s string) *AddressUpdate {
 	return au
 }
 
-// SetStreet sets the Street field.
-func (au *AddressUpdate) SetStreet(s string) *AddressUpdate {
-	au.mutation.SetStreet(s)
+// SetStreetLine sets the streetLine field.
+func (au *AddressUpdate) SetStreetLine(s string) *AddressUpdate {
+	au.mutation.SetStreetLine(s)
 	return au
 }
 
@@ -133,11 +133,11 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: address.FieldLongitude,
 		})
 	}
-	if value, ok := au.mutation.Street(); ok {
+	if value, ok := au.mutation.StreetLine(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: address.FieldStreet,
+			Column: address.FieldStreetLine,
 		})
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
@@ -170,9 +170,9 @@ func (auo *AddressUpdateOne) SetLongitude(s string) *AddressUpdateOne {
 	return auo
 }
 
-// SetStreet sets the Street field.
-func (auo *AddressUpdateOne) SetStreet(s string) *AddressUpdateOne {
-	auo.mutation.SetStreet(s)
+// SetStreetLine sets the streetLine field.
+func (auo *AddressUpdateOne) SetStreetLine(s string) *AddressUpdateOne {
+	auo.mutation.SetStreetLine(s)
 	return auo
 }
 
@@ -262,11 +262,11 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Column: address.FieldLongitude,
 		})
 	}
-	if value, ok := auo.mutation.Street(); ok {
+	if value, ok := auo.mutation.StreetLine(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: address.FieldStreet,
+			Column: address.FieldStreetLine,
 		})
 	}
 	_node = &Address{config: auo.config}

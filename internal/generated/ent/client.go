@@ -303,7 +303,7 @@ func (c *CustomerClient) QueryAddress(cu *Customer) *AddressQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(customer.Table, customer.FieldID, id),
 			sqlgraph.To(address.Table, address.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, customer.AddressTable, customer.AddressColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, customer.AddressTable, customer.AddressColumn),
 		)
 		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
 		return fromV, nil

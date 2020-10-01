@@ -19,9 +19,8 @@ type Address struct {
 	Latitude string `json:"latitude,omitempty"`
 	// Longitude holds the value of the "longitude" field.
 	Longitude string `json:"longitude,omitempty"`
-	// Street holds the value of the "Street" field.
-	Street           string `json:"Street,omitempty"`
-	customer_address *int
+	// StreetLine holds the value of the "streetLine" field.
+	StreetLine string `json:"streetLine,omitempty"`
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -30,14 +29,7 @@ func (*Address) scanValues() []interface{} {
 		&sql.NullInt64{},  // id
 		&sql.NullString{}, // latitude
 		&sql.NullString{}, // longitude
-		&sql.NullString{}, // Street
-	}
-}
-
-// fkValues returns the types for scanning foreign-keys values from sql.Rows.
-func (*Address) fkValues() []interface{} {
-	return []interface{}{
-		&sql.NullInt64{}, // customer_address
+		&sql.NullString{}, // streetLine
 	}
 }
 
@@ -64,18 +56,9 @@ func (a *Address) assignValues(values ...interface{}) error {
 		a.Longitude = value.String
 	}
 	if value, ok := values[2].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field Street", values[2])
+		return fmt.Errorf("unexpected type %T for field streetLine", values[2])
 	} else if value.Valid {
-		a.Street = value.String
-	}
-	values = values[3:]
-	if len(values) == len(address.ForeignKeys) {
-		if value, ok := values[0].(*sql.NullInt64); !ok {
-			return fmt.Errorf("unexpected type %T for edge-field customer_address", value)
-		} else if value.Valid {
-			a.customer_address = new(int)
-			*a.customer_address = int(value.Int64)
-		}
+		a.StreetLine = value.String
 	}
 	return nil
 }
@@ -107,8 +90,8 @@ func (a *Address) String() string {
 	builder.WriteString(a.Latitude)
 	builder.WriteString(", longitude=")
 	builder.WriteString(a.Longitude)
-	builder.WriteString(", Street=")
-	builder.WriteString(a.Street)
+	builder.WriteString(", streetLine=")
+	builder.WriteString(a.StreetLine)
 	builder.WriteByte(')')
 	return builder.String()
 }

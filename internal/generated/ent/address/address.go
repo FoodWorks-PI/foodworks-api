@@ -11,8 +11,8 @@ const (
 	FieldLatitude = "latitude"
 	// FieldLongitude holds the string denoting the longitude field in the database.
 	FieldLongitude = "longitude"
-	// FieldStreet holds the string denoting the street field in the database.
-	FieldStreet = "street"
+	// FieldStreetLine holds the string denoting the streetline field in the database.
+	FieldStreetLine = "street_line"
 
 	// Table holds the table name of the address in the database.
 	Table = "addresses"
@@ -23,23 +23,13 @@ var Columns = []string{
 	FieldID,
 	FieldLatitude,
 	FieldLongitude,
-	FieldStreet,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the Address type.
-var ForeignKeys = []string{
-	"customer_address",
+	FieldStreetLine,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
