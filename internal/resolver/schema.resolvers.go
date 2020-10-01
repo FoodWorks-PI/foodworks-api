@@ -6,8 +6,6 @@ package resolver
 import (
 	"context"
 
-	"foodworks.ml/m/internal/generated/ent/customer"
-
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent"
 	"foodworks.ml/m/internal/generated/ent/customer"
