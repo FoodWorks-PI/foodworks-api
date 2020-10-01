@@ -5,22 +5,34 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"foodworks.ml/m/internal/generated/ent/customer"
 
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent"
+	"foodworks.ml/m/internal/generated/ent/customer"
 	generated "foodworks.ml/m/internal/generated/graphql"
 	"foodworks.ml/m/internal/generated/graphql/model"
 )
 
-func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (string, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (*ent.Address, error) {
+	address, err := r.Client.Customer.QueryAddress(obj).First(ctx)
+	return address, ent.MaskNotFound(err)
 }
 
 func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input model.RegisterCustomerInput) (int, error) {
 	currentUser := auth.ForContext(ctx)
+
+	newAddress, err := r.Client.Address.
+		Create().
+		SetLatitude(input.Address.Latitude).
+		SetLongitude(input.Address.Longitude).
+		SetStreetLine(input.Address.StreetLine).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
 
 	newCustomer, err := r.Client.Customer.
 		Create().
@@ -28,6 +40,7 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 		SetEmail(currentUser.Email).
 		SetKratosID(currentUser.Id).
 		SetPhone(input.Phone).
+		SetAddress(newAddress).
 		Save(ctx)
 
 	if err != nil {
@@ -38,14 +51,17 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 }
 
 func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, error) {
-	currentUser := auth.ForContext(ctx)
+	kratosUser := auth.ForContext(ctx)
+
 	currentCustomer, err := r.Client.Customer.
 		Query().
-		Where(customer.KratosIDEQ(currentUser.Id)).
+		Where(customer.KratosID(kratosUser.Id)).
 		First(ctx)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return currentCustomer, nil
 }
 
