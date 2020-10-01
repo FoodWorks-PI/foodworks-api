@@ -38,6 +38,7 @@ type UserCredentials struct {
 
 func ForContext(ctx context.Context) *UserCredentials {
 	raw, _ := ctx.Value(userCtxKey).(*UserCredentials)
+
 	return raw
 }
 
