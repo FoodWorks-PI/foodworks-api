@@ -16,8 +16,18 @@ const (
 	// FieldPhone holds the string denoting the phone field in the database.
 	FieldPhone = "phone"
 
+	// EdgeAddress holds the string denoting the address edge name in mutations.
+	EdgeAddress = "address"
+
 	// Table holds the table name of the customer in the database.
 	Table = "customers"
+	// AddressTable is the table the holds the address relation/edge.
+	AddressTable = "customers"
+	// AddressInverseTable is the table name for the Address entity.
+	// It exists in this package in order to avoid circular dependency with the "address" package.
+	AddressInverseTable = "addresses"
+	// AddressColumn is the table column denoting the address relation/edge.
+	AddressColumn = "customer_address"
 )
 
 // Columns holds all SQL columns for customer fields.
@@ -29,10 +39,20 @@ var Columns = []string{
 	FieldPhone,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the Customer type.
+var ForeignKeys = []string{
+	"customer_address",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 
+	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"github.com/facebook/ent/dialect/sql"
@@ -23,6 +24,9 @@ type CustomerQuery struct {
 	order      []OrderFunc
 	unique     []string
 	predicates []predicate.Customer
+	// eager-loading edges.
+	withAddress *AddressQuery
+	withFKs     bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -50,6 +54,28 @@ func (cq *CustomerQuery) Offset(offset int) *CustomerQuery {
 func (cq *CustomerQuery) Order(o ...OrderFunc) *CustomerQuery {
 	cq.order = append(cq.order, o...)
 	return cq
+}
+
+// QueryAddress chains the current query on the address edge.
+func (cq *CustomerQuery) QueryAddress() *AddressQuery {
+	query := &AddressQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, selector),
+			sqlgraph.To(address.Table, address.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, customer.AddressTable, customer.AddressColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Customer entity in the query. Returns *NotFoundError when no customer was found.
@@ -231,6 +257,17 @@ func (cq *CustomerQuery) Clone() *CustomerQuery {
 	}
 }
 
+//  WithAddress tells the query-builder to eager-loads the nodes that are connected to
+// the "address" edge. The optional arguments used to configure the query builder of the edge.
+func (cq *CustomerQuery) WithAddress(opts ...func(*AddressQuery)) *CustomerQuery {
+	query := &AddressQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withAddress = query
+	return cq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -295,13 +332,26 @@ func (cq *CustomerQuery) prepareQuery(ctx context.Context) error {
 
 func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 	var (
-		nodes = []*Customer{}
-		_spec = cq.querySpec()
+		nodes       = []*Customer{}
+		withFKs     = cq.withFKs
+		_spec       = cq.querySpec()
+		loadedTypes = [1]bool{
+			cq.withAddress != nil,
+		}
 	)
+	if cq.withAddress != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, customer.ForeignKeys...)
+	}
 	_spec.ScanValues = func() []interface{} {
 		node := &Customer{config: cq.config}
 		nodes = append(nodes, node)
 		values := node.scanValues()
+		if withFKs {
+			values = append(values, node.fkValues()...)
+		}
 		return values
 	}
 	_spec.Assign = func(values ...interface{}) error {
@@ -309,6 +359,7 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(values...)
 	}
 	if err := sqlgraph.QueryNodes(ctx, cq.driver, _spec); err != nil {
@@ -317,6 +368,32 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := cq.withAddress; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*Customer)
+		for i := range nodes {
+			if fk := nodes[i].customer_address; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
+		}
+		query.Where(address.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "customer_address" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Address = n
+			}
+		}
+	}
+
 	return nodes, nil
 }
 

@@ -9,10 +9,12 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/migrate"
 
+	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
 
 	"github.com/facebook/ent/dialect"
 	"github.com/facebook/ent/dialect/sql"
+	"github.com/facebook/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -20,6 +22,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Address is the client for interacting with the Address builders.
+	Address *AddressClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
 }
@@ -35,6 +39,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Address = NewAddressClient(c.config)
 	c.Customer = NewCustomerClient(c.config)
 }
 
@@ -68,6 +73,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:      ctx,
 		config:   cfg,
+		Address:  NewAddressClient(cfg),
 		Customer: NewCustomerClient(cfg),
 	}, nil
 }
@@ -84,6 +90,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := config{driver: &txDriver{tx: tx, drv: c.driver}, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
 		config:   cfg,
+		Address:  NewAddressClient(cfg),
 		Customer: NewCustomerClient(cfg),
 	}, nil
 }
@@ -91,7 +98,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Customer.
+//		Address.
 //		Query().
 //		Count(ctx)
 //
@@ -113,7 +120,96 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.Address.Use(hooks...)
 	c.Customer.Use(hooks...)
+}
+
+// AddressClient is a client for the Address schema.
+type AddressClient struct {
+	config
+}
+
+// NewAddressClient returns a client for the Address from the given config.
+func NewAddressClient(c config) *AddressClient {
+	return &AddressClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `address.Hooks(f(g(h())))`.
+func (c *AddressClient) Use(hooks ...Hook) {
+	c.hooks.Address = append(c.hooks.Address, hooks...)
+}
+
+// Create returns a create builder for Address.
+func (c *AddressClient) Create() *AddressCreate {
+	mutation := newAddressMutation(c.config, OpCreate)
+	return &AddressCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of Address entities.
+func (c *AddressClient) CreateBulk(builders ...*AddressCreate) *AddressCreateBulk {
+	return &AddressCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Address.
+func (c *AddressClient) Update() *AddressUpdate {
+	mutation := newAddressMutation(c.config, OpUpdate)
+	return &AddressUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AddressClient) UpdateOne(a *Address) *AddressUpdateOne {
+	mutation := newAddressMutation(c.config, OpUpdateOne, withAddress(a))
+	return &AddressUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AddressClient) UpdateOneID(id int) *AddressUpdateOne {
+	mutation := newAddressMutation(c.config, OpUpdateOne, withAddressID(id))
+	return &AddressUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Address.
+func (c *AddressClient) Delete() *AddressDelete {
+	mutation := newAddressMutation(c.config, OpDelete)
+	return &AddressDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *AddressClient) DeleteOne(a *Address) *AddressDeleteOne {
+	return c.DeleteOneID(a.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *AddressClient) DeleteOneID(id int) *AddressDeleteOne {
+	builder := c.Delete().Where(address.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AddressDeleteOne{builder}
+}
+
+// Query returns a query builder for Address.
+func (c *AddressClient) Query() *AddressQuery {
+	return &AddressQuery{config: c.config}
+}
+
+// Get returns a Address entity by its id.
+func (c *AddressClient) Get(ctx context.Context, id int) (*Address, error) {
+	return c.Query().Where(address.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AddressClient) GetX(ctx context.Context, id int) *Address {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *AddressClient) Hooks() []Hook {
+	return c.hooks.Address
 }
 
 // CustomerClient is a client for the Customer schema.
@@ -197,6 +293,22 @@ func (c *CustomerClient) GetX(ctx context.Context, id int) *Customer {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryAddress queries the address edge of a Customer.
+func (c *CustomerClient) QueryAddress(cu *Customer) *AddressQuery {
+	query := &AddressQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cu.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, id),
+			sqlgraph.To(address.Table, address.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, customer.AddressTable, customer.AddressColumn),
+		)
+		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
