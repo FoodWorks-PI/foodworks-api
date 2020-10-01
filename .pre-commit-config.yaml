@@ -1,6 +1,6 @@
 repos:
 - repo: git://github.com/serch037/pre-commit-golang
-  rev: cd5f2e15e2e7c8e2faef3c76a59572e661633b02
+  rev: 7de4e3fd87c3b86aa51412f69a08e5774986325b
   hooks:
     - id: go-fmt
     - id: go-imports
