@@ -51,17 +51,16 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, error) {
 	kratosUser := auth.ForContext(ctx)
 
-	currentUser, err := r.Client.Customer.
+	currentCustomer, err := r.Client.Customer.
 		Query().
 		Where(customer.KratosID(kratosUser.Id)).
-		WithAddress().
 		First(ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return currentUser, nil
+	return currentCustomer, nil
 }
 
 // Customer returns generated.CustomerResolver implementation.

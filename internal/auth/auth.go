@@ -15,8 +15,8 @@ import (
 
 var TokenAuth *jwtauth.JWTAuth
 
-func InitAuth() {
-	set, err := jwk.Fetch("http://127.0.0.1:4456/.well-known/jwks.json")
+func InitAuth(jwksURL string) {
+	set, err := jwk.Fetch(jwksURL)
 	if err != nil {
 		log.Panic().Err(err).Msg("Error gettint jwks")
 	}
