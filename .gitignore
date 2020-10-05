@@ -208,3 +208,5 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/go,visualstudiocode,jetbrains,windows,macos,linux
 __debug_bin
+
+main

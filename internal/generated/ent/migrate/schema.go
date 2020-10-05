@@ -22,6 +22,18 @@ var (
 		PrimaryKey:  []*schema.Column{AddressesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{},
 	}
+	// BankingDataColumns holds the columns for the "banking_data" table.
+	BankingDataColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "bank_account", Type: field.TypeString},
+	}
+	// BankingDataTable holds the schema information for the "banking_data" table.
+	BankingDataTable = &schema.Table{
+		Name:        "banking_data",
+		Columns:     BankingDataColumns,
+		PrimaryKey:  []*schema.Column{BankingDataColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{},
+	}
 	// CustomersColumns holds the columns for the "customers" table.
 	CustomersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -53,13 +65,47 @@ var (
 			},
 		},
 	}
+	// RestaurantOwnersColumns holds the columns for the "restaurant_owners" table.
+	RestaurantOwnersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "kratos_id", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "email", Type: field.TypeString},
+		{Name: "phone", Type: field.TypeString},
+		{Name: "restaurant_owner_banking_data", Type: field.TypeInt, Nullable: true},
+	}
+	// RestaurantOwnersTable holds the schema information for the "restaurant_owners" table.
+	RestaurantOwnersTable = &schema.Table{
+		Name:       "restaurant_owners",
+		Columns:    RestaurantOwnersColumns,
+		PrimaryKey: []*schema.Column{RestaurantOwnersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "restaurant_owners_banking_data_banking_data",
+				Columns: []*schema.Column{RestaurantOwnersColumns[5]},
+
+				RefColumns: []*schema.Column{BankingDataColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "restaurantowner_kratos_id_email",
+				Unique:  true,
+				Columns: []*schema.Column{RestaurantOwnersColumns[1], RestaurantOwnersColumns[3]},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AddressesTable,
+		BankingDataTable,
 		CustomersTable,
+		RestaurantOwnersTable,
 	}
 )
 
 func init() {
 	CustomersTable.ForeignKeys[0].RefTable = AddressesTable
+	RestaurantOwnersTable.ForeignKeys[0].RefTable = BankingDataTable
 }

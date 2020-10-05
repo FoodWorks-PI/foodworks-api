@@ -11,50 +11,60 @@
 # }
 
 input RegisterAddressInput {
-  Latitude: String!
-  Longitude: String!
-  StreetLine: String!
+  latitude: String!
+  longitude: String!
+  streetLine: String!
+}
+
+input RegisterBankingInput {
+  bankAccount: String!
 }
 
 input RegisterCustomerInput {
-  Name: String!
-  Phone: String!
-  Address: RegisterAddressInput!
+  name: String!
+  phone: String!
+  address: RegisterAddressInput!
 }
 
-#input RegisterRestaurantOwnerInput {
-#  Name: String!
-#  Phone: String!
-#  address: Address
-#}
+input RegisterRestaurantOwnerInput {
+  name: String!
+  phone: String!
+  banking: RegisterBankingInput!
+}
 
 type Address {
-  Latitude: String!
-  Longitude: String!
-  StreetLine: String!
+  latitude: String!
+  longitude: String!
+  streetLine: String!
+}
+
+type BankingData {
+    bankAccount: String!
 }
 
 type Customer {
   ID: ID!
-  Name: String!
-  Email: String!
-  Address: Address!
-  Phone: String!
+  name: String!
+  email: String!
+  address: Address!
+  phone: String!
   # favoriteProducts: [Product]
 }
 
-#type Owner {
-#  ID: ID!
-#  Name: String!
-#  Email: String!
-#  Phone: String!
-#}
+type RestaurantOwner {
+  ID: ID!
+  name: String!
+  email: String!
+  phone: String!
+  banking : BankingData!
+}
 
 type Query {
   getCurrentCustomer: Customer!
+  getCurrentRestaurantOwner : RestaurantOwner!
 }
 
 type Mutation {
   createCustomerProfile(input:RegisterCustomerInput!): ID!
-# createOwnerProfile(input:RegisterRestaurantOwnerInput!): ID!
+  createRestaurantOwnerProfile(input:RegisterRestaurantOwnerInput!): ID!
 }
