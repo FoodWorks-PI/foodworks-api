@@ -26,10 +26,20 @@ input RegisterCustomerInput {
   address: RegisterAddressInput!
 }
 
+input UpdateCustomerInput {
+  name: String!
+  phone: String!
+}
+
 input RegisterRestaurantOwnerInput {
   name: String!
   phone: String!
   banking: RegisterBankingInput!
+}
+
+input UpdateRestaurantOwnerInput {
+  name: String!
+  phone: String!
 }
 
 type Address {
@@ -67,4 +77,12 @@ type Query {
 type Mutation {
   createCustomerProfile(input:RegisterCustomerInput!): ID!
   createRestaurantOwnerProfile(input:RegisterRestaurantOwnerInput!): ID!
+
+  updateCustomerProfile(input:UpdateCustomerInput!): ID!
+  updateCustomerAddress(input:RegisterAddressInput!):ID!
+  updateRestaurantOwnerProfile(input:UpdateRestaurantOwnerInput!): ID!
+  updateRestaurantOwnerBankingData(input:RegisterBankingInput!): ID!
+
+  deleteCustomerProfile: ID!
+  deleteRestaurantOwnerProfile : ID!
 }

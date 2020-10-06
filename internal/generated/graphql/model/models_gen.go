@@ -23,3 +23,13 @@ type RegisterRestaurantOwnerInput struct {
 	Phone   string                `json:"phone"`
 	Banking *RegisterBankingInput `json:"banking"`
 }
+
+type UpdateCustomerInput struct {
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
+}
+
+type UpdateRestaurantOwnerInput struct {
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
+}
