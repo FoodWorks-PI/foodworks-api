@@ -22,6 +22,19 @@ func (f AddressFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return f(ctx, mv)
 }
 
+// The BankingDataFunc type is an adapter to allow the use of ordinary
+// function as BankingData mutator.
+type BankingDataFunc func(context.Context, *ent.BankingDataMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BankingDataFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.BankingDataMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BankingDataMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The CustomerFunc type is an adapter to allow the use of ordinary
 // function as Customer mutator.
 type CustomerFunc func(context.Context, *ent.CustomerMutation) (ent.Value, error)
@@ -31,6 +44,19 @@ func (f CustomerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	mv, ok := m.(*ent.CustomerMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CustomerMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The RestaurantOwnerFunc type is an adapter to allow the use of ordinary
+// function as RestaurantOwner mutator.
+type RestaurantOwnerFunc func(context.Context, *ent.RestaurantOwnerMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RestaurantOwnerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.RestaurantOwnerMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RestaurantOwnerMutation", m)
 	}
 	return f(ctx, mv)
 }

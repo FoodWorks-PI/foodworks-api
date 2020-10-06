@@ -8,7 +8,9 @@ import (
 	"sync"
 
 	"foodworks.ml/m/internal/generated/ent/address"
+	"foodworks.ml/m/internal/generated/ent/bankingdata"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 
 	"github.com/facebook/ent"
 )
@@ -22,8 +24,10 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAddress  = "Address"
-	TypeCustomer = "Customer"
+	TypeAddress         = "Address"
+	TypeBankingData     = "BankingData"
+	TypeCustomer        = "Customer"
+	TypeRestaurantOwner = "RestaurantOwner"
 )
 
 // AddressMutation represents an operation that mutate the Addresses
@@ -427,6 +431,299 @@ func (m *AddressMutation) ClearEdge(name string) error {
 // defined in the schema.
 func (m *AddressMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Address edge %s", name)
+}
+
+// BankingDataMutation represents an operation that mutate the BankingDataSlice
+// nodes in the graph.
+type BankingDataMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	bank_account  *string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*BankingData, error)
+}
+
+var _ ent.Mutation = (*BankingDataMutation)(nil)
+
+// bankingdataOption allows to manage the mutation configuration using functional options.
+type bankingdataOption func(*BankingDataMutation)
+
+// newBankingDataMutation creates new mutation for $n.Name.
+func newBankingDataMutation(c config, op Op, opts ...bankingdataOption) *BankingDataMutation {
+	m := &BankingDataMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBankingData,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBankingDataID sets the id field of the mutation.
+func withBankingDataID(id int) bankingdataOption {
+	return func(m *BankingDataMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BankingData
+		)
+		m.oldValue = func(ctx context.Context) (*BankingData, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BankingData.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBankingData sets the old BankingData of the mutation.
+func withBankingData(node *BankingData) bankingdataOption {
+	return func(m *BankingDataMutation) {
+		m.oldValue = func(context.Context) (*BankingData, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BankingDataMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BankingDataMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *BankingDataMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetBankAccount sets the bank_account field.
+func (m *BankingDataMutation) SetBankAccount(s string) {
+	m.bank_account = &s
+}
+
+// BankAccount returns the bank_account value in the mutation.
+func (m *BankingDataMutation) BankAccount() (r string, exists bool) {
+	v := m.bank_account
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBankAccount returns the old bank_account value of the BankingData.
+// If the BankingData object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *BankingDataMutation) OldBankAccount(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldBankAccount is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldBankAccount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBankAccount: %w", err)
+	}
+	return oldValue.BankAccount, nil
+}
+
+// ResetBankAccount reset all changes of the "bank_account" field.
+func (m *BankingDataMutation) ResetBankAccount() {
+	m.bank_account = nil
+}
+
+// Op returns the operation name.
+func (m *BankingDataMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (BankingData).
+func (m *BankingDataMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *BankingDataMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.bank_account != nil {
+		fields = append(fields, bankingdata.FieldBankAccount)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *BankingDataMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case bankingdata.FieldBankAccount:
+		return m.BankAccount()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *BankingDataMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case bankingdata.FieldBankAccount:
+		return m.OldBankAccount(ctx)
+	}
+	return nil, fmt.Errorf("unknown BankingData field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *BankingDataMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case bankingdata.FieldBankAccount:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBankAccount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BankingData field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *BankingDataMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *BankingDataMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *BankingDataMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown BankingData numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *BankingDataMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *BankingDataMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BankingDataMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown BankingData nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *BankingDataMutation) ResetField(name string) error {
+	switch name {
+	case bankingdata.FieldBankAccount:
+		m.ResetBankAccount()
+		return nil
+	}
+	return fmt.Errorf("unknown BankingData field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *BankingDataMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *BankingDataMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *BankingDataMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *BankingDataMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *BankingDataMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *BankingDataMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *BankingDataMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown BankingData unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *BankingDataMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown BankingData edge %s", name)
 }
 
 // CustomerMutation represents an operation that mutate the Customers
@@ -954,4 +1251,531 @@ func (m *CustomerMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Customer edge %s", name)
+}
+
+// RestaurantOwnerMutation represents an operation that mutate the RestaurantOwners
+// nodes in the graph.
+type RestaurantOwnerMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	kratos_id           *string
+	name                *string
+	email               *string
+	phone               *string
+	clearedFields       map[string]struct{}
+	banking_data        *int
+	clearedbanking_data bool
+	done                bool
+	oldValue            func(context.Context) (*RestaurantOwner, error)
+}
+
+var _ ent.Mutation = (*RestaurantOwnerMutation)(nil)
+
+// restaurantownerOption allows to manage the mutation configuration using functional options.
+type restaurantownerOption func(*RestaurantOwnerMutation)
+
+// newRestaurantOwnerMutation creates new mutation for $n.Name.
+func newRestaurantOwnerMutation(c config, op Op, opts ...restaurantownerOption) *RestaurantOwnerMutation {
+	m := &RestaurantOwnerMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRestaurantOwner,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRestaurantOwnerID sets the id field of the mutation.
+func withRestaurantOwnerID(id int) restaurantownerOption {
+	return func(m *RestaurantOwnerMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RestaurantOwner
+		)
+		m.oldValue = func(ctx context.Context) (*RestaurantOwner, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RestaurantOwner.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRestaurantOwner sets the old RestaurantOwner of the mutation.
+func withRestaurantOwner(node *RestaurantOwner) restaurantownerOption {
+	return func(m *RestaurantOwnerMutation) {
+		m.oldValue = func(context.Context) (*RestaurantOwner, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RestaurantOwnerMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RestaurantOwnerMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *RestaurantOwnerMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetKratosID sets the kratos_id field.
+func (m *RestaurantOwnerMutation) SetKratosID(s string) {
+	m.kratos_id = &s
+}
+
+// KratosID returns the kratos_id value in the mutation.
+func (m *RestaurantOwnerMutation) KratosID() (r string, exists bool) {
+	v := m.kratos_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKratosID returns the old kratos_id value of the RestaurantOwner.
+// If the RestaurantOwner object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *RestaurantOwnerMutation) OldKratosID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldKratosID is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldKratosID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKratosID: %w", err)
+	}
+	return oldValue.KratosID, nil
+}
+
+// ResetKratosID reset all changes of the "kratos_id" field.
+func (m *RestaurantOwnerMutation) ResetKratosID() {
+	m.kratos_id = nil
+}
+
+// SetName sets the name field.
+func (m *RestaurantOwnerMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the name value in the mutation.
+func (m *RestaurantOwnerMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old name value of the RestaurantOwner.
+// If the RestaurantOwner object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *RestaurantOwnerMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldName is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName reset all changes of the "name" field.
+func (m *RestaurantOwnerMutation) ResetName() {
+	m.name = nil
+}
+
+// SetEmail sets the email field.
+func (m *RestaurantOwnerMutation) SetEmail(s string) {
+	m.email = &s
+}
+
+// Email returns the email value in the mutation.
+func (m *RestaurantOwnerMutation) Email() (r string, exists bool) {
+	v := m.email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmail returns the old email value of the RestaurantOwner.
+// If the RestaurantOwner object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *RestaurantOwnerMutation) OldEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldEmail is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmail: %w", err)
+	}
+	return oldValue.Email, nil
+}
+
+// ResetEmail reset all changes of the "email" field.
+func (m *RestaurantOwnerMutation) ResetEmail() {
+	m.email = nil
+}
+
+// SetPhone sets the phone field.
+func (m *RestaurantOwnerMutation) SetPhone(s string) {
+	m.phone = &s
+}
+
+// Phone returns the phone value in the mutation.
+func (m *RestaurantOwnerMutation) Phone() (r string, exists bool) {
+	v := m.phone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPhone returns the old phone value of the RestaurantOwner.
+// If the RestaurantOwner object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *RestaurantOwnerMutation) OldPhone(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldPhone is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldPhone requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPhone: %w", err)
+	}
+	return oldValue.Phone, nil
+}
+
+// ResetPhone reset all changes of the "phone" field.
+func (m *RestaurantOwnerMutation) ResetPhone() {
+	m.phone = nil
+}
+
+// SetBankingDataID sets the banking_data edge to BankingData by id.
+func (m *RestaurantOwnerMutation) SetBankingDataID(id int) {
+	m.banking_data = &id
+}
+
+// ClearBankingData clears the banking_data edge to BankingData.
+func (m *RestaurantOwnerMutation) ClearBankingData() {
+	m.clearedbanking_data = true
+}
+
+// BankingDataCleared returns if the edge banking_data was cleared.
+func (m *RestaurantOwnerMutation) BankingDataCleared() bool {
+	return m.clearedbanking_data
+}
+
+// BankingDataID returns the banking_data id in the mutation.
+func (m *RestaurantOwnerMutation) BankingDataID() (id int, exists bool) {
+	if m.banking_data != nil {
+		return *m.banking_data, true
+	}
+	return
+}
+
+// BankingDataIDs returns the banking_data ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// BankingDataID instead. It exists only for internal usage by the builders.
+func (m *RestaurantOwnerMutation) BankingDataIDs() (ids []int) {
+	if id := m.banking_data; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBankingData reset all changes of the "banking_data" edge.
+func (m *RestaurantOwnerMutation) ResetBankingData() {
+	m.banking_data = nil
+	m.clearedbanking_data = false
+}
+
+// Op returns the operation name.
+func (m *RestaurantOwnerMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (RestaurantOwner).
+func (m *RestaurantOwnerMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *RestaurantOwnerMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.kratos_id != nil {
+		fields = append(fields, restaurantowner.FieldKratosID)
+	}
+	if m.name != nil {
+		fields = append(fields, restaurantowner.FieldName)
+	}
+	if m.email != nil {
+		fields = append(fields, restaurantowner.FieldEmail)
+	}
+	if m.phone != nil {
+		fields = append(fields, restaurantowner.FieldPhone)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *RestaurantOwnerMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case restaurantowner.FieldKratosID:
+		return m.KratosID()
+	case restaurantowner.FieldName:
+		return m.Name()
+	case restaurantowner.FieldEmail:
+		return m.Email()
+	case restaurantowner.FieldPhone:
+		return m.Phone()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *RestaurantOwnerMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case restaurantowner.FieldKratosID:
+		return m.OldKratosID(ctx)
+	case restaurantowner.FieldName:
+		return m.OldName(ctx)
+	case restaurantowner.FieldEmail:
+		return m.OldEmail(ctx)
+	case restaurantowner.FieldPhone:
+		return m.OldPhone(ctx)
+	}
+	return nil, fmt.Errorf("unknown RestaurantOwner field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *RestaurantOwnerMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case restaurantowner.FieldKratosID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKratosID(v)
+		return nil
+	case restaurantowner.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case restaurantowner.FieldEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmail(v)
+		return nil
+	case restaurantowner.FieldPhone:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPhone(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RestaurantOwner field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *RestaurantOwnerMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *RestaurantOwnerMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *RestaurantOwnerMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown RestaurantOwner numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *RestaurantOwnerMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *RestaurantOwnerMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RestaurantOwnerMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown RestaurantOwner nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *RestaurantOwnerMutation) ResetField(name string) error {
+	switch name {
+	case restaurantowner.FieldKratosID:
+		m.ResetKratosID()
+		return nil
+	case restaurantowner.FieldName:
+		m.ResetName()
+		return nil
+	case restaurantowner.FieldEmail:
+		m.ResetEmail()
+		return nil
+	case restaurantowner.FieldPhone:
+		m.ResetPhone()
+		return nil
+	}
+	return fmt.Errorf("unknown RestaurantOwner field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *RestaurantOwnerMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.banking_data != nil {
+		edges = append(edges, restaurantowner.EdgeBankingData)
+	}
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *RestaurantOwnerMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case restaurantowner.EdgeBankingData:
+		if id := m.banking_data; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *RestaurantOwnerMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *RestaurantOwnerMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *RestaurantOwnerMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedbanking_data {
+		edges = append(edges, restaurantowner.EdgeBankingData)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *RestaurantOwnerMutation) EdgeCleared(name string) bool {
+	switch name {
+	case restaurantowner.EdgeBankingData:
+		return m.clearedbanking_data
+	}
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *RestaurantOwnerMutation) ClearEdge(name string) error {
+	switch name {
+	case restaurantowner.EdgeBankingData:
+		m.ClearBankingData()
+		return nil
+	}
+	return fmt.Errorf("unknown RestaurantOwner unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *RestaurantOwnerMutation) ResetEdge(name string) error {
+	switch name {
+	case restaurantowner.EdgeBankingData:
+		m.ResetBankingData()
+		return nil
+	}
+	return fmt.Errorf("unknown RestaurantOwner edge %s", name)
 }

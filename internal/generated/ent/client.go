@@ -10,7 +10,9 @@ import (
 	"foodworks.ml/m/internal/generated/ent/migrate"
 
 	"foodworks.ml/m/internal/generated/ent/address"
+	"foodworks.ml/m/internal/generated/ent/bankingdata"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 
 	"github.com/facebook/ent/dialect"
 	"github.com/facebook/ent/dialect/sql"
@@ -24,8 +26,12 @@ type Client struct {
 	Schema *migrate.Schema
 	// Address is the client for interacting with the Address builders.
 	Address *AddressClient
+	// BankingData is the client for interacting with the BankingData builders.
+	BankingData *BankingDataClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
+	// RestaurantOwner is the client for interacting with the RestaurantOwner builders.
+	RestaurantOwner *RestaurantOwnerClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -40,7 +46,9 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Address = NewAddressClient(c.config)
+	c.BankingData = NewBankingDataClient(c.config)
 	c.Customer = NewCustomerClient(c.config)
+	c.RestaurantOwner = NewRestaurantOwnerClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -71,10 +79,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	}
 	cfg := config{driver: tx, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Address:  NewAddressClient(cfg),
-		Customer: NewCustomerClient(cfg),
+		ctx:             ctx,
+		config:          cfg,
+		Address:         NewAddressClient(cfg),
+		BankingData:     NewBankingDataClient(cfg),
+		Customer:        NewCustomerClient(cfg),
+		RestaurantOwner: NewRestaurantOwnerClient(cfg),
 	}, nil
 }
 
@@ -89,9 +99,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	}
 	cfg := config{driver: &txDriver{tx: tx, drv: c.driver}, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		config:   cfg,
-		Address:  NewAddressClient(cfg),
-		Customer: NewCustomerClient(cfg),
+		config:          cfg,
+		Address:         NewAddressClient(cfg),
+		BankingData:     NewBankingDataClient(cfg),
+		Customer:        NewCustomerClient(cfg),
+		RestaurantOwner: NewRestaurantOwnerClient(cfg),
 	}, nil
 }
 
@@ -121,7 +133,9 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Address.Use(hooks...)
+	c.BankingData.Use(hooks...)
 	c.Customer.Use(hooks...)
+	c.RestaurantOwner.Use(hooks...)
 }
 
 // AddressClient is a client for the Address schema.
@@ -210,6 +224,94 @@ func (c *AddressClient) GetX(ctx context.Context, id int) *Address {
 // Hooks returns the client hooks.
 func (c *AddressClient) Hooks() []Hook {
 	return c.hooks.Address
+}
+
+// BankingDataClient is a client for the BankingData schema.
+type BankingDataClient struct {
+	config
+}
+
+// NewBankingDataClient returns a client for the BankingData from the given config.
+func NewBankingDataClient(c config) *BankingDataClient {
+	return &BankingDataClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `bankingdata.Hooks(f(g(h())))`.
+func (c *BankingDataClient) Use(hooks ...Hook) {
+	c.hooks.BankingData = append(c.hooks.BankingData, hooks...)
+}
+
+// Create returns a create builder for BankingData.
+func (c *BankingDataClient) Create() *BankingDataCreate {
+	mutation := newBankingDataMutation(c.config, OpCreate)
+	return &BankingDataCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of BankingData entities.
+func (c *BankingDataClient) CreateBulk(builders ...*BankingDataCreate) *BankingDataCreateBulk {
+	return &BankingDataCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for BankingData.
+func (c *BankingDataClient) Update() *BankingDataUpdate {
+	mutation := newBankingDataMutation(c.config, OpUpdate)
+	return &BankingDataUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BankingDataClient) UpdateOne(bd *BankingData) *BankingDataUpdateOne {
+	mutation := newBankingDataMutation(c.config, OpUpdateOne, withBankingData(bd))
+	return &BankingDataUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BankingDataClient) UpdateOneID(id int) *BankingDataUpdateOne {
+	mutation := newBankingDataMutation(c.config, OpUpdateOne, withBankingDataID(id))
+	return &BankingDataUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for BankingData.
+func (c *BankingDataClient) Delete() *BankingDataDelete {
+	mutation := newBankingDataMutation(c.config, OpDelete)
+	return &BankingDataDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *BankingDataClient) DeleteOne(bd *BankingData) *BankingDataDeleteOne {
+	return c.DeleteOneID(bd.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *BankingDataClient) DeleteOneID(id int) *BankingDataDeleteOne {
+	builder := c.Delete().Where(bankingdata.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BankingDataDeleteOne{builder}
+}
+
+// Query returns a query builder for BankingData.
+func (c *BankingDataClient) Query() *BankingDataQuery {
+	return &BankingDataQuery{config: c.config}
+}
+
+// Get returns a BankingData entity by its id.
+func (c *BankingDataClient) Get(ctx context.Context, id int) (*BankingData, error) {
+	return c.Query().Where(bankingdata.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BankingDataClient) GetX(ctx context.Context, id int) *BankingData {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *BankingDataClient) Hooks() []Hook {
+	return c.hooks.BankingData
 }
 
 // CustomerClient is a client for the Customer schema.
@@ -314,4 +416,108 @@ func (c *CustomerClient) QueryAddress(cu *Customer) *AddressQuery {
 // Hooks returns the client hooks.
 func (c *CustomerClient) Hooks() []Hook {
 	return c.hooks.Customer
+}
+
+// RestaurantOwnerClient is a client for the RestaurantOwner schema.
+type RestaurantOwnerClient struct {
+	config
+}
+
+// NewRestaurantOwnerClient returns a client for the RestaurantOwner from the given config.
+func NewRestaurantOwnerClient(c config) *RestaurantOwnerClient {
+	return &RestaurantOwnerClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `restaurantowner.Hooks(f(g(h())))`.
+func (c *RestaurantOwnerClient) Use(hooks ...Hook) {
+	c.hooks.RestaurantOwner = append(c.hooks.RestaurantOwner, hooks...)
+}
+
+// Create returns a create builder for RestaurantOwner.
+func (c *RestaurantOwnerClient) Create() *RestaurantOwnerCreate {
+	mutation := newRestaurantOwnerMutation(c.config, OpCreate)
+	return &RestaurantOwnerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of RestaurantOwner entities.
+func (c *RestaurantOwnerClient) CreateBulk(builders ...*RestaurantOwnerCreate) *RestaurantOwnerCreateBulk {
+	return &RestaurantOwnerCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RestaurantOwner.
+func (c *RestaurantOwnerClient) Update() *RestaurantOwnerUpdate {
+	mutation := newRestaurantOwnerMutation(c.config, OpUpdate)
+	return &RestaurantOwnerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RestaurantOwnerClient) UpdateOne(ro *RestaurantOwner) *RestaurantOwnerUpdateOne {
+	mutation := newRestaurantOwnerMutation(c.config, OpUpdateOne, withRestaurantOwner(ro))
+	return &RestaurantOwnerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RestaurantOwnerClient) UpdateOneID(id int) *RestaurantOwnerUpdateOne {
+	mutation := newRestaurantOwnerMutation(c.config, OpUpdateOne, withRestaurantOwnerID(id))
+	return &RestaurantOwnerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RestaurantOwner.
+func (c *RestaurantOwnerClient) Delete() *RestaurantOwnerDelete {
+	mutation := newRestaurantOwnerMutation(c.config, OpDelete)
+	return &RestaurantOwnerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *RestaurantOwnerClient) DeleteOne(ro *RestaurantOwner) *RestaurantOwnerDeleteOne {
+	return c.DeleteOneID(ro.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *RestaurantOwnerClient) DeleteOneID(id int) *RestaurantOwnerDeleteOne {
+	builder := c.Delete().Where(restaurantowner.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RestaurantOwnerDeleteOne{builder}
+}
+
+// Query returns a query builder for RestaurantOwner.
+func (c *RestaurantOwnerClient) Query() *RestaurantOwnerQuery {
+	return &RestaurantOwnerQuery{config: c.config}
+}
+
+// Get returns a RestaurantOwner entity by its id.
+func (c *RestaurantOwnerClient) Get(ctx context.Context, id int) (*RestaurantOwner, error) {
+	return c.Query().Where(restaurantowner.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RestaurantOwnerClient) GetX(ctx context.Context, id int) *RestaurantOwner {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryBankingData queries the banking_data edge of a RestaurantOwner.
+func (c *RestaurantOwnerClient) QueryBankingData(ro *RestaurantOwner) *BankingDataQuery {
+	query := &BankingDataQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ro.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(restaurantowner.Table, restaurantowner.FieldID, id),
+			sqlgraph.To(bankingdata.Table, bankingdata.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, restaurantowner.BankingDataTable, restaurantowner.BankingDataColumn),
+		)
+		fromV = sqlgraph.Neighbors(ro.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RestaurantOwnerClient) Hooks() []Hook {
+	return c.hooks.RestaurantOwner
 }

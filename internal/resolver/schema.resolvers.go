@@ -9,6 +9,7 @@ import (
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	generated "foodworks.ml/m/internal/generated/graphql"
 	"foodworks.ml/m/internal/generated/graphql/model"
 )
@@ -36,7 +37,7 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 		Create().
 		SetName(input.Name).
 		SetEmail(currentUser.Email).
-		SetKratosID(currentUser.Id).
+		SetKratosID(currentUser.ID).
 		SetPhone(input.Phone).
 		SetAddress(newAddress).
 		Save(ctx)
@@ -48,12 +49,202 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 	return newCustomer.ID, nil
 }
 
+func (r *mutationResolver) CreateRestaurantOwnerProfile(ctx context.Context, input model.RegisterRestaurantOwnerInput) (int, error) {
+	currentUser := auth.ForContext(ctx)
+
+	newBankingData, err := r.Client.BankingData.
+		Create().
+		SetBankAccount(input.Banking.BankAccount).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	newRestaurantOwner, err := r.Client.RestaurantOwner.
+		Create().
+		SetName(input.Name).
+		SetEmail(currentUser.Email).
+		SetKratosID(currentUser.ID).
+		SetPhone(input.Phone).
+		SetBankingData(newBankingData).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return newRestaurantOwner.ID, nil
+}
+
+func (r *mutationResolver) UpdateCustomerProfile(ctx context.Context, input model.UpdateCustomerInput) (int, error) {
+	kratosSessionUser := auth.ForContext(ctx)
+
+	currentUser, err := r.Client.Customer.
+		Query().
+		Where(customer.KratosID(kratosSessionUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = currentUser.
+		Update().
+		SetName(input.Name).
+		SetPhone(input.Phone).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return currentUser.ID, nil
+}
+
+func (r *mutationResolver) UpdateCustomerAddress(ctx context.Context, input model.RegisterAddressInput) (int, error) {
+	kratosSessionUser := auth.ForContext(ctx)
+
+	currentUser, err := r.Client.Customer.
+		Query().
+		Where(customer.KratosID(kratosSessionUser.ID)).
+		WithAddress().
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	updatedAddress, err := currentUser.Edges.Address.
+		Update().
+		SetLatitude(input.Latitude).
+		SetLongitude(input.Longitude).
+		SetStreetLine(input.StreetLine).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = currentUser.
+		Update().
+		SetAddress(updatedAddress).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return currentUser.ID, nil
+}
+
+func (r *mutationResolver) UpdateRestaurantOwnerProfile(ctx context.Context, input model.UpdateRestaurantOwnerInput) (int, error) {
+	kratosSessionUser := auth.ForContext(ctx)
+
+	currentUser, err := r.Client.RestaurantOwner.
+		Query().
+		Where(restaurantowner.KratosID(kratosSessionUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = currentUser.
+		Update().
+		SetName(input.Name).
+		SetPhone(input.Phone).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return currentUser.ID, nil
+}
+
+func (r *mutationResolver) UpdateRestaurantOwnerBankingData(ctx context.Context, input model.RegisterBankingInput) (int, error) {
+	kratosSessionUser := auth.ForContext(ctx)
+
+	currentUser, err := r.Client.RestaurantOwner.
+		Query().
+		Where(restaurantowner.KratosID(kratosSessionUser.ID)).
+		WithBankingData().
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	updatedBankingData, err := currentUser.Edges.BankingData.
+		Update().
+		SetBankAccount(input.BankAccount).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = currentUser.
+		Update().
+		SetBankingData(updatedBankingData).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return currentUser.ID, nil
+}
+
+func (r *mutationResolver) DeleteCustomerProfile(ctx context.Context) (int, error) {
+	kratosSessionUser := auth.ForContext(ctx)
+
+	currentUser, err := r.Client.Customer.
+		Query().
+		Where(customer.KratosID(kratosSessionUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	err = r.Client.Customer.DeleteOne(currentUser).Exec(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return currentUser.ID, nil
+}
+
+func (r *mutationResolver) DeleteRestaurantOwnerProfile(ctx context.Context) (int, error) {
+	kratosSessionUser := auth.ForContext(ctx)
+
+	currentUser, err := r.Client.RestaurantOwner.
+		Query().
+		Where(restaurantowner.KratosID(kratosSessionUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	err = r.Client.RestaurantOwner.DeleteOne(currentUser).Exec(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return currentUser.ID, nil
+}
+
 func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, error) {
 	kratosUser := auth.ForContext(ctx)
 
 	currentCustomer, err := r.Client.Customer.
 		Query().
-		Where(customer.KratosID(kratosUser.Id)).
+		Where(customer.KratosID(kratosUser.ID)).
 		First(ctx)
 
 	if err != nil {
@@ -61,6 +252,26 @@ func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, 
 	}
 
 	return currentCustomer, nil
+}
+
+func (r *queryResolver) GetCurrentRestaurantOwner(ctx context.Context) (*ent.RestaurantOwner, error) {
+	kratosUser := auth.ForContext(ctx)
+
+	currentRestaurantOwner, err := r.Client.RestaurantOwner.
+		Query().
+		Where(restaurantowner.KratosID(kratosUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return currentRestaurantOwner, nil
+}
+
+func (r *restaurantOwnerResolver) Banking(ctx context.Context, obj *ent.RestaurantOwner) (*ent.BankingData, error) {
+	banking, err := r.Client.RestaurantOwner.QueryBankingData(obj).First(ctx)
+	return banking, ent.MaskNotFound(err)
 }
 
 // Customer returns generated.CustomerResolver implementation.
@@ -72,6 +283,12 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// RestaurantOwner returns generated.RestaurantOwnerResolver implementation.
+func (r *Resolver) RestaurantOwner() generated.RestaurantOwnerResolver {
+	return &restaurantOwnerResolver{r}
+}
+
 type customerResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type restaurantOwnerResolver struct{ *Resolver }

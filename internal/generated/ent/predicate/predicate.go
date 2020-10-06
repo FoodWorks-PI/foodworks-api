@@ -9,5 +9,11 @@ import (
 // Address is the predicate function for address builders.
 type Address func(*sql.Selector)
 
+// BankingData is the predicate function for bankingdata builders.
+type BankingData func(*sql.Selector)
+
 // Customer is the predicate function for customer builders.
 type Customer func(*sql.Selector)
+
+// RestaurantOwner is the predicate function for restaurantowner builders.
+type RestaurantOwner func(*sql.Selector)

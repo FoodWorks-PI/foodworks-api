@@ -3,13 +3,33 @@
 package model
 
 type RegisterAddressInput struct {
-	Latitude   string `json:"Latitude"`
-	Longitude  string `json:"Longitude"`
-	StreetLine string `json:"StreetLine"`
+	Latitude   string `json:"latitude"`
+	Longitude  string `json:"longitude"`
+	StreetLine string `json:"streetLine"`
+}
+
+type RegisterBankingInput struct {
+	BankAccount string `json:"bankAccount"`
 }
 
 type RegisterCustomerInput struct {
-	Name    string                `json:"Name"`
-	Phone   string                `json:"Phone"`
-	Address *RegisterAddressInput `json:"Address"`
+	Name    string                `json:"name"`
+	Phone   string                `json:"phone"`
+	Address *RegisterAddressInput `json:"address"`
+}
+
+type RegisterRestaurantOwnerInput struct {
+	Name    string                `json:"name"`
+	Phone   string                `json:"phone"`
+	Banking *RegisterBankingInput `json:"banking"`
+}
+
+type UpdateCustomerInput struct {
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
+}
+
+type UpdateRestaurantOwnerInput struct {
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
 }

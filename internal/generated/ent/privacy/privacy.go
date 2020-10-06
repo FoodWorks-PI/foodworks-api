@@ -234,6 +234,30 @@ func (f AddressMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutatio
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AddressMutation", m)
 }
 
+// The BankingDataQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type BankingDataQueryRuleFunc func(context.Context, *ent.BankingDataQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f BankingDataQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.BankingDataQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.BankingDataQuery", q)
+}
+
+// The BankingDataMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type BankingDataMutationRuleFunc func(context.Context, *ent.BankingDataMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f BankingDataMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.BankingDataMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.BankingDataMutation", m)
+}
+
 // The CustomerQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type CustomerQueryRuleFunc func(context.Context, *ent.CustomerQuery) error
@@ -256,4 +280,28 @@ func (f CustomerMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutati
 		return f(ctx, m)
 	}
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.CustomerMutation", m)
+}
+
+// The RestaurantOwnerQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type RestaurantOwnerQueryRuleFunc func(context.Context, *ent.RestaurantOwnerQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f RestaurantOwnerQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.RestaurantOwnerQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.RestaurantOwnerQuery", q)
+}
+
+// The RestaurantOwnerMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type RestaurantOwnerMutationRuleFunc func(context.Context, *ent.RestaurantOwnerMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f RestaurantOwnerMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.RestaurantOwnerMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.RestaurantOwnerMutation", m)
 }
