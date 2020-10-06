@@ -32,7 +32,7 @@ type contextKey struct {
 	name string
 }
 type UserCredentials struct {
-	Id    string
+	ID    string
 	Email string
 }
 
@@ -79,7 +79,7 @@ func Middleware() func(http.Handler) http.Handler {
 				return
 			}
 
-			userCredentials := &UserCredentials{Id: id, Email: email}
+			userCredentials := &UserCredentials{ID: id, Email: email}
 
 			ctx := context.WithValue(r.Context(), userCtxKey, userCredentials)
 

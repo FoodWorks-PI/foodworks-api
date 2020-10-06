@@ -37,7 +37,7 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 		Create().
 		SetName(input.Name).
 		SetEmail(currentUser.Email).
-		SetKratosID(currentUser.Id).
+		SetKratosID(currentUser.ID).
 		SetPhone(input.Phone).
 		SetAddress(newAddress).
 		Save(ctx)
@@ -65,7 +65,7 @@ func (r *mutationResolver) CreateRestaurantOwnerProfile(ctx context.Context, inp
 		Create().
 		SetName(input.Name).
 		SetEmail(currentUser.Email).
-		SetKratosID(currentUser.Id).
+		SetKratosID(currentUser.ID).
 		SetPhone(input.Phone).
 		SetBankingData(newBankingData).
 		Save(ctx)
@@ -82,18 +82,22 @@ func (r *mutationResolver) UpdateCustomerProfile(ctx context.Context, input mode
 
 	currentUser, err := r.Client.Customer.
 		Query().
-		Where(customer.KratosID(kratosSessionUser.Id)).
+		Where(customer.KratosID(kratosSessionUser.ID)).
 		First(ctx)
 
 	if err != nil {
 		return -1, err
 	}
 
-	currentUser.
+	_, err = currentUser.
 		Update().
 		SetName(input.Name).
 		SetPhone(input.Phone).
 		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
 
 	return currentUser.ID, nil
 }
@@ -103,7 +107,7 @@ func (r *mutationResolver) UpdateCustomerAddress(ctx context.Context, input mode
 
 	currentUser, err := r.Client.Customer.
 		Query().
-		Where(customer.KratosID(kratosSessionUser.Id)).
+		Where(customer.KratosID(kratosSessionUser.ID)).
 		WithAddress().
 		First(ctx)
 
@@ -118,10 +122,18 @@ func (r *mutationResolver) UpdateCustomerAddress(ctx context.Context, input mode
 		SetStreetLine(input.StreetLine).
 		Save(ctx)
 
-	currentUser.
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = currentUser.
 		Update().
 		SetAddress(updatedAddress).
 		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
 
 	return currentUser.ID, nil
 }
@@ -131,18 +143,22 @@ func (r *mutationResolver) UpdateRestaurantOwnerProfile(ctx context.Context, inp
 
 	currentUser, err := r.Client.RestaurantOwner.
 		Query().
-		Where(restaurantowner.KratosID(kratosSessionUser.Id)).
+		Where(restaurantowner.KratosID(kratosSessionUser.ID)).
 		First(ctx)
 
 	if err != nil {
 		return -1, err
 	}
 
-	currentUser.
+	_, err = currentUser.
 		Update().
 		SetName(input.Name).
 		SetPhone(input.Phone).
 		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
 
 	return currentUser.ID, nil
 }
@@ -152,7 +168,7 @@ func (r *mutationResolver) UpdateRestaurantOwnerBankingData(ctx context.Context,
 
 	currentUser, err := r.Client.RestaurantOwner.
 		Query().
-		Where(restaurantowner.KratosID(kratosSessionUser.Id)).
+		Where(restaurantowner.KratosID(kratosSessionUser.ID)).
 		WithBankingData().
 		First(ctx)
 
@@ -165,10 +181,18 @@ func (r *mutationResolver) UpdateRestaurantOwnerBankingData(ctx context.Context,
 		SetBankAccount(input.BankAccount).
 		Save(ctx)
 
-	currentUser.
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = currentUser.
 		Update().
 		SetBankingData(updatedBankingData).
 		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
 
 	return currentUser.ID, nil
 }
@@ -178,7 +202,7 @@ func (r *mutationResolver) DeleteCustomerProfile(ctx context.Context) (int, erro
 
 	currentUser, err := r.Client.Customer.
 		Query().
-		Where(customer.KratosID(kratosSessionUser.Id)).
+		Where(customer.KratosID(kratosSessionUser.ID)).
 		First(ctx)
 
 	if err != nil {
@@ -199,7 +223,7 @@ func (r *mutationResolver) DeleteRestaurantOwnerProfile(ctx context.Context) (in
 
 	currentUser, err := r.Client.RestaurantOwner.
 		Query().
-		Where(restaurantowner.KratosID(kratosSessionUser.Id)).
+		Where(restaurantowner.KratosID(kratosSessionUser.ID)).
 		First(ctx)
 
 	if err != nil {
@@ -220,7 +244,7 @@ func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, 
 
 	currentCustomer, err := r.Client.Customer.
 		Query().
-		Where(customer.KratosID(kratosUser.Id)).
+		Where(customer.KratosID(kratosUser.ID)).
 		First(ctx)
 
 	if err != nil {
@@ -235,7 +259,7 @@ func (r *queryResolver) GetCurrentRestaurantOwner(ctx context.Context) (*ent.Res
 
 	currentRestaurantOwner, err := r.Client.RestaurantOwner.
 		Query().
-		Where(restaurantowner.KratosID(kratosUser.Id)).
+		Where(restaurantowner.KratosID(kratosUser.ID)).
 		First(ctx)
 
 	if err != nil {
