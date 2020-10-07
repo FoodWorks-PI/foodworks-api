@@ -28,14 +28,28 @@ func (au *AddressUpdate) Where(ps ...predicate.Address) *AddressUpdate {
 }
 
 // SetLatitude sets the latitude field.
-func (au *AddressUpdate) SetLatitude(s string) *AddressUpdate {
-	au.mutation.SetLatitude(s)
+func (au *AddressUpdate) SetLatitude(f float64) *AddressUpdate {
+	au.mutation.ResetLatitude()
+	au.mutation.SetLatitude(f)
+	return au
+}
+
+// AddLatitude adds f to latitude.
+func (au *AddressUpdate) AddLatitude(f float64) *AddressUpdate {
+	au.mutation.AddLatitude(f)
 	return au
 }
 
 // SetLongitude sets the longitude field.
-func (au *AddressUpdate) SetLongitude(s string) *AddressUpdate {
-	au.mutation.SetLongitude(s)
+func (au *AddressUpdate) SetLongitude(f float64) *AddressUpdate {
+	au.mutation.ResetLongitude()
+	au.mutation.SetLongitude(f)
+	return au
+}
+
+// AddLongitude adds f to longitude.
+func (au *AddressUpdate) AddLongitude(f float64) *AddressUpdate {
+	au.mutation.AddLongitude(f)
 	return au
 }
 
@@ -121,14 +135,28 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := au.mutation.Latitude(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: address.FieldLatitude,
+		})
+	}
+	if value, ok := au.mutation.AddedLatitude(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
 			Value:  value,
 			Column: address.FieldLatitude,
 		})
 	}
 	if value, ok := au.mutation.Longitude(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: address.FieldLongitude,
+		})
+	}
+	if value, ok := au.mutation.AddedLongitude(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
 			Value:  value,
 			Column: address.FieldLongitude,
 		})
@@ -159,14 +187,28 @@ type AddressUpdateOne struct {
 }
 
 // SetLatitude sets the latitude field.
-func (auo *AddressUpdateOne) SetLatitude(s string) *AddressUpdateOne {
-	auo.mutation.SetLatitude(s)
+func (auo *AddressUpdateOne) SetLatitude(f float64) *AddressUpdateOne {
+	auo.mutation.ResetLatitude()
+	auo.mutation.SetLatitude(f)
+	return auo
+}
+
+// AddLatitude adds f to latitude.
+func (auo *AddressUpdateOne) AddLatitude(f float64) *AddressUpdateOne {
+	auo.mutation.AddLatitude(f)
 	return auo
 }
 
 // SetLongitude sets the longitude field.
-func (auo *AddressUpdateOne) SetLongitude(s string) *AddressUpdateOne {
-	auo.mutation.SetLongitude(s)
+func (auo *AddressUpdateOne) SetLongitude(f float64) *AddressUpdateOne {
+	auo.mutation.ResetLongitude()
+	auo.mutation.SetLongitude(f)
+	return auo
+}
+
+// AddLongitude adds f to longitude.
+func (auo *AddressUpdateOne) AddLongitude(f float64) *AddressUpdateOne {
+	auo.mutation.AddLongitude(f)
 	return auo
 }
 
@@ -250,14 +292,28 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 	_spec.Node.ID.Value = id
 	if value, ok := auo.mutation.Latitude(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: address.FieldLatitude,
+		})
+	}
+	if value, ok := auo.mutation.AddedLatitude(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
 			Value:  value,
 			Column: address.FieldLatitude,
 		})
 	}
 	if value, ok := auo.mutation.Longitude(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: address.FieldLongitude,
+		})
+	}
+	if value, ok := auo.mutation.AddedLongitude(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
 			Value:  value,
 			Column: address.FieldLongitude,
 		})

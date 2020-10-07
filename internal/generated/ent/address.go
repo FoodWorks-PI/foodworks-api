@@ -16,9 +16,9 @@ type Address struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// Latitude holds the value of the "latitude" field.
-	Latitude string `json:"latitude,omitempty"`
+	Latitude float64 `json:"latitude,omitempty"`
 	// Longitude holds the value of the "longitude" field.
-	Longitude string `json:"longitude,omitempty"`
+	Longitude float64 `json:"longitude,omitempty"`
 	// StreetLine holds the value of the "streetLine" field.
 	StreetLine string `json:"streetLine,omitempty"`
 }
@@ -26,10 +26,10 @@ type Address struct {
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Address) scanValues() []interface{} {
 	return []interface{}{
-		&sql.NullInt64{},  // id
-		&sql.NullString{}, // latitude
-		&sql.NullString{}, // longitude
-		&sql.NullString{}, // streetLine
+		&sql.NullInt64{},   // id
+		&sql.NullFloat64{}, // latitude
+		&sql.NullFloat64{}, // longitude
+		&sql.NullString{},  // streetLine
 	}
 }
 
@@ -45,15 +45,15 @@ func (a *Address) assignValues(values ...interface{}) error {
 	}
 	a.ID = int(value.Int64)
 	values = values[1:]
-	if value, ok := values[0].(*sql.NullString); !ok {
+	if value, ok := values[0].(*sql.NullFloat64); !ok {
 		return fmt.Errorf("unexpected type %T for field latitude", values[0])
 	} else if value.Valid {
-		a.Latitude = value.String
+		a.Latitude = value.Float64
 	}
-	if value, ok := values[1].(*sql.NullString); !ok {
+	if value, ok := values[1].(*sql.NullFloat64); !ok {
 		return fmt.Errorf("unexpected type %T for field longitude", values[1])
 	} else if value.Valid {
-		a.Longitude = value.String
+		a.Longitude = value.Float64
 	}
 	if value, ok := values[2].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field streetLine", values[2])
@@ -87,9 +87,9 @@ func (a *Address) String() string {
 	builder.WriteString("Address(")
 	builder.WriteString(fmt.Sprintf("id=%v", a.ID))
 	builder.WriteString(", latitude=")
-	builder.WriteString(a.Latitude)
+	builder.WriteString(fmt.Sprintf("%v", a.Latitude))
 	builder.WriteString(", longitude=")
-	builder.WriteString(a.Longitude)
+	builder.WriteString(fmt.Sprintf("%v", a.Longitude))
 	builder.WriteString(", streetLine=")
 	builder.WriteString(a.StreetLine)
 	builder.WriteByte(')')

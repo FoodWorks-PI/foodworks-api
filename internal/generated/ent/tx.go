@@ -18,6 +18,8 @@ type Tx struct {
 	BankingData *BankingDataClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
+	// Restaurant is the client for interacting with the Restaurant builders.
+	Restaurant *RestaurantClient
 	// RestaurantOwner is the client for interacting with the RestaurantOwner builders.
 	RestaurantOwner *RestaurantOwnerClient
 
@@ -158,6 +160,7 @@ func (tx *Tx) init() {
 	tx.Address = NewAddressClient(tx.config)
 	tx.BankingData = NewBankingDataClient(tx.config)
 	tx.Customer = NewCustomerClient(tx.config)
+	tx.Restaurant = NewRestaurantClient(tx.config)
 	tx.RestaurantOwner = NewRestaurantOwnerClient(tx.config)
 }
 

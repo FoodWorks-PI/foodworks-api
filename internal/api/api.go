@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+
 	"foodworks.ml/m/internal/platform"
 
 	"foodworks.ml/m/internal/auth"
@@ -33,7 +35,7 @@ type API struct {
 	Router *chi.Mux
 }
 
-func (a *API) SetupRoutes(entClient *ent.Client, redisClient *redis.Client, dataStoreConfig platform.DataStoreConfig) {
+func (a *API) SetupRoutes(entClient *ent.Client, dbClient *sqlx.DB, redisClient *redis.Client, dataStoreConfig platform.DataStoreConfig) {
 	// init server
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer)
@@ -58,7 +60,7 @@ func (a *API) SetupRoutes(entClient *ent.Client, redisClient *redis.Client, data
 		}
 		router.HandleFunc("/echoAuth", EchoRequest)
 		router.Route("/graphql", func(router chi.Router) {
-			srv := newGraphQLServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{Client: entClient, Redis: redisClient}}))
+			srv := newGraphQLServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{EntClient: entClient, Redis: redisClient, DBClient: dbClient}}))
 			router.Handle("/", srv)
 			router.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 		})

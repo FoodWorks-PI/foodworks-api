@@ -91,14 +91,14 @@ func IDLTE(id int) predicate.Address {
 }
 
 // Latitude applies equality check predicate on the "latitude" field. It's identical to LatitudeEQ.
-func Latitude(v string) predicate.Address {
+func Latitude(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldLatitude), v))
 	})
 }
 
 // Longitude applies equality check predicate on the "longitude" field. It's identical to LongitudeEQ.
-func Longitude(v string) predicate.Address {
+func Longitude(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldLongitude), v))
 	})
@@ -112,21 +112,21 @@ func StreetLine(v string) predicate.Address {
 }
 
 // LatitudeEQ applies the EQ predicate on the "latitude" field.
-func LatitudeEQ(v string) predicate.Address {
+func LatitudeEQ(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldLatitude), v))
 	})
 }
 
 // LatitudeNEQ applies the NEQ predicate on the "latitude" field.
-func LatitudeNEQ(v string) predicate.Address {
+func LatitudeNEQ(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldLatitude), v))
 	})
 }
 
 // LatitudeIn applies the In predicate on the "latitude" field.
-func LatitudeIn(vs ...string) predicate.Address {
+func LatitudeIn(vs ...float64) predicate.Address {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -143,7 +143,7 @@ func LatitudeIn(vs ...string) predicate.Address {
 }
 
 // LatitudeNotIn applies the NotIn predicate on the "latitude" field.
-func LatitudeNotIn(vs ...string) predicate.Address {
+func LatitudeNotIn(vs ...float64) predicate.Address {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -160,84 +160,49 @@ func LatitudeNotIn(vs ...string) predicate.Address {
 }
 
 // LatitudeGT applies the GT predicate on the "latitude" field.
-func LatitudeGT(v string) predicate.Address {
+func LatitudeGT(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.GT(s.C(FieldLatitude), v))
 	})
 }
 
 // LatitudeGTE applies the GTE predicate on the "latitude" field.
-func LatitudeGTE(v string) predicate.Address {
+func LatitudeGTE(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.GTE(s.C(FieldLatitude), v))
 	})
 }
 
 // LatitudeLT applies the LT predicate on the "latitude" field.
-func LatitudeLT(v string) predicate.Address {
+func LatitudeLT(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.LT(s.C(FieldLatitude), v))
 	})
 }
 
 // LatitudeLTE applies the LTE predicate on the "latitude" field.
-func LatitudeLTE(v string) predicate.Address {
+func LatitudeLTE(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldLatitude), v))
 	})
 }
 
-// LatitudeContains applies the Contains predicate on the "latitude" field.
-func LatitudeContains(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldLatitude), v))
-	})
-}
-
-// LatitudeHasPrefix applies the HasPrefix predicate on the "latitude" field.
-func LatitudeHasPrefix(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldLatitude), v))
-	})
-}
-
-// LatitudeHasSuffix applies the HasSuffix predicate on the "latitude" field.
-func LatitudeHasSuffix(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldLatitude), v))
-	})
-}
-
-// LatitudeEqualFold applies the EqualFold predicate on the "latitude" field.
-func LatitudeEqualFold(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldLatitude), v))
-	})
-}
-
-// LatitudeContainsFold applies the ContainsFold predicate on the "latitude" field.
-func LatitudeContainsFold(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldLatitude), v))
-	})
-}
-
 // LongitudeEQ applies the EQ predicate on the "longitude" field.
-func LongitudeEQ(v string) predicate.Address {
+func LongitudeEQ(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldLongitude), v))
 	})
 }
 
 // LongitudeNEQ applies the NEQ predicate on the "longitude" field.
-func LongitudeNEQ(v string) predicate.Address {
+func LongitudeNEQ(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldLongitude), v))
 	})
 }
 
 // LongitudeIn applies the In predicate on the "longitude" field.
-func LongitudeIn(vs ...string) predicate.Address {
+func LongitudeIn(vs ...float64) predicate.Address {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -254,7 +219,7 @@ func LongitudeIn(vs ...string) predicate.Address {
 }
 
 // LongitudeNotIn applies the NotIn predicate on the "longitude" field.
-func LongitudeNotIn(vs ...string) predicate.Address {
+func LongitudeNotIn(vs ...float64) predicate.Address {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -271,65 +236,30 @@ func LongitudeNotIn(vs ...string) predicate.Address {
 }
 
 // LongitudeGT applies the GT predicate on the "longitude" field.
-func LongitudeGT(v string) predicate.Address {
+func LongitudeGT(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.GT(s.C(FieldLongitude), v))
 	})
 }
 
 // LongitudeGTE applies the GTE predicate on the "longitude" field.
-func LongitudeGTE(v string) predicate.Address {
+func LongitudeGTE(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.GTE(s.C(FieldLongitude), v))
 	})
 }
 
 // LongitudeLT applies the LT predicate on the "longitude" field.
-func LongitudeLT(v string) predicate.Address {
+func LongitudeLT(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.LT(s.C(FieldLongitude), v))
 	})
 }
 
 // LongitudeLTE applies the LTE predicate on the "longitude" field.
-func LongitudeLTE(v string) predicate.Address {
+func LongitudeLTE(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldLongitude), v))
-	})
-}
-
-// LongitudeContains applies the Contains predicate on the "longitude" field.
-func LongitudeContains(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldLongitude), v))
-	})
-}
-
-// LongitudeHasPrefix applies the HasPrefix predicate on the "longitude" field.
-func LongitudeHasPrefix(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldLongitude), v))
-	})
-}
-
-// LongitudeHasSuffix applies the HasSuffix predicate on the "longitude" field.
-func LongitudeHasSuffix(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldLongitude), v))
-	})
-}
-
-// LongitudeEqualFold applies the EqualFold predicate on the "longitude" field.
-func LongitudeEqualFold(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldLongitude), v))
-	})
-}
-
-// LongitudeContainsFold applies the ContainsFold predicate on the "longitude" field.
-func LongitudeContainsFold(v string) predicate.Address {
-	return predicate.Address(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldLongitude), v))
 	})
 }
 

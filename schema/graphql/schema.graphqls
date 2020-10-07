@@ -11,8 +11,8 @@
 # }
 
 input RegisterAddressInput {
-  latitude: String!
-  longitude: String!
+  latitude: Float!
+  longitude: Float!
   streetLine: String!
 }
 
@@ -43,8 +43,8 @@ input UpdateRestaurantOwnerInput {
 }
 
 type Address {
-  latitude: String!
-  longitude: String!
+  latitude: Float!
+  longitude: Float!
   streetLine: String!
 }
 
@@ -69,8 +69,20 @@ type RestaurantOwner {
   banking : BankingData!
 }
 
+type Restaurant {
+  ID: ID!
+  name: String!
+  address: Address!
+}
+
+type RestaurantSearchResult {
+  restaurant: Restaurant!
+  distance: Float!
+}
+
 type Query {
   getCurrentCustomer: Customer!
+  getClosestRestaurants(input: Int): [RestaurantSearchResult!]!
   getCurrentRestaurantOwner : RestaurantOwner!
 }
 

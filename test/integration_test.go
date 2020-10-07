@@ -156,11 +156,11 @@ func (suite *IntegrationTestSuite) Test_Auth_Disabled() {
 // TODO: Abstract
 func SetupAPI(support *TestSupport) {
 
-	_, client := platform.NewEntClient(*support.Config)
+	db, client := platform.NewEntClient(*support.Config)
 
 	rdb := platform.NewRedisClient(*support.Config)
 
 	api := api.API{}
-	api.SetupRoutes(client, rdb, *support.Config)
+	api.SetupRoutes(client, db, rdb, *support.Config)
 	support.Handler = api.Router
 }

@@ -2,10 +2,14 @@
 
 package model
 
+import (
+	"foodworks.ml/m/internal/generated/ent"
+)
+
 type RegisterAddressInput struct {
-	Latitude   string `json:"latitude"`
-	Longitude  string `json:"longitude"`
-	StreetLine string `json:"streetLine"`
+	Latitude   float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
+	StreetLine string  `json:"streetLine"`
 }
 
 type RegisterBankingInput struct {
@@ -22,6 +26,11 @@ type RegisterRestaurantOwnerInput struct {
 	Name    string                `json:"name"`
 	Phone   string                `json:"phone"`
 	Banking *RegisterBankingInput `json:"banking"`
+}
+
+type RestaurantSearchResult struct {
+	Restaurant *ent.Restaurant `json:"restaurant"`
+	Distance   float64         `json:"distance"`
 }
 
 type UpdateCustomerInput struct {

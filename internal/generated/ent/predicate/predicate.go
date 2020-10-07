@@ -15,5 +15,8 @@ type BankingData func(*sql.Selector)
 // Customer is the predicate function for customer builders.
 type Customer func(*sql.Selector)
 
+// Restaurant is the predicate function for restaurant builders.
+type Restaurant func(*sql.Selector)
+
 // RestaurantOwner is the predicate function for restaurantowner builders.
 type RestaurantOwner func(*sql.Selector)

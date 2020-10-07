@@ -1,0 +1,7 @@
+{{ define "model/fields/additional" }}
+    {{- /* Add static fields to the "Card" entity. */}}
+    {{- if eq $.Name "Restaurant" }}
+        // StaticField defined by templates.
+        Distance float64 `json:"distance,omitempty"`
+    {{- end }}
+{{ end }}

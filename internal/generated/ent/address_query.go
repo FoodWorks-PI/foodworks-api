@@ -237,7 +237,7 @@ func (aq *AddressQuery) Clone() *AddressQuery {
 // Example:
 //
 //	var v []struct {
-//		Latitude string `json:"latitude,omitempty"`
+//		Latitude float64 `json:"latitude,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -263,7 +263,7 @@ func (aq *AddressQuery) GroupBy(field string, fields ...string) *AddressGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Latitude string `json:"latitude,omitempty"`
+//		Latitude float64 `json:"latitude,omitempty"`
 //	}
 //
 //	client.Address.Query().

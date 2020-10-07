@@ -23,7 +23,7 @@ func main() {
 	rdb := platform.NewRedisClient(dataStoreConfig)
 
 	api := api.API{}
-	api.SetupRoutes(client, rdb, dataStoreConfig)
+	api.SetupRoutes(client, db, rdb, dataStoreConfig)
 	api.StartServer()
 
 	// Cleanup
