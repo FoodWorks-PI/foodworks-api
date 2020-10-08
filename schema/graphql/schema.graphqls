@@ -23,12 +23,14 @@ input RegisterBankingInput {
 
 input RegisterCustomerInput {
   name: String!
+  lastName: String!
   phone: String!
   address: RegisterAddressInput!
 }
 
 input UpdateCustomerInput {
   name: String!
+  lastName: String!
   phone: String!
 }
 
@@ -43,10 +45,9 @@ input RegisterTagInput {
   name: String!
 }
 
-
-
 input RegisterRestaurantOwnerInput {
   name: String!
+  lastName: String!
   phone: String!
   banking: RegisterBankingInput!
   restaurant: RegisterRestaurantInput!
@@ -54,6 +55,7 @@ input RegisterRestaurantOwnerInput {
 
 input UpdateRestaurantOwnerInput {
   name: String!
+  lastName: String!
   phone: String!
 }
 

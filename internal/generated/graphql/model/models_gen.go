@@ -27,9 +27,10 @@ type RegisterBankingInput struct {
 }
 
 type RegisterCustomerInput struct {
-	Name    string                `json:"name"`
-	Phone   string                `json:"phone"`
-	Address *RegisterAddressInput `json:"address"`
+	Name     string                `json:"name"`
+	LastName string                `json:"lastName"`
+	Phone    string                `json:"phone"`
+	Address  *RegisterAddressInput `json:"address"`
 }
 
 type RegisterRestaurantInput struct {
@@ -41,6 +42,7 @@ type RegisterRestaurantInput struct {
 
 type RegisterRestaurantOwnerInput struct {
 	Name       string                   `json:"name"`
+	LastName   string                   `json:"lastName"`
 	Phone      string                   `json:"phone"`
 	Banking    *RegisterBankingInput    `json:"banking"`
 	Restaurant *RegisterRestaurantInput `json:"restaurant"`
@@ -61,11 +63,13 @@ type Tag struct {
 }
 
 type UpdateCustomerInput struct {
-	Name  string `json:"name"`
-	Phone string `json:"phone"`
+	Name     string `json:"name"`
+	LastName string `json:"lastName"`
+	Phone    string `json:"phone"`
 }
 
 type UpdateRestaurantOwnerInput struct {
-	Name  string `json:"name"`
-	Phone string `json:"phone"`
+	Name     string `json:"name"`
+	LastName string `json:"lastName"`
+	Phone    string `json:"phone"`
 }
