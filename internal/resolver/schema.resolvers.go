@@ -145,6 +145,27 @@ func (r *mutationResolver) UpdateCustomerAddress(ctx context.Context, input mode
 	return currentUser.ID, nil
 }
 
+func (r *mutationResolver) DeleteCustomerProfile(ctx context.Context) (int, error) {
+	kratosSessionUser := auth.ForContext(ctx)
+
+	currentUser, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosSessionUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	err = r.EntClient.Customer.DeleteOne(currentUser).Exec(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return currentUser.ID, nil
+}
+
 func (r *mutationResolver) UpdateRestaurantOwnerProfile(ctx context.Context, input model.UpdateRestaurantOwnerInput) (int, error) {
 	kratosSessionUser := auth.ForContext(ctx)
 
@@ -204,25 +225,8 @@ func (r *mutationResolver) UpdateRestaurantOwnerBankingData(ctx context.Context,
 	return currentUser.ID, nil
 }
 
-func (r *mutationResolver) DeleteCustomerProfile(ctx context.Context) (int, error) {
-	kratosSessionUser := auth.ForContext(ctx)
-
-	currentUser, err := r.EntClient.Customer.
-		Query().
-		Where(customer.KratosID(kratosSessionUser.ID)).
-		First(ctx)
-
-	if err != nil {
-		return -1, err
-	}
-
-	err = r.EntClient.Customer.DeleteOne(currentUser).Exec(ctx)
-
-	if err != nil {
-		return -1, err
-	}
-
-	return currentUser.ID, nil
+func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.RegisterRestaurantInput) (int, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) DeleteRestaurantOwnerProfile(ctx context.Context) (int, error) {
@@ -325,13 +329,37 @@ func (r *queryResolver) GetCurrentRestaurantOwner(ctx context.Context) (*ent.Res
 	return currentRestaurantOwner, nil
 }
 
+func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input *string) ([]*model.Product, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *restaurantResolver) Address(ctx context.Context, obj *ent.Restaurant) (*ent.Address, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *restaurantResolver) Description(ctx context.Context, obj *ent.Restaurant) (string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *restaurantResolver) Tags(ctx context.Context, obj *ent.Restaurant) ([]*model.Tag, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *restaurantResolver) Products(ctx context.Context, obj *ent.Restaurant) ([]*model.Product, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *restaurantResolver) RestaurantOwner(ctx context.Context, obj *ent.Restaurant) (*ent.RestaurantOwner, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *restaurantOwnerResolver) Banking(ctx context.Context, obj *ent.RestaurantOwner) (*ent.BankingData, error) {
 	banking, err := r.EntClient.RestaurantOwner.QueryBankingData(obj).First(ctx)
 	return banking, ent.MaskNotFound(err)
+}
+
+func (r *restaurantOwnerResolver) Restaurant(ctx context.Context, obj *ent.RestaurantOwner) (*ent.Restaurant, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Customer returns generated.CustomerResolver implementation.
