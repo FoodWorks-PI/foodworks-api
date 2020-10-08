@@ -13,8 +13,8 @@ type Address struct {
 // Fields of the Address.
 func (Address) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("latitude"),
-		field.String("longitude"),
+		field.Float("latitude"),
+		field.Float("longitude"),
 		field.String("streetLine"),
 	}
 }

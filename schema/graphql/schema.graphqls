@@ -10,9 +10,10 @@
 #   Email: String!
 # }
 
+#TODO: Image Upload/Download in: Product, Restaurant, Tag
 input RegisterAddressInput {
-  latitude: String!
-  longitude: String!
+  latitude: Float!
+  longitude: Float!
   streetLine: String!
 }
 
@@ -31,10 +32,24 @@ input UpdateCustomerInput {
   phone: String!
 }
 
+input RegisterRestaurantInput {
+  name: String!
+  address: RegisterAddressInput!
+  description: String!
+  tags: [RegisterTagInput!]!
+}
+
+input RegisterTagInput {
+  name: String!
+}
+
+
+
 input RegisterRestaurantOwnerInput {
   name: String!
   phone: String!
   banking: RegisterBankingInput!
+  restaurant: RegisterRestaurantInput!
 }
 
 input UpdateRestaurantOwnerInput {
@@ -43,13 +58,13 @@ input UpdateRestaurantOwnerInput {
 }
 
 type Address {
-  latitude: String!
-  longitude: String!
+  latitude: Float!
+  longitude: Float!
   streetLine: String!
 }
 
 type BankingData {
-    bankAccount: String!
+  bankAccount: String!
 }
 
 type Customer {
@@ -67,11 +82,46 @@ type RestaurantOwner {
   email: String!
   phone: String!
   banking : BankingData!
+  restaurant: Restaurant!
+}
+
+type Restaurant {
+  ID: ID!
+  name: String!
+  address: Address!
+  description: String!
+  tags: [Tag!]!
+  products: [Product]
+  restaurantOwner: RestaurantOwner!
+}
+
+type Product {
+  ID: ID!
+  name: String!
+  description: String!
+  tags: [Tag!]!
+  cost: Int! # Manejar como centavos
+  active: Boolean!
+  restaurant: Restaurant # Es necesario?
+  # quantity: Int!
+  # recurrence: Recurrence
+}
+
+type Tag {
+  ID: ID!
+  name: String!
+}
+
+type RestaurantSearchResult {
+  restaurant: Restaurant!
+  distance: Float!
 }
 
 type Query {
   getCurrentCustomer: Customer!
+  getClosestRestaurants(input: Int): [RestaurantSearchResult!]!
   getCurrentRestaurantOwner : RestaurantOwner!
+  getProductsByAllFields(input: String): [Product!]!
 }
 
 type Mutation {
@@ -80,9 +130,15 @@ type Mutation {
 
   updateCustomerProfile(input:UpdateCustomerInput!): ID!
   updateCustomerAddress(input:RegisterAddressInput!):ID!
-  updateRestaurantOwnerProfile(input:UpdateRestaurantOwnerInput!): ID!
-  updateRestaurantOwnerBankingData(input:RegisterBankingInput!): ID!
 
   deleteCustomerProfile: ID!
+
+  updateRestaurantOwnerProfile(input:UpdateRestaurantOwnerInput!): ID!
+  updateRestaurantOwnerBankingData(input:RegisterBankingInput!): ID!
+  updateRestaurant(input:RegisterRestaurantInput!): ID!
+
   deleteRestaurantOwnerProfile : ID!
+
+  # createOrder(input: CreateOrderInput): CreateOrderPayload!
+  # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!
 }

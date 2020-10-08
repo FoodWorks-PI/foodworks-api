@@ -2,10 +2,24 @@
 
 package model
 
+import (
+	"foodworks.ml/m/internal/generated/ent"
+)
+
+type Product struct {
+	ID          int             `json:"ID"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Tags        []*Tag          `json:"tags"`
+	Cost        int             `json:"cost"`
+	Active      bool            `json:"active"`
+	Restaurant  *ent.Restaurant `json:"restaurant"`
+}
+
 type RegisterAddressInput struct {
-	Latitude   string `json:"latitude"`
-	Longitude  string `json:"longitude"`
-	StreetLine string `json:"streetLine"`
+	Latitude   float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
+	StreetLine string  `json:"streetLine"`
 }
 
 type RegisterBankingInput struct {
@@ -18,10 +32,32 @@ type RegisterCustomerInput struct {
 	Address *RegisterAddressInput `json:"address"`
 }
 
+type RegisterRestaurantInput struct {
+	Name        string                `json:"name"`
+	Address     *RegisterAddressInput `json:"address"`
+	Description string                `json:"description"`
+	Tags        []*RegisterTagInput   `json:"tags"`
+}
+
 type RegisterRestaurantOwnerInput struct {
-	Name    string                `json:"name"`
-	Phone   string                `json:"phone"`
-	Banking *RegisterBankingInput `json:"banking"`
+	Name       string                   `json:"name"`
+	Phone      string                   `json:"phone"`
+	Banking    *RegisterBankingInput    `json:"banking"`
+	Restaurant *RegisterRestaurantInput `json:"restaurant"`
+}
+
+type RegisterTagInput struct {
+	Name string `json:"name"`
+}
+
+type RestaurantSearchResult struct {
+	Restaurant *ent.Restaurant `json:"restaurant"`
+	Distance   float64         `json:"distance"`
+}
+
+type Tag struct {
+	ID   int    `json:"ID"`
+	Name string `json:"name"`
 }
 
 type UpdateCustomerInput struct {

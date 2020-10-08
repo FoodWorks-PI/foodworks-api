@@ -20,14 +20,14 @@ type AddressCreate struct {
 }
 
 // SetLatitude sets the latitude field.
-func (ac *AddressCreate) SetLatitude(s string) *AddressCreate {
-	ac.mutation.SetLatitude(s)
+func (ac *AddressCreate) SetLatitude(f float64) *AddressCreate {
+	ac.mutation.SetLatitude(f)
 	return ac
 }
 
 // SetLongitude sets the longitude field.
-func (ac *AddressCreate) SetLongitude(s string) *AddressCreate {
-	ac.mutation.SetLongitude(s)
+func (ac *AddressCreate) SetLongitude(f float64) *AddressCreate {
+	ac.mutation.SetLongitude(f)
 	return ac
 }
 
@@ -126,7 +126,7 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 	)
 	if value, ok := ac.mutation.Latitude(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeFloat64,
 			Value:  value,
 			Column: address.FieldLatitude,
 		})
@@ -134,7 +134,7 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := ac.mutation.Longitude(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeFloat64,
 			Value:  value,
 			Column: address.FieldLongitude,
 		})

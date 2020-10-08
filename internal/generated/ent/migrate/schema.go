@@ -11,8 +11,8 @@ var (
 	// AddressesColumns holds the columns for the "addresses" table.
 	AddressesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "latitude", Type: field.TypeString},
-		{Name: "longitude", Type: field.TypeString},
+		{Name: "latitude", Type: field.TypeFloat64},
+		{Name: "longitude", Type: field.TypeFloat64},
 		{Name: "street_line", Type: field.TypeString},
 	}
 	// AddressesTable holds the schema information for the "addresses" table.
@@ -65,6 +65,27 @@ var (
 			},
 		},
 	}
+	// RestaurantsColumns holds the columns for the "restaurants" table.
+	RestaurantsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "restaurant_address", Type: field.TypeInt, Nullable: true},
+	}
+	// RestaurantsTable holds the schema information for the "restaurants" table.
+	RestaurantsTable = &schema.Table{
+		Name:       "restaurants",
+		Columns:    RestaurantsColumns,
+		PrimaryKey: []*schema.Column{RestaurantsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "restaurants_addresses_address",
+				Columns: []*schema.Column{RestaurantsColumns[2]},
+
+				RefColumns: []*schema.Column{AddressesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// RestaurantOwnersColumns holds the columns for the "restaurant_owners" table.
 	RestaurantOwnersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -101,11 +122,13 @@ var (
 		AddressesTable,
 		BankingDataTable,
 		CustomersTable,
+		RestaurantsTable,
 		RestaurantOwnersTable,
 	}
 )
 
 func init() {
 	CustomersTable.ForeignKeys[0].RefTable = AddressesTable
+	RestaurantsTable.ForeignKeys[0].RefTable = AddressesTable
 	RestaurantOwnersTable.ForeignKeys[0].RefTable = BankingDataTable
 }
