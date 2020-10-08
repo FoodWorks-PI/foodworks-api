@@ -627,12 +627,14 @@ input RegisterBankingInput {
 
 input RegisterCustomerInput {
   name: String!
+  lastName: String!
   phone: String!
   address: RegisterAddressInput!
 }
 
 input UpdateCustomerInput {
   name: String!
+  lastName: String!
   phone: String!
 }
 
@@ -647,10 +649,9 @@ input RegisterTagInput {
   name: String!
 }
 
-
-
 input RegisterRestaurantOwnerInput {
   name: String!
+  lastName: String!
   phone: String!
   banking: RegisterBankingInput!
   restaurant: RegisterRestaurantInput!
@@ -658,6 +659,7 @@ input RegisterRestaurantOwnerInput {
 
 input UpdateRestaurantOwnerInput {
   name: String!
+  lastName: String!
   phone: String!
 }
 
@@ -745,7 +747,8 @@ type Mutation {
 
   # createOrder(input: CreateOrderInput): CreateOrderPayload!
   # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -3836,6 +3839,14 @@ func (ec *executionContext) unmarshalInputRegisterCustomerInput(ctx context.Cont
 			if err != nil {
 				return it, err
 			}
+		case "lastName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
+			it.LastName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "phone":
 			var err error
 
@@ -3916,6 +3927,14 @@ func (ec *executionContext) unmarshalInputRegisterRestaurantOwnerInput(ctx conte
 			if err != nil {
 				return it, err
 			}
+		case "lastName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
+			it.LastName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "phone":
 			var err error
 
@@ -3980,6 +3999,14 @@ func (ec *executionContext) unmarshalInputUpdateCustomerInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "lastName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
+			it.LastName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "phone":
 			var err error
 
@@ -4005,6 +4032,14 @@ func (ec *executionContext) unmarshalInputUpdateRestaurantOwnerInput(ctx context
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lastName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
+			it.LastName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
