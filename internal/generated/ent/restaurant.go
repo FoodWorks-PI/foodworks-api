@@ -18,6 +18,8 @@ type Restaurant struct {
 	ID int `json:"id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Description holds the value of the "description" field.
+	Description string `json:"description,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RestaurantQuery when eager-loading is set.
 	Edges              RestaurantEdges `json:"edges"`
@@ -28,9 +30,15 @@ type Restaurant struct {
 type RestaurantEdges struct {
 	// Address holds the value of the address edge.
 	Address *Address
+	// Tags holds the value of the tags edge.
+	Tags []*Tag
+	// Owner holds the value of the owner edge.
+	Owner []*RestaurantOwner
+	// Products holds the value of the products edge.
+	Products []*Product
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [4]bool
 }
 
 // AddressOrErr returns the Address value or an error if the edge
@@ -47,11 +55,39 @@ func (e RestaurantEdges) AddressOrErr() (*Address, error) {
 	return nil, &NotLoadedError{edge: "address"}
 }
 
+// TagsOrErr returns the Tags value or an error if the edge
+// was not loaded in eager-loading.
+func (e RestaurantEdges) TagsOrErr() ([]*Tag, error) {
+	if e.loadedTypes[1] {
+		return e.Tags, nil
+	}
+	return nil, &NotLoadedError{edge: "tags"}
+}
+
+// OwnerOrErr returns the Owner value or an error if the edge
+// was not loaded in eager-loading.
+func (e RestaurantEdges) OwnerOrErr() ([]*RestaurantOwner, error) {
+	if e.loadedTypes[2] {
+		return e.Owner, nil
+	}
+	return nil, &NotLoadedError{edge: "owner"}
+}
+
+// ProductsOrErr returns the Products value or an error if the edge
+// was not loaded in eager-loading.
+func (e RestaurantEdges) ProductsOrErr() ([]*Product, error) {
+	if e.loadedTypes[3] {
+		return e.Products, nil
+	}
+	return nil, &NotLoadedError{edge: "products"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Restaurant) scanValues() []interface{} {
 	return []interface{}{
 		&sql.NullInt64{},  // id
 		&sql.NullString{}, // name
+		&sql.NullString{}, // description
 	}
 }
 
@@ -79,7 +115,12 @@ func (r *Restaurant) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		r.Name = value.String
 	}
-	values = values[1:]
+	if value, ok := values[1].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field description", values[1])
+	} else if value.Valid {
+		r.Description = value.String
+	}
+	values = values[2:]
 	if len(values) == len(restaurant.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullInt64); !ok {
 			return fmt.Errorf("unexpected type %T for edge-field restaurant_address", value)
@@ -94,6 +135,21 @@ func (r *Restaurant) assignValues(values ...interface{}) error {
 // QueryAddress queries the address edge of the Restaurant.
 func (r *Restaurant) QueryAddress() *AddressQuery {
 	return (&RestaurantClient{config: r.config}).QueryAddress(r)
+}
+
+// QueryTags queries the tags edge of the Restaurant.
+func (r *Restaurant) QueryTags() *TagQuery {
+	return (&RestaurantClient{config: r.config}).QueryTags(r)
+}
+
+// QueryOwner queries the owner edge of the Restaurant.
+func (r *Restaurant) QueryOwner() *RestaurantOwnerQuery {
+	return (&RestaurantClient{config: r.config}).QueryOwner(r)
+}
+
+// QueryProducts queries the products edge of the Restaurant.
+func (r *Restaurant) QueryProducts() *ProductQuery {
+	return (&RestaurantClient{config: r.config}).QueryProducts(r)
 }
 
 // Update returns a builder for updating this Restaurant.
@@ -121,6 +177,8 @@ func (r *Restaurant) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", r.ID))
 	builder.WriteString(", name=")
 	builder.WriteString(r.Name)
+	builder.WriteString(", description=")
+	builder.WriteString(r.Description)
 	builder.WriteByte(')')
 	return builder.String()
 }

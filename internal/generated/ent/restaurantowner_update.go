@@ -8,6 +8,7 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/bankingdata"
 	"foodworks.ml/m/internal/generated/ent/predicate"
+	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -71,6 +72,25 @@ func (rou *RestaurantOwnerUpdate) SetBankingData(b *BankingData) *RestaurantOwne
 	return rou.SetBankingDataID(b.ID)
 }
 
+// SetRestaurantID sets the restaurant edge to Restaurant by id.
+func (rou *RestaurantOwnerUpdate) SetRestaurantID(id int) *RestaurantOwnerUpdate {
+	rou.mutation.SetRestaurantID(id)
+	return rou
+}
+
+// SetNillableRestaurantID sets the restaurant edge to Restaurant by id if the given value is not nil.
+func (rou *RestaurantOwnerUpdate) SetNillableRestaurantID(id *int) *RestaurantOwnerUpdate {
+	if id != nil {
+		rou = rou.SetRestaurantID(*id)
+	}
+	return rou
+}
+
+// SetRestaurant sets the restaurant edge to Restaurant.
+func (rou *RestaurantOwnerUpdate) SetRestaurant(r *Restaurant) *RestaurantOwnerUpdate {
+	return rou.SetRestaurantID(r.ID)
+}
+
 // Mutation returns the RestaurantOwnerMutation object of the builder.
 func (rou *RestaurantOwnerUpdate) Mutation() *RestaurantOwnerMutation {
 	return rou.mutation
@@ -79,6 +99,12 @@ func (rou *RestaurantOwnerUpdate) Mutation() *RestaurantOwnerMutation {
 // ClearBankingData clears the "banking_data" edge to type BankingData.
 func (rou *RestaurantOwnerUpdate) ClearBankingData() *RestaurantOwnerUpdate {
 	rou.mutation.ClearBankingData()
+	return rou
+}
+
+// ClearRestaurant clears the "restaurant" edge to type Restaurant.
+func (rou *RestaurantOwnerUpdate) ClearRestaurant() *RestaurantOwnerUpdate {
+	rou.mutation.ClearRestaurant()
 	return rou
 }
 
@@ -214,6 +240,41 @@ func (rou *RestaurantOwnerUpdate) sqlSave(ctx context.Context) (n int, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if rou.mutation.RestaurantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   restaurantowner.RestaurantTable,
+			Columns: []string{restaurantowner.RestaurantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := rou.mutation.RestaurantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   restaurantowner.RestaurantTable,
+			Columns: []string{restaurantowner.RestaurantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, rou.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{restaurantowner.Label}
@@ -275,6 +336,25 @@ func (rouo *RestaurantOwnerUpdateOne) SetBankingData(b *BankingData) *Restaurant
 	return rouo.SetBankingDataID(b.ID)
 }
 
+// SetRestaurantID sets the restaurant edge to Restaurant by id.
+func (rouo *RestaurantOwnerUpdateOne) SetRestaurantID(id int) *RestaurantOwnerUpdateOne {
+	rouo.mutation.SetRestaurantID(id)
+	return rouo
+}
+
+// SetNillableRestaurantID sets the restaurant edge to Restaurant by id if the given value is not nil.
+func (rouo *RestaurantOwnerUpdateOne) SetNillableRestaurantID(id *int) *RestaurantOwnerUpdateOne {
+	if id != nil {
+		rouo = rouo.SetRestaurantID(*id)
+	}
+	return rouo
+}
+
+// SetRestaurant sets the restaurant edge to Restaurant.
+func (rouo *RestaurantOwnerUpdateOne) SetRestaurant(r *Restaurant) *RestaurantOwnerUpdateOne {
+	return rouo.SetRestaurantID(r.ID)
+}
+
 // Mutation returns the RestaurantOwnerMutation object of the builder.
 func (rouo *RestaurantOwnerUpdateOne) Mutation() *RestaurantOwnerMutation {
 	return rouo.mutation
@@ -283,6 +363,12 @@ func (rouo *RestaurantOwnerUpdateOne) Mutation() *RestaurantOwnerMutation {
 // ClearBankingData clears the "banking_data" edge to type BankingData.
 func (rouo *RestaurantOwnerUpdateOne) ClearBankingData() *RestaurantOwnerUpdateOne {
 	rouo.mutation.ClearBankingData()
+	return rouo
+}
+
+// ClearRestaurant clears the "restaurant" edge to type Restaurant.
+func (rouo *RestaurantOwnerUpdateOne) ClearRestaurant() *RestaurantOwnerUpdateOne {
+	rouo.mutation.ClearRestaurant()
 	return rouo
 }
 
@@ -408,6 +494,41 @@ func (rouo *RestaurantOwnerUpdateOne) sqlSave(ctx context.Context) (_node *Resta
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: bankingdata.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if rouo.mutation.RestaurantCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   restaurantowner.RestaurantTable,
+			Columns: []string{restaurantowner.RestaurantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := rouo.mutation.RestaurantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   restaurantowner.RestaurantTable,
+			Columns: []string{restaurantowner.RestaurantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurant.FieldID,
 				},
 			},
 		}

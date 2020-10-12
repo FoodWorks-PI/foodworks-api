@@ -27,6 +27,7 @@ func (RestaurantOwner) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("banking_data", BankingData.Type).
 			Unique(),
+		edge.To("restaurant", Restaurant.Type).Unique(),
 	}
 }
 

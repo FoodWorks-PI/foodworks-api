@@ -10,8 +10,10 @@ import (
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/bankingdata"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
+	"foodworks.ml/m/internal/generated/ent/tag"
 
 	"github.com/facebook/ent"
 )
@@ -28,8 +30,10 @@ const (
 	TypeAddress         = "Address"
 	TypeBankingData     = "BankingData"
 	TypeCustomer        = "Customer"
+	TypeProduct         = "Product"
 	TypeRestaurant      = "Restaurant"
 	TypeRestaurantOwner = "RestaurantOwner"
+	TypeTag             = "Tag"
 )
 
 // AddressMutation represents an operation that mutate the Addresses
@@ -1324,19 +1328,697 @@ func (m *CustomerMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Customer edge %s", name)
 }
 
+// ProductMutation represents an operation that mutate the Products
+// nodes in the graph.
+type ProductMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int
+	name              *string
+	description       *string
+	cost              *int
+	addcost           *int
+	is_active         *bool
+	clearedFields     map[string]struct{}
+	tags              map[int]struct{}
+	removedtags       map[int]struct{}
+	clearedtags       bool
+	restaurant        map[int]struct{}
+	removedrestaurant map[int]struct{}
+	clearedrestaurant bool
+	done              bool
+	oldValue          func(context.Context) (*Product, error)
+}
+
+var _ ent.Mutation = (*ProductMutation)(nil)
+
+// productOption allows to manage the mutation configuration using functional options.
+type productOption func(*ProductMutation)
+
+// newProductMutation creates new mutation for $n.Name.
+func newProductMutation(c config, op Op, opts ...productOption) *ProductMutation {
+	m := &ProductMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProduct,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProductID sets the id field of the mutation.
+func withProductID(id int) productOption {
+	return func(m *ProductMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Product
+		)
+		m.oldValue = func(ctx context.Context) (*Product, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Product.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProduct sets the old Product of the mutation.
+func withProduct(node *Product) productOption {
+	return func(m *ProductMutation) {
+		m.oldValue = func(context.Context) (*Product, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProductMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProductMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *ProductMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetName sets the name field.
+func (m *ProductMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the name value in the mutation.
+func (m *ProductMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old name value of the Product.
+// If the Product object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ProductMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldName is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName reset all changes of the "name" field.
+func (m *ProductMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the description field.
+func (m *ProductMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the description value in the mutation.
+func (m *ProductMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old description value of the Product.
+// If the Product object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ProductMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldDescription is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription reset all changes of the "description" field.
+func (m *ProductMutation) ResetDescription() {
+	m.description = nil
+}
+
+// SetCost sets the cost field.
+func (m *ProductMutation) SetCost(i int) {
+	m.cost = &i
+	m.addcost = nil
+}
+
+// Cost returns the cost value in the mutation.
+func (m *ProductMutation) Cost() (r int, exists bool) {
+	v := m.cost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCost returns the old cost value of the Product.
+// If the Product object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ProductMutation) OldCost(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCost is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCost requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCost: %w", err)
+	}
+	return oldValue.Cost, nil
+}
+
+// AddCost adds i to cost.
+func (m *ProductMutation) AddCost(i int) {
+	if m.addcost != nil {
+		*m.addcost += i
+	} else {
+		m.addcost = &i
+	}
+}
+
+// AddedCost returns the value that was added to the cost field in this mutation.
+func (m *ProductMutation) AddedCost() (r int, exists bool) {
+	v := m.addcost
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCost reset all changes of the "cost" field.
+func (m *ProductMutation) ResetCost() {
+	m.cost = nil
+	m.addcost = nil
+}
+
+// SetIsActive sets the is_active field.
+func (m *ProductMutation) SetIsActive(b bool) {
+	m.is_active = &b
+}
+
+// IsActive returns the is_active value in the mutation.
+func (m *ProductMutation) IsActive() (r bool, exists bool) {
+	v := m.is_active
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsActive returns the old is_active value of the Product.
+// If the Product object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ProductMutation) OldIsActive(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldIsActive is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldIsActive requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsActive: %w", err)
+	}
+	return oldValue.IsActive, nil
+}
+
+// ResetIsActive reset all changes of the "is_active" field.
+func (m *ProductMutation) ResetIsActive() {
+	m.is_active = nil
+}
+
+// AddTagIDs adds the tags edge to Tag by ids.
+func (m *ProductMutation) AddTagIDs(ids ...int) {
+	if m.tags == nil {
+		m.tags = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.tags[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTags clears the tags edge to Tag.
+func (m *ProductMutation) ClearTags() {
+	m.clearedtags = true
+}
+
+// TagsCleared returns if the edge tags was cleared.
+func (m *ProductMutation) TagsCleared() bool {
+	return m.clearedtags
+}
+
+// RemoveTagIDs removes the tags edge to Tag by ids.
+func (m *ProductMutation) RemoveTagIDs(ids ...int) {
+	if m.removedtags == nil {
+		m.removedtags = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedtags[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTags returns the removed ids of tags.
+func (m *ProductMutation) RemovedTagsIDs() (ids []int) {
+	for id := range m.removedtags {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TagsIDs returns the tags ids in the mutation.
+func (m *ProductMutation) TagsIDs() (ids []int) {
+	for id := range m.tags {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTags reset all changes of the "tags" edge.
+func (m *ProductMutation) ResetTags() {
+	m.tags = nil
+	m.clearedtags = false
+	m.removedtags = nil
+}
+
+// AddRestaurantIDs adds the restaurant edge to Restaurant by ids.
+func (m *ProductMutation) AddRestaurantIDs(ids ...int) {
+	if m.restaurant == nil {
+		m.restaurant = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.restaurant[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRestaurant clears the restaurant edge to Restaurant.
+func (m *ProductMutation) ClearRestaurant() {
+	m.clearedrestaurant = true
+}
+
+// RestaurantCleared returns if the edge restaurant was cleared.
+func (m *ProductMutation) RestaurantCleared() bool {
+	return m.clearedrestaurant
+}
+
+// RemoveRestaurantIDs removes the restaurant edge to Restaurant by ids.
+func (m *ProductMutation) RemoveRestaurantIDs(ids ...int) {
+	if m.removedrestaurant == nil {
+		m.removedrestaurant = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedrestaurant[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRestaurant returns the removed ids of restaurant.
+func (m *ProductMutation) RemovedRestaurantIDs() (ids []int) {
+	for id := range m.removedrestaurant {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RestaurantIDs returns the restaurant ids in the mutation.
+func (m *ProductMutation) RestaurantIDs() (ids []int) {
+	for id := range m.restaurant {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRestaurant reset all changes of the "restaurant" edge.
+func (m *ProductMutation) ResetRestaurant() {
+	m.restaurant = nil
+	m.clearedrestaurant = false
+	m.removedrestaurant = nil
+}
+
+// Op returns the operation name.
+func (m *ProductMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Product).
+func (m *ProductMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *ProductMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.name != nil {
+		fields = append(fields, product.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, product.FieldDescription)
+	}
+	if m.cost != nil {
+		fields = append(fields, product.FieldCost)
+	}
+	if m.is_active != nil {
+		fields = append(fields, product.FieldIsActive)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *ProductMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case product.FieldName:
+		return m.Name()
+	case product.FieldDescription:
+		return m.Description()
+	case product.FieldCost:
+		return m.Cost()
+	case product.FieldIsActive:
+		return m.IsActive()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case product.FieldName:
+		return m.OldName(ctx)
+	case product.FieldDescription:
+		return m.OldDescription(ctx)
+	case product.FieldCost:
+		return m.OldCost(ctx)
+	case product.FieldIsActive:
+		return m.OldIsActive(ctx)
+	}
+	return nil, fmt.Errorf("unknown Product field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *ProductMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case product.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case product.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case product.FieldCost:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCost(v)
+		return nil
+	case product.FieldIsActive:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsActive(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Product field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *ProductMutation) AddedFields() []string {
+	var fields []string
+	if m.addcost != nil {
+		fields = append(fields, product.FieldCost)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *ProductMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case product.FieldCost:
+		return m.AddedCost()
+	}
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *ProductMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case product.FieldCost:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCost(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Product numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *ProductMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *ProductMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProductMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Product nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *ProductMutation) ResetField(name string) error {
+	switch name {
+	case product.FieldName:
+		m.ResetName()
+		return nil
+	case product.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case product.FieldCost:
+		m.ResetCost()
+		return nil
+	case product.FieldIsActive:
+		m.ResetIsActive()
+		return nil
+	}
+	return fmt.Errorf("unknown Product field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *ProductMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.tags != nil {
+		edges = append(edges, product.EdgeTags)
+	}
+	if m.restaurant != nil {
+		edges = append(edges, product.EdgeRestaurant)
+	}
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *ProductMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case product.EdgeTags:
+		ids := make([]ent.Value, 0, len(m.tags))
+		for id := range m.tags {
+			ids = append(ids, id)
+		}
+		return ids
+	case product.EdgeRestaurant:
+		ids := make([]ent.Value, 0, len(m.restaurant))
+		for id := range m.restaurant {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *ProductMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedtags != nil {
+		edges = append(edges, product.EdgeTags)
+	}
+	if m.removedrestaurant != nil {
+		edges = append(edges, product.EdgeRestaurant)
+	}
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *ProductMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case product.EdgeTags:
+		ids := make([]ent.Value, 0, len(m.removedtags))
+		for id := range m.removedtags {
+			ids = append(ids, id)
+		}
+		return ids
+	case product.EdgeRestaurant:
+		ids := make([]ent.Value, 0, len(m.removedrestaurant))
+		for id := range m.removedrestaurant {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *ProductMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedtags {
+		edges = append(edges, product.EdgeTags)
+	}
+	if m.clearedrestaurant {
+		edges = append(edges, product.EdgeRestaurant)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *ProductMutation) EdgeCleared(name string) bool {
+	switch name {
+	case product.EdgeTags:
+		return m.clearedtags
+	case product.EdgeRestaurant:
+		return m.clearedrestaurant
+	}
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *ProductMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Product unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *ProductMutation) ResetEdge(name string) error {
+	switch name {
+	case product.EdgeTags:
+		m.ResetTags()
+		return nil
+	case product.EdgeRestaurant:
+		m.ResetRestaurant()
+		return nil
+	}
+	return fmt.Errorf("unknown Product edge %s", name)
+}
+
 // RestaurantMutation represents an operation that mutate the Restaurants
 // nodes in the graph.
 type RestaurantMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *int
-	name           *string
-	clearedFields  map[string]struct{}
-	address        *int
-	clearedaddress bool
-	done           bool
-	oldValue       func(context.Context) (*Restaurant, error)
+	op              Op
+	typ             string
+	id              *int
+	name            *string
+	description     *string
+	clearedFields   map[string]struct{}
+	address         *int
+	clearedaddress  bool
+	tags            map[int]struct{}
+	removedtags     map[int]struct{}
+	clearedtags     bool
+	owner           map[int]struct{}
+	removedowner    map[int]struct{}
+	clearedowner    bool
+	products        map[int]struct{}
+	removedproducts map[int]struct{}
+	clearedproducts bool
+	done            bool
+	oldValue        func(context.Context) (*Restaurant, error)
 }
 
 var _ ent.Mutation = (*RestaurantMutation)(nil)
@@ -1455,6 +2137,43 @@ func (m *RestaurantMutation) ResetName() {
 	m.name = nil
 }
 
+// SetDescription sets the description field.
+func (m *RestaurantMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the description value in the mutation.
+func (m *RestaurantMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old description value of the Restaurant.
+// If the Restaurant object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *RestaurantMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldDescription is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription reset all changes of the "description" field.
+func (m *RestaurantMutation) ResetDescription() {
+	m.description = nil
+}
+
 // SetAddressID sets the address edge to Address by id.
 func (m *RestaurantMutation) SetAddressID(id int) {
 	m.address = &id
@@ -1494,6 +2213,165 @@ func (m *RestaurantMutation) ResetAddress() {
 	m.clearedaddress = false
 }
 
+// AddTagIDs adds the tags edge to Tag by ids.
+func (m *RestaurantMutation) AddTagIDs(ids ...int) {
+	if m.tags == nil {
+		m.tags = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.tags[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTags clears the tags edge to Tag.
+func (m *RestaurantMutation) ClearTags() {
+	m.clearedtags = true
+}
+
+// TagsCleared returns if the edge tags was cleared.
+func (m *RestaurantMutation) TagsCleared() bool {
+	return m.clearedtags
+}
+
+// RemoveTagIDs removes the tags edge to Tag by ids.
+func (m *RestaurantMutation) RemoveTagIDs(ids ...int) {
+	if m.removedtags == nil {
+		m.removedtags = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedtags[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTags returns the removed ids of tags.
+func (m *RestaurantMutation) RemovedTagsIDs() (ids []int) {
+	for id := range m.removedtags {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TagsIDs returns the tags ids in the mutation.
+func (m *RestaurantMutation) TagsIDs() (ids []int) {
+	for id := range m.tags {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTags reset all changes of the "tags" edge.
+func (m *RestaurantMutation) ResetTags() {
+	m.tags = nil
+	m.clearedtags = false
+	m.removedtags = nil
+}
+
+// AddOwnerIDs adds the owner edge to RestaurantOwner by ids.
+func (m *RestaurantMutation) AddOwnerIDs(ids ...int) {
+	if m.owner == nil {
+		m.owner = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.owner[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOwner clears the owner edge to RestaurantOwner.
+func (m *RestaurantMutation) ClearOwner() {
+	m.clearedowner = true
+}
+
+// OwnerCleared returns if the edge owner was cleared.
+func (m *RestaurantMutation) OwnerCleared() bool {
+	return m.clearedowner
+}
+
+// RemoveOwnerIDs removes the owner edge to RestaurantOwner by ids.
+func (m *RestaurantMutation) RemoveOwnerIDs(ids ...int) {
+	if m.removedowner == nil {
+		m.removedowner = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedowner[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOwner returns the removed ids of owner.
+func (m *RestaurantMutation) RemovedOwnerIDs() (ids []int) {
+	for id := range m.removedowner {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OwnerIDs returns the owner ids in the mutation.
+func (m *RestaurantMutation) OwnerIDs() (ids []int) {
+	for id := range m.owner {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOwner reset all changes of the "owner" edge.
+func (m *RestaurantMutation) ResetOwner() {
+	m.owner = nil
+	m.clearedowner = false
+	m.removedowner = nil
+}
+
+// AddProductIDs adds the products edge to Product by ids.
+func (m *RestaurantMutation) AddProductIDs(ids ...int) {
+	if m.products == nil {
+		m.products = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.products[ids[i]] = struct{}{}
+	}
+}
+
+// ClearProducts clears the products edge to Product.
+func (m *RestaurantMutation) ClearProducts() {
+	m.clearedproducts = true
+}
+
+// ProductsCleared returns if the edge products was cleared.
+func (m *RestaurantMutation) ProductsCleared() bool {
+	return m.clearedproducts
+}
+
+// RemoveProductIDs removes the products edge to Product by ids.
+func (m *RestaurantMutation) RemoveProductIDs(ids ...int) {
+	if m.removedproducts == nil {
+		m.removedproducts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedproducts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProducts returns the removed ids of products.
+func (m *RestaurantMutation) RemovedProductsIDs() (ids []int) {
+	for id := range m.removedproducts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProductsIDs returns the products ids in the mutation.
+func (m *RestaurantMutation) ProductsIDs() (ids []int) {
+	for id := range m.products {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProducts reset all changes of the "products" edge.
+func (m *RestaurantMutation) ResetProducts() {
+	m.products = nil
+	m.clearedproducts = false
+	m.removedproducts = nil
+}
+
 // Op returns the operation name.
 func (m *RestaurantMutation) Op() Op {
 	return m.op
@@ -1508,9 +2386,12 @@ func (m *RestaurantMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *RestaurantMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
 	if m.name != nil {
 		fields = append(fields, restaurant.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, restaurant.FieldDescription)
 	}
 	return fields
 }
@@ -1522,6 +2403,8 @@ func (m *RestaurantMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case restaurant.FieldName:
 		return m.Name()
+	case restaurant.FieldDescription:
+		return m.Description()
 	}
 	return nil, false
 }
@@ -1533,6 +2416,8 @@ func (m *RestaurantMutation) OldField(ctx context.Context, name string) (ent.Val
 	switch name {
 	case restaurant.FieldName:
 		return m.OldName(ctx)
+	case restaurant.FieldDescription:
+		return m.OldDescription(ctx)
 	}
 	return nil, fmt.Errorf("unknown Restaurant field %s", name)
 }
@@ -1548,6 +2433,13 @@ func (m *RestaurantMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case restaurant.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Restaurant field %s", name)
@@ -1602,6 +2494,9 @@ func (m *RestaurantMutation) ResetField(name string) error {
 	case restaurant.FieldName:
 		m.ResetName()
 		return nil
+	case restaurant.FieldDescription:
+		m.ResetDescription()
+		return nil
 	}
 	return fmt.Errorf("unknown Restaurant field %s", name)
 }
@@ -1609,9 +2504,18 @@ func (m *RestaurantMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *RestaurantMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 4)
 	if m.address != nil {
 		edges = append(edges, restaurant.EdgeAddress)
+	}
+	if m.tags != nil {
+		edges = append(edges, restaurant.EdgeTags)
+	}
+	if m.owner != nil {
+		edges = append(edges, restaurant.EdgeOwner)
+	}
+	if m.products != nil {
+		edges = append(edges, restaurant.EdgeProducts)
 	}
 	return edges
 }
@@ -1624,6 +2528,24 @@ func (m *RestaurantMutation) AddedIDs(name string) []ent.Value {
 		if id := m.address; id != nil {
 			return []ent.Value{*id}
 		}
+	case restaurant.EdgeTags:
+		ids := make([]ent.Value, 0, len(m.tags))
+		for id := range m.tags {
+			ids = append(ids, id)
+		}
+		return ids
+	case restaurant.EdgeOwner:
+		ids := make([]ent.Value, 0, len(m.owner))
+		for id := range m.owner {
+			ids = append(ids, id)
+		}
+		return ids
+	case restaurant.EdgeProducts:
+		ids := make([]ent.Value, 0, len(m.products))
+		for id := range m.products {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -1631,7 +2553,16 @@ func (m *RestaurantMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *RestaurantMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 4)
+	if m.removedtags != nil {
+		edges = append(edges, restaurant.EdgeTags)
+	}
+	if m.removedowner != nil {
+		edges = append(edges, restaurant.EdgeOwner)
+	}
+	if m.removedproducts != nil {
+		edges = append(edges, restaurant.EdgeProducts)
+	}
 	return edges
 }
 
@@ -1639,6 +2570,24 @@ func (m *RestaurantMutation) RemovedEdges() []string {
 // the given edge name.
 func (m *RestaurantMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case restaurant.EdgeTags:
+		ids := make([]ent.Value, 0, len(m.removedtags))
+		for id := range m.removedtags {
+			ids = append(ids, id)
+		}
+		return ids
+	case restaurant.EdgeOwner:
+		ids := make([]ent.Value, 0, len(m.removedowner))
+		for id := range m.removedowner {
+			ids = append(ids, id)
+		}
+		return ids
+	case restaurant.EdgeProducts:
+		ids := make([]ent.Value, 0, len(m.removedproducts))
+		for id := range m.removedproducts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -1646,9 +2595,18 @@ func (m *RestaurantMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *RestaurantMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 4)
 	if m.clearedaddress {
 		edges = append(edges, restaurant.EdgeAddress)
+	}
+	if m.clearedtags {
+		edges = append(edges, restaurant.EdgeTags)
+	}
+	if m.clearedowner {
+		edges = append(edges, restaurant.EdgeOwner)
+	}
+	if m.clearedproducts {
+		edges = append(edges, restaurant.EdgeProducts)
 	}
 	return edges
 }
@@ -1659,6 +2617,12 @@ func (m *RestaurantMutation) EdgeCleared(name string) bool {
 	switch name {
 	case restaurant.EdgeAddress:
 		return m.clearedaddress
+	case restaurant.EdgeTags:
+		return m.clearedtags
+	case restaurant.EdgeOwner:
+		return m.clearedowner
+	case restaurant.EdgeProducts:
+		return m.clearedproducts
 	}
 	return false
 }
@@ -1682,6 +2646,15 @@ func (m *RestaurantMutation) ResetEdge(name string) error {
 	case restaurant.EdgeAddress:
 		m.ResetAddress()
 		return nil
+	case restaurant.EdgeTags:
+		m.ResetTags()
+		return nil
+	case restaurant.EdgeOwner:
+		m.ResetOwner()
+		return nil
+	case restaurant.EdgeProducts:
+		m.ResetProducts()
+		return nil
 	}
 	return fmt.Errorf("unknown Restaurant edge %s", name)
 }
@@ -1700,6 +2673,8 @@ type RestaurantOwnerMutation struct {
 	clearedFields       map[string]struct{}
 	banking_data        *int
 	clearedbanking_data bool
+	restaurant          *int
+	clearedrestaurant   bool
 	done                bool
 	oldValue            func(context.Context) (*RestaurantOwner, error)
 }
@@ -1970,6 +2945,45 @@ func (m *RestaurantOwnerMutation) ResetBankingData() {
 	m.clearedbanking_data = false
 }
 
+// SetRestaurantID sets the restaurant edge to Restaurant by id.
+func (m *RestaurantOwnerMutation) SetRestaurantID(id int) {
+	m.restaurant = &id
+}
+
+// ClearRestaurant clears the restaurant edge to Restaurant.
+func (m *RestaurantOwnerMutation) ClearRestaurant() {
+	m.clearedrestaurant = true
+}
+
+// RestaurantCleared returns if the edge restaurant was cleared.
+func (m *RestaurantOwnerMutation) RestaurantCleared() bool {
+	return m.clearedrestaurant
+}
+
+// RestaurantID returns the restaurant id in the mutation.
+func (m *RestaurantOwnerMutation) RestaurantID() (id int, exists bool) {
+	if m.restaurant != nil {
+		return *m.restaurant, true
+	}
+	return
+}
+
+// RestaurantIDs returns the restaurant ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// RestaurantID instead. It exists only for internal usage by the builders.
+func (m *RestaurantOwnerMutation) RestaurantIDs() (ids []int) {
+	if id := m.restaurant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRestaurant reset all changes of the "restaurant" edge.
+func (m *RestaurantOwnerMutation) ResetRestaurant() {
+	m.restaurant = nil
+	m.clearedrestaurant = false
+}
+
 // Op returns the operation name.
 func (m *RestaurantOwnerMutation) Op() Op {
 	return m.op
@@ -2136,9 +3150,12 @@ func (m *RestaurantOwnerMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *RestaurantOwnerMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.banking_data != nil {
 		edges = append(edges, restaurantowner.EdgeBankingData)
+	}
+	if m.restaurant != nil {
+		edges = append(edges, restaurantowner.EdgeRestaurant)
 	}
 	return edges
 }
@@ -2151,6 +3168,10 @@ func (m *RestaurantOwnerMutation) AddedIDs(name string) []ent.Value {
 		if id := m.banking_data; id != nil {
 			return []ent.Value{*id}
 		}
+	case restaurantowner.EdgeRestaurant:
+		if id := m.restaurant; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
@@ -2158,7 +3179,7 @@ func (m *RestaurantOwnerMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *RestaurantOwnerMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -2173,9 +3194,12 @@ func (m *RestaurantOwnerMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *RestaurantOwnerMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedbanking_data {
 		edges = append(edges, restaurantowner.EdgeBankingData)
+	}
+	if m.clearedrestaurant {
+		edges = append(edges, restaurantowner.EdgeRestaurant)
 	}
 	return edges
 }
@@ -2186,6 +3210,8 @@ func (m *RestaurantOwnerMutation) EdgeCleared(name string) bool {
 	switch name {
 	case restaurantowner.EdgeBankingData:
 		return m.clearedbanking_data
+	case restaurantowner.EdgeRestaurant:
+		return m.clearedrestaurant
 	}
 	return false
 }
@@ -2196,6 +3222,9 @@ func (m *RestaurantOwnerMutation) ClearEdge(name string) error {
 	switch name {
 	case restaurantowner.EdgeBankingData:
 		m.ClearBankingData()
+		return nil
+	case restaurantowner.EdgeRestaurant:
+		m.ClearRestaurant()
 		return nil
 	}
 	return fmt.Errorf("unknown RestaurantOwner unique edge %s", name)
@@ -2209,6 +3238,476 @@ func (m *RestaurantOwnerMutation) ResetEdge(name string) error {
 	case restaurantowner.EdgeBankingData:
 		m.ResetBankingData()
 		return nil
+	case restaurantowner.EdgeRestaurant:
+		m.ResetRestaurant()
+		return nil
 	}
 	return fmt.Errorf("unknown RestaurantOwner edge %s", name)
+}
+
+// TagMutation represents an operation that mutate the Tags
+// nodes in the graph.
+type TagMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int
+	name              *string
+	clearedFields     map[string]struct{}
+	product           map[int]struct{}
+	removedproduct    map[int]struct{}
+	clearedproduct    bool
+	restaurant        map[int]struct{}
+	removedrestaurant map[int]struct{}
+	clearedrestaurant bool
+	done              bool
+	oldValue          func(context.Context) (*Tag, error)
+}
+
+var _ ent.Mutation = (*TagMutation)(nil)
+
+// tagOption allows to manage the mutation configuration using functional options.
+type tagOption func(*TagMutation)
+
+// newTagMutation creates new mutation for $n.Name.
+func newTagMutation(c config, op Op, opts ...tagOption) *TagMutation {
+	m := &TagMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTag,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTagID sets the id field of the mutation.
+func withTagID(id int) tagOption {
+	return func(m *TagMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Tag
+		)
+		m.oldValue = func(ctx context.Context) (*Tag, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Tag.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTag sets the old Tag of the mutation.
+func withTag(node *Tag) tagOption {
+	return func(m *TagMutation) {
+		m.oldValue = func(context.Context) (*Tag, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TagMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TagMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *TagMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetName sets the name field.
+func (m *TagMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the name value in the mutation.
+func (m *TagMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old name value of the Tag.
+// If the Tag object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *TagMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldName is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName reset all changes of the "name" field.
+func (m *TagMutation) ResetName() {
+	m.name = nil
+}
+
+// AddProductIDs adds the product edge to Product by ids.
+func (m *TagMutation) AddProductIDs(ids ...int) {
+	if m.product == nil {
+		m.product = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.product[ids[i]] = struct{}{}
+	}
+}
+
+// ClearProduct clears the product edge to Product.
+func (m *TagMutation) ClearProduct() {
+	m.clearedproduct = true
+}
+
+// ProductCleared returns if the edge product was cleared.
+func (m *TagMutation) ProductCleared() bool {
+	return m.clearedproduct
+}
+
+// RemoveProductIDs removes the product edge to Product by ids.
+func (m *TagMutation) RemoveProductIDs(ids ...int) {
+	if m.removedproduct == nil {
+		m.removedproduct = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedproduct[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProduct returns the removed ids of product.
+func (m *TagMutation) RemovedProductIDs() (ids []int) {
+	for id := range m.removedproduct {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProductIDs returns the product ids in the mutation.
+func (m *TagMutation) ProductIDs() (ids []int) {
+	for id := range m.product {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProduct reset all changes of the "product" edge.
+func (m *TagMutation) ResetProduct() {
+	m.product = nil
+	m.clearedproduct = false
+	m.removedproduct = nil
+}
+
+// AddRestaurantIDs adds the restaurant edge to Restaurant by ids.
+func (m *TagMutation) AddRestaurantIDs(ids ...int) {
+	if m.restaurant == nil {
+		m.restaurant = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.restaurant[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRestaurant clears the restaurant edge to Restaurant.
+func (m *TagMutation) ClearRestaurant() {
+	m.clearedrestaurant = true
+}
+
+// RestaurantCleared returns if the edge restaurant was cleared.
+func (m *TagMutation) RestaurantCleared() bool {
+	return m.clearedrestaurant
+}
+
+// RemoveRestaurantIDs removes the restaurant edge to Restaurant by ids.
+func (m *TagMutation) RemoveRestaurantIDs(ids ...int) {
+	if m.removedrestaurant == nil {
+		m.removedrestaurant = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedrestaurant[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRestaurant returns the removed ids of restaurant.
+func (m *TagMutation) RemovedRestaurantIDs() (ids []int) {
+	for id := range m.removedrestaurant {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RestaurantIDs returns the restaurant ids in the mutation.
+func (m *TagMutation) RestaurantIDs() (ids []int) {
+	for id := range m.restaurant {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRestaurant reset all changes of the "restaurant" edge.
+func (m *TagMutation) ResetRestaurant() {
+	m.restaurant = nil
+	m.clearedrestaurant = false
+	m.removedrestaurant = nil
+}
+
+// Op returns the operation name.
+func (m *TagMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Tag).
+func (m *TagMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *TagMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.name != nil {
+		fields = append(fields, tag.FieldName)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *TagMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case tag.FieldName:
+		return m.Name()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *TagMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case tag.FieldName:
+		return m.OldName(ctx)
+	}
+	return nil, fmt.Errorf("unknown Tag field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *TagMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case tag.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Tag field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *TagMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *TagMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *TagMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Tag numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *TagMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *TagMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TagMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Tag nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *TagMutation) ResetField(name string) error {
+	switch name {
+	case tag.FieldName:
+		m.ResetName()
+		return nil
+	}
+	return fmt.Errorf("unknown Tag field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *TagMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.product != nil {
+		edges = append(edges, tag.EdgeProduct)
+	}
+	if m.restaurant != nil {
+		edges = append(edges, tag.EdgeRestaurant)
+	}
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *TagMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case tag.EdgeProduct:
+		ids := make([]ent.Value, 0, len(m.product))
+		for id := range m.product {
+			ids = append(ids, id)
+		}
+		return ids
+	case tag.EdgeRestaurant:
+		ids := make([]ent.Value, 0, len(m.restaurant))
+		for id := range m.restaurant {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *TagMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedproduct != nil {
+		edges = append(edges, tag.EdgeProduct)
+	}
+	if m.removedrestaurant != nil {
+		edges = append(edges, tag.EdgeRestaurant)
+	}
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *TagMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case tag.EdgeProduct:
+		ids := make([]ent.Value, 0, len(m.removedproduct))
+		for id := range m.removedproduct {
+			ids = append(ids, id)
+		}
+		return ids
+	case tag.EdgeRestaurant:
+		ids := make([]ent.Value, 0, len(m.removedrestaurant))
+		for id := range m.removedrestaurant {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *TagMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedproduct {
+		edges = append(edges, tag.EdgeProduct)
+	}
+	if m.clearedrestaurant {
+		edges = append(edges, tag.EdgeRestaurant)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *TagMutation) EdgeCleared(name string) bool {
+	switch name {
+	case tag.EdgeProduct:
+		return m.clearedproduct
+	case tag.EdgeRestaurant:
+		return m.clearedrestaurant
+	}
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *TagMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Tag unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *TagMutation) ResetEdge(name string) error {
+	switch name {
+	case tag.EdgeProduct:
+		m.ResetProduct()
+		return nil
+	case tag.EdgeRestaurant:
+		m.ResetRestaurant()
+		return nil
+	}
+	return fmt.Errorf("unknown Tag edge %s", name)
 }

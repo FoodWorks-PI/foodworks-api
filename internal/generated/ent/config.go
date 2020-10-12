@@ -27,8 +27,10 @@ type hooks struct {
 	Address         []ent.Hook
 	BankingData     []ent.Hook
 	Customer        []ent.Hook
+	Product         []ent.Hook
 	Restaurant      []ent.Hook
 	RestaurantOwner []ent.Hook
+	Tag             []ent.Hook
 }
 
 // Options applies the options on the config object.

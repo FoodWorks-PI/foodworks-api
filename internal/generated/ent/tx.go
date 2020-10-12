@@ -18,10 +18,14 @@ type Tx struct {
 	BankingData *BankingDataClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
+	// Product is the client for interacting with the Product builders.
+	Product *ProductClient
 	// Restaurant is the client for interacting with the Restaurant builders.
 	Restaurant *RestaurantClient
 	// RestaurantOwner is the client for interacting with the RestaurantOwner builders.
 	RestaurantOwner *RestaurantOwnerClient
+	// Tag is the client for interacting with the Tag builders.
+	Tag *TagClient
 
 	// lazily loaded.
 	client     *Client
@@ -160,8 +164,10 @@ func (tx *Tx) init() {
 	tx.Address = NewAddressClient(tx.config)
 	tx.BankingData = NewBankingDataClient(tx.config)
 	tx.Customer = NewCustomerClient(tx.config)
+	tx.Product = NewProductClient(tx.config)
 	tx.Restaurant = NewRestaurantClient(tx.config)
 	tx.RestaurantOwner = NewRestaurantOwnerClient(tx.config)
+	tx.Tag = NewTagClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

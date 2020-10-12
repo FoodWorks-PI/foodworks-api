@@ -10,6 +10,7 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/bankingdata"
 	"foodworks.ml/m/internal/generated/ent/predicate"
+	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -26,6 +27,7 @@ type RestaurantOwnerQuery struct {
 	predicates []predicate.RestaurantOwner
 	// eager-loading edges.
 	withBankingData *BankingDataQuery
+	withRestaurant  *RestaurantQuery
 	withFKs         bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -71,6 +73,28 @@ func (roq *RestaurantOwnerQuery) QueryBankingData() *BankingDataQuery {
 			sqlgraph.From(restaurantowner.Table, restaurantowner.FieldID, selector),
 			sqlgraph.To(bankingdata.Table, bankingdata.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, restaurantowner.BankingDataTable, restaurantowner.BankingDataColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(roq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRestaurant chains the current query on the restaurant edge.
+func (roq *RestaurantOwnerQuery) QueryRestaurant() *RestaurantQuery {
+	query := &RestaurantQuery{config: roq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := roq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := roq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(restaurantowner.Table, restaurantowner.FieldID, selector),
+			sqlgraph.To(restaurant.Table, restaurant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, restaurantowner.RestaurantTable, restaurantowner.RestaurantColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(roq.driver.Dialect(), step)
 		return fromU, nil
@@ -268,6 +292,17 @@ func (roq *RestaurantOwnerQuery) WithBankingData(opts ...func(*BankingDataQuery)
 	return roq
 }
 
+//  WithRestaurant tells the query-builder to eager-loads the nodes that are connected to
+// the "restaurant" edge. The optional arguments used to configure the query builder of the edge.
+func (roq *RestaurantOwnerQuery) WithRestaurant(opts ...func(*RestaurantQuery)) *RestaurantOwnerQuery {
+	query := &RestaurantQuery{config: roq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	roq.withRestaurant = query
+	return roq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -335,11 +370,12 @@ func (roq *RestaurantOwnerQuery) sqlAll(ctx context.Context) ([]*RestaurantOwner
 		nodes       = []*RestaurantOwner{}
 		withFKs     = roq.withFKs
 		_spec       = roq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			roq.withBankingData != nil,
+			roq.withRestaurant != nil,
 		}
 	)
-	if roq.withBankingData != nil {
+	if roq.withBankingData != nil || roq.withRestaurant != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -390,6 +426,31 @@ func (roq *RestaurantOwnerQuery) sqlAll(ctx context.Context) ([]*RestaurantOwner
 			}
 			for i := range nodes {
 				nodes[i].Edges.BankingData = n
+			}
+		}
+	}
+
+	if query := roq.withRestaurant; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*RestaurantOwner)
+		for i := range nodes {
+			if fk := nodes[i].restaurant_owner_restaurant; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
+		}
+		query.Where(restaurant.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "restaurant_owner_restaurant" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Restaurant = n
 			}
 		}
 	}

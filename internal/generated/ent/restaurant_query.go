@@ -4,13 +4,17 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
 
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/predicate"
+	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
+	"foodworks.ml/m/internal/generated/ent/restaurantowner"
+	"foodworks.ml/m/internal/generated/ent/tag"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -25,8 +29,11 @@ type RestaurantQuery struct {
 	unique     []string
 	predicates []predicate.Restaurant
 	// eager-loading edges.
-	withAddress *AddressQuery
-	withFKs     bool
+	withAddress  *AddressQuery
+	withTags     *TagQuery
+	withOwner    *RestaurantOwnerQuery
+	withProducts *ProductQuery
+	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -71,6 +78,72 @@ func (rq *RestaurantQuery) QueryAddress() *AddressQuery {
 			sqlgraph.From(restaurant.Table, restaurant.FieldID, selector),
 			sqlgraph.To(address.Table, address.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, restaurant.AddressTable, restaurant.AddressColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTags chains the current query on the tags edge.
+func (rq *RestaurantQuery) QueryTags() *TagQuery {
+	query := &TagQuery{config: rq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(restaurant.Table, restaurant.FieldID, selector),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, restaurant.TagsTable, restaurant.TagsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOwner chains the current query on the owner edge.
+func (rq *RestaurantQuery) QueryOwner() *RestaurantOwnerQuery {
+	query := &RestaurantOwnerQuery{config: rq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(restaurant.Table, restaurant.FieldID, selector),
+			sqlgraph.To(restaurantowner.Table, restaurantowner.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, restaurant.OwnerTable, restaurant.OwnerColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProducts chains the current query on the products edge.
+func (rq *RestaurantQuery) QueryProducts() *ProductQuery {
+	query := &ProductQuery{config: rq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(restaurant.Table, restaurant.FieldID, selector),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, restaurant.ProductsTable, restaurant.ProductsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -268,6 +341,39 @@ func (rq *RestaurantQuery) WithAddress(opts ...func(*AddressQuery)) *RestaurantQ
 	return rq
 }
 
+//  WithTags tells the query-builder to eager-loads the nodes that are connected to
+// the "tags" edge. The optional arguments used to configure the query builder of the edge.
+func (rq *RestaurantQuery) WithTags(opts ...func(*TagQuery)) *RestaurantQuery {
+	query := &TagQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withTags = query
+	return rq
+}
+
+//  WithOwner tells the query-builder to eager-loads the nodes that are connected to
+// the "owner" edge. The optional arguments used to configure the query builder of the edge.
+func (rq *RestaurantQuery) WithOwner(opts ...func(*RestaurantOwnerQuery)) *RestaurantQuery {
+	query := &RestaurantOwnerQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withOwner = query
+	return rq
+}
+
+//  WithProducts tells the query-builder to eager-loads the nodes that are connected to
+// the "products" edge. The optional arguments used to configure the query builder of the edge.
+func (rq *RestaurantQuery) WithProducts(opts ...func(*ProductQuery)) *RestaurantQuery {
+	query := &ProductQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withProducts = query
+	return rq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -335,8 +441,11 @@ func (rq *RestaurantQuery) sqlAll(ctx context.Context) ([]*Restaurant, error) {
 		nodes       = []*Restaurant{}
 		withFKs     = rq.withFKs
 		_spec       = rq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [4]bool{
 			rq.withAddress != nil,
+			rq.withTags != nil,
+			rq.withOwner != nil,
+			rq.withProducts != nil,
 		}
 	)
 	if rq.withAddress != nil {
@@ -390,6 +499,160 @@ func (rq *RestaurantQuery) sqlAll(ctx context.Context) ([]*Restaurant, error) {
 			}
 			for i := range nodes {
 				nodes[i].Edges.Address = n
+			}
+		}
+	}
+
+	if query := rq.withTags; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Restaurant, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Restaurant)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   restaurant.TagsTable,
+				Columns: restaurant.TagsPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(restaurant.TagsPrimaryKey[0], fks...))
+			},
+
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				edgeids = append(edgeids, inValue)
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, rq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "tags": %v`, err)
+		}
+		query.Where(tag.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "tags" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Tags = append(nodes[i].Edges.Tags, n)
+			}
+		}
+	}
+
+	if query := rq.withOwner; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Restaurant)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.RestaurantOwner(func(s *sql.Selector) {
+			s.Where(sql.InValues(restaurant.OwnerColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.restaurant_owner_restaurant
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "restaurant_owner_restaurant" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "restaurant_owner_restaurant" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Owner = append(node.Edges.Owner, n)
+		}
+	}
+
+	if query := rq.withProducts; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Restaurant, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Restaurant)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   restaurant.ProductsTable,
+				Columns: restaurant.ProductsPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(restaurant.ProductsPrimaryKey[0], fks...))
+			},
+
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				edgeids = append(edgeids, inValue)
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, rq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "products": %v`, err)
+		}
+		query.Where(product.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "products" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Products = append(nodes[i].Edges.Products, n)
 			}
 		}
 	}

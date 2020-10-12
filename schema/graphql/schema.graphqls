@@ -17,9 +17,21 @@ input RegisterAddressInput {
   streetLine: String!
 }
 
+type Address {
+  latitude: Float!
+  longitude: Float!
+  streetLine: String!
+}
+
+
 input RegisterBankingInput {
   bankAccount: String!
 }
+
+type BankingData {
+  bankAccount: String!
+}
+
 
 input RegisterCustomerInput {
   name: String!
@@ -34,6 +46,58 @@ input UpdateCustomerInput {
   phone: String!
 }
 
+type Customer {
+  ID: ID!
+  name: String!
+  email: String!
+  address: Address!
+  phone: String!
+  # favoriteProducts: [Product]
+}
+
+
+input RegisterProductInput {
+  name: String!
+  description: String!
+  tags: [RegisterTagInput!]!
+  cost: Int! # Manejar como centavos
+  active: Boolean!
+  restaurantID: ID! # Es necesario?
+}
+
+input ProductsFilterConfigInput {
+  includeInactive: Boolean
+  #oderByField: smt
+}
+
+input ProductsByAllFieldsInput {
+  searchString: String!
+  productFilterConfig: ProductsFilterConfigInput
+}
+
+input ProductsFilterByRestaurantInput {
+  restaurantID: ID!
+  productFilterConfig: ProductsFilterConfigInput
+}
+
+input ProductsFilterByTagInput {
+  tag: ID!
+  productFilterConfig: ProductsFilterConfigInput
+}
+
+type Product {
+  ID: ID!
+  name: String!
+  description: String!
+  tags: [Tag!]!
+  cost: Int! # Manejar como centavos
+  isActive: Boolean!
+  restaurant: Restaurant # Es necesario?
+  # quantity: Int!
+  # recurrence: Recurrence
+}
+
+
 input RegisterRestaurantInput {
   name: String!
   address: RegisterAddressInput!
@@ -41,9 +105,30 @@ input RegisterRestaurantInput {
   tags: [RegisterTagInput!]!
 }
 
+type Restaurant {
+  ID: ID!
+  name: String!
+  description: String!
+  address: Address!
+  tags: [Tag!]!
+  products: [Product]
+  restaurantOwner: RestaurantOwner!
+}
+
 input RegisterTagInput {
+  ID: ID
+  name: String
+}
+
+input TagInput {
+  id: ID!
+}
+
+type Tag {
+  ID: ID!
   name: String!
 }
+
 
 input RegisterRestaurantOwnerInput {
   name: String!
@@ -59,25 +144,6 @@ input UpdateRestaurantOwnerInput {
   phone: String!
 }
 
-type Address {
-  latitude: Float!
-  longitude: Float!
-  streetLine: String!
-}
-
-type BankingData {
-  bankAccount: String!
-}
-
-type Customer {
-  ID: ID!
-  name: String!
-  email: String!
-  address: Address!
-  phone: String!
-  # favoriteProducts: [Product]
-}
-
 type RestaurantOwner {
   ID: ID!
   name: String!
@@ -87,32 +153,6 @@ type RestaurantOwner {
   restaurant: Restaurant!
 }
 
-type Restaurant {
-  ID: ID!
-  name: String!
-  address: Address!
-  description: String!
-  tags: [Tag!]!
-  products: [Product]
-  restaurantOwner: RestaurantOwner!
-}
-
-type Product {
-  ID: ID!
-  name: String!
-  description: String!
-  tags: [Tag!]!
-  cost: Int! # Manejar como centavos
-  active: Boolean!
-  restaurant: Restaurant # Es necesario?
-  # quantity: Int!
-  # recurrence: Recurrence
-}
-
-type Tag {
-  ID: ID!
-  name: String!
-}
 
 type RestaurantSearchResult {
   restaurant: Restaurant!
@@ -122,24 +162,31 @@ type RestaurantSearchResult {
 type Query {
   getCurrentCustomer: Customer!
   getClosestRestaurants(input: Int): [RestaurantSearchResult!]!
-  getCurrentRestaurantOwner : RestaurantOwner!
-  getProductsByAllFields(input: String): [Product!]!
+  getCurrentRestaurantOwner: RestaurantOwner!
+  getProductsByAllFields(input: ProductsByAllFieldsInput!): [Product!]!
+  getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
+  getRestaurantByID(input: ID!): Restaurant!
+  getTags(input: String): [Tag]!
 }
 
 type Mutation {
-  createCustomerProfile(input:RegisterCustomerInput!): ID!
-  createRestaurantOwnerProfile(input:RegisterRestaurantOwnerInput!): ID!
-
-  updateCustomerProfile(input:UpdateCustomerInput!): ID!
-  updateCustomerAddress(input:RegisterAddressInput!):ID!
-
+  createCustomerProfile(input: RegisterCustomerInput!): ID!
+  updateCustomerProfile(input: UpdateCustomerInput!): ID!
+  updateCustomerAddress(input: RegisterAddressInput!): ID!
   deleteCustomerProfile: ID!
 
-  updateRestaurantOwnerProfile(input:UpdateRestaurantOwnerInput!): ID!
-  updateRestaurantOwnerBankingData(input:RegisterBankingInput!): ID!
-  updateRestaurant(input:RegisterRestaurantInput!): ID!
+  createRestaurantOwnerProfile(input: RegisterRestaurantOwnerInput!): ID!
+  updateRestaurantOwnerProfile(input: UpdateRestaurantOwnerInput!): ID!
+  updateRestaurantOwnerBankingData(input: RegisterBankingInput!): ID!
+  deleteRestaurantOwnerProfile: ID!
 
-  deleteRestaurantOwnerProfile : ID!
+  createProduct(input: RegisterProductInput!): ID!
+  updateProduct(input: RegisterProductInput!): ID!
+  toggleProductStatus(input: ID!): Boolean!
+  deleteProduct: ID!
+
+  updateRestaurant(input:RegisterRestaurantInput!): ID!
+  deleteRestaurant: ID!
 
   # createOrder(input: CreateOrderInput): CreateOrderPayload!
   # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!

@@ -15,6 +15,7 @@ type Restaurant struct {
 func (Restaurant) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name"),
+		field.String("description"),
 	}
 }
 
@@ -23,5 +24,8 @@ func (Restaurant) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("address", Address.Type).
 			Unique(),
+		edge.To("tags", Tag.Type),
+		edge.From("owner", RestaurantOwner.Type).Ref("restaurant"),
+		edge.To("products", Product.Type),
 	}
 }

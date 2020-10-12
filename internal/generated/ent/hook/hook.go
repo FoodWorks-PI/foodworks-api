@@ -48,6 +48,19 @@ func (f CustomerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return f(ctx, mv)
 }
 
+// The ProductFunc type is an adapter to allow the use of ordinary
+// function as Product mutator.
+type ProductFunc func(context.Context, *ent.ProductMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProductFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ProductMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProductMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The RestaurantFunc type is an adapter to allow the use of ordinary
 // function as Restaurant mutator.
 type RestaurantFunc func(context.Context, *ent.RestaurantMutation) (ent.Value, error)
@@ -70,6 +83,19 @@ func (f RestaurantOwnerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Va
 	mv, ok := m.(*ent.RestaurantOwnerMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RestaurantOwnerMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The TagFunc type is an adapter to allow the use of ordinary
+// function as Tag mutator.
+type TagFunc func(context.Context, *ent.TagMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TagFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.TagMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TagMutation", m)
 	}
 	return f(ctx, mv)
 }

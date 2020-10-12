@@ -65,10 +65,26 @@ var (
 			},
 		},
 	}
+	// ProductsColumns holds the columns for the "products" table.
+	ProductsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString},
+		{Name: "cost", Type: field.TypeInt},
+		{Name: "is_active", Type: field.TypeBool},
+	}
+	// ProductsTable holds the schema information for the "products" table.
+	ProductsTable = &schema.Table{
+		Name:        "products",
+		Columns:     ProductsColumns,
+		PrimaryKey:  []*schema.Column{ProductsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{},
+	}
 	// RestaurantsColumns holds the columns for the "restaurants" table.
 	RestaurantsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString},
 		{Name: "restaurant_address", Type: field.TypeInt, Nullable: true},
 	}
 	// RestaurantsTable holds the schema information for the "restaurants" table.
@@ -79,7 +95,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "restaurants_addresses_address",
-				Columns: []*schema.Column{RestaurantsColumns[2]},
+				Columns: []*schema.Column{RestaurantsColumns[3]},
 
 				RefColumns: []*schema.Column{AddressesColumns[0]},
 				OnDelete:   schema.SetNull,
@@ -94,6 +110,7 @@ var (
 		{Name: "email", Type: field.TypeString},
 		{Name: "phone", Type: field.TypeString},
 		{Name: "restaurant_owner_banking_data", Type: field.TypeInt, Nullable: true},
+		{Name: "restaurant_owner_restaurant", Type: field.TypeInt, Nullable: true},
 	}
 	// RestaurantOwnersTable holds the schema information for the "restaurant_owners" table.
 	RestaurantOwnersTable = &schema.Table{
@@ -108,6 +125,13 @@ var (
 				RefColumns: []*schema.Column{BankingDataColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
+			{
+				Symbol:  "restaurant_owners_restaurants_restaurant",
+				Columns: []*schema.Column{RestaurantOwnersColumns[6]},
+
+				RefColumns: []*schema.Column{RestaurantsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
 		},
 		Indexes: []*schema.Index{
 			{
@@ -117,13 +141,111 @@ var (
 			},
 		},
 	}
+	// TagsColumns holds the columns for the "tags" table.
+	TagsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+	}
+	// TagsTable holds the schema information for the "tags" table.
+	TagsTable = &schema.Table{
+		Name:        "tags",
+		Columns:     TagsColumns,
+		PrimaryKey:  []*schema.Column{TagsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{},
+	}
+	// ProductTagsColumns holds the columns for the "product_tags" table.
+	ProductTagsColumns = []*schema.Column{
+		{Name: "product_id", Type: field.TypeInt},
+		{Name: "tag_id", Type: field.TypeInt},
+	}
+	// ProductTagsTable holds the schema information for the "product_tags" table.
+	ProductTagsTable = &schema.Table{
+		Name:       "product_tags",
+		Columns:    ProductTagsColumns,
+		PrimaryKey: []*schema.Column{ProductTagsColumns[0], ProductTagsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "product_tags_product_id",
+				Columns: []*schema.Column{ProductTagsColumns[0]},
+
+				RefColumns: []*schema.Column{ProductsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "product_tags_tag_id",
+				Columns: []*schema.Column{ProductTagsColumns[1]},
+
+				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// RestaurantTagsColumns holds the columns for the "restaurant_tags" table.
+	RestaurantTagsColumns = []*schema.Column{
+		{Name: "restaurant_id", Type: field.TypeInt},
+		{Name: "tag_id", Type: field.TypeInt},
+	}
+	// RestaurantTagsTable holds the schema information for the "restaurant_tags" table.
+	RestaurantTagsTable = &schema.Table{
+		Name:       "restaurant_tags",
+		Columns:    RestaurantTagsColumns,
+		PrimaryKey: []*schema.Column{RestaurantTagsColumns[0], RestaurantTagsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "restaurant_tags_restaurant_id",
+				Columns: []*schema.Column{RestaurantTagsColumns[0]},
+
+				RefColumns: []*schema.Column{RestaurantsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "restaurant_tags_tag_id",
+				Columns: []*schema.Column{RestaurantTagsColumns[1]},
+
+				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// RestaurantProductsColumns holds the columns for the "restaurant_products" table.
+	RestaurantProductsColumns = []*schema.Column{
+		{Name: "restaurant_id", Type: field.TypeInt},
+		{Name: "product_id", Type: field.TypeInt},
+	}
+	// RestaurantProductsTable holds the schema information for the "restaurant_products" table.
+	RestaurantProductsTable = &schema.Table{
+		Name:       "restaurant_products",
+		Columns:    RestaurantProductsColumns,
+		PrimaryKey: []*schema.Column{RestaurantProductsColumns[0], RestaurantProductsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "restaurant_products_restaurant_id",
+				Columns: []*schema.Column{RestaurantProductsColumns[0]},
+
+				RefColumns: []*schema.Column{RestaurantsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "restaurant_products_product_id",
+				Columns: []*schema.Column{RestaurantProductsColumns[1]},
+
+				RefColumns: []*schema.Column{ProductsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AddressesTable,
 		BankingDataTable,
 		CustomersTable,
+		ProductsTable,
 		RestaurantsTable,
 		RestaurantOwnersTable,
+		TagsTable,
+		ProductTagsTable,
+		RestaurantTagsTable,
+		RestaurantProductsTable,
 	}
 )
 
@@ -131,4 +253,11 @@ func init() {
 	CustomersTable.ForeignKeys[0].RefTable = AddressesTable
 	RestaurantsTable.ForeignKeys[0].RefTable = AddressesTable
 	RestaurantOwnersTable.ForeignKeys[0].RefTable = BankingDataTable
+	RestaurantOwnersTable.ForeignKeys[1].RefTable = RestaurantsTable
+	ProductTagsTable.ForeignKeys[0].RefTable = ProductsTable
+	ProductTagsTable.ForeignKeys[1].RefTable = TagsTable
+	RestaurantTagsTable.ForeignKeys[0].RefTable = RestaurantsTable
+	RestaurantTagsTable.ForeignKeys[1].RefTable = TagsTable
+	RestaurantProductsTable.ForeignKeys[0].RefTable = RestaurantsTable
+	RestaurantProductsTable.ForeignKeys[1].RefTable = ProductsTable
 }
