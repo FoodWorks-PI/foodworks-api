@@ -591,6 +591,34 @@ func HasBankingDataWith(preds ...predicate.BankingData) predicate.RestaurantOwne
 	})
 }
 
+// HasRestaurant applies the HasEdge predicate on the "restaurant" edge.
+func HasRestaurant() predicate.RestaurantOwner {
+	return predicate.RestaurantOwner(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RestaurantTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, RestaurantTable, RestaurantColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRestaurantWith applies the HasEdge predicate on the "restaurant" edge with a given conditions (other predicates).
+func HasRestaurantWith(preds ...predicate.Restaurant) predicate.RestaurantOwner {
+	return predicate.RestaurantOwner(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RestaurantInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, RestaurantTable, RestaurantColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups list of predicates with the AND operator between them.
 func And(predicates ...predicate.RestaurantOwner) predicate.RestaurantOwner {
 	return predicate.RestaurantOwner(func(s *sql.Selector) {

@@ -6,14 +6,23 @@ import (
 	"foodworks.ml/m/internal/generated/ent"
 )
 
-type Product struct {
-	ID          int             `json:"ID"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Tags        []*Tag          `json:"tags"`
-	Cost        int             `json:"cost"`
-	Active      bool            `json:"active"`
-	Restaurant  *ent.Restaurant `json:"restaurant"`
+type ProductsByAllFieldsInput struct {
+	SearchString        string                     `json:"searchString"`
+	ProductFilterConfig *ProductsFilterConfigInput `json:"productFilterConfig"`
+}
+
+type ProductsFilterByRestaurantInput struct {
+	RestaurantID        int                        `json:"restaurantID"`
+	ProductFilterConfig *ProductsFilterConfigInput `json:"productFilterConfig"`
+}
+
+type ProductsFilterByTagInput struct {
+	Tag                 int                        `json:"tag"`
+	ProductFilterConfig *ProductsFilterConfigInput `json:"productFilterConfig"`
+}
+
+type ProductsFilterConfigInput struct {
+	IncludeInactive *bool `json:"includeInactive"`
 }
 
 type RegisterAddressInput struct {
@@ -33,6 +42,15 @@ type RegisterCustomerInput struct {
 	Address  *RegisterAddressInput `json:"address"`
 }
 
+type RegisterProductInput struct {
+	Name         string              `json:"name"`
+	Description  string              `json:"description"`
+	Tags         []*RegisterTagInput `json:"tags"`
+	Cost         int                 `json:"cost"`
+	Active       bool                `json:"active"`
+	RestaurantID int                 `json:"restaurantID"`
+}
+
 type RegisterRestaurantInput struct {
 	Name        string                `json:"name"`
 	Address     *RegisterAddressInput `json:"address"`
@@ -49,7 +67,8 @@ type RegisterRestaurantOwnerInput struct {
 }
 
 type RegisterTagInput struct {
-	Name string `json:"name"`
+	ID   *int    `json:"ID"`
+	Name *string `json:"name"`
 }
 
 type RestaurantSearchResult struct {
@@ -57,9 +76,8 @@ type RestaurantSearchResult struct {
 	Distance   float64         `json:"distance"`
 }
 
-type Tag struct {
-	ID   int    `json:"ID"`
-	Name string `json:"name"`
+type TagInput struct {
+	ID int `json:"id"`
 }
 
 type UpdateCustomerInput struct {

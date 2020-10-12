@@ -8,7 +8,10 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/predicate"
+	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
+	"foodworks.ml/m/internal/generated/ent/restaurantowner"
+	"foodworks.ml/m/internal/generated/ent/tag"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -34,6 +37,12 @@ func (ru *RestaurantUpdate) SetName(s string) *RestaurantUpdate {
 	return ru
 }
 
+// SetDescription sets the description field.
+func (ru *RestaurantUpdate) SetDescription(s string) *RestaurantUpdate {
+	ru.mutation.SetDescription(s)
+	return ru
+}
+
 // SetAddressID sets the address edge to Address by id.
 func (ru *RestaurantUpdate) SetAddressID(id int) *RestaurantUpdate {
 	ru.mutation.SetAddressID(id)
@@ -53,6 +62,51 @@ func (ru *RestaurantUpdate) SetAddress(a *Address) *RestaurantUpdate {
 	return ru.SetAddressID(a.ID)
 }
 
+// AddTagIDs adds the tags edge to Tag by ids.
+func (ru *RestaurantUpdate) AddTagIDs(ids ...int) *RestaurantUpdate {
+	ru.mutation.AddTagIDs(ids...)
+	return ru
+}
+
+// AddTags adds the tags edges to Tag.
+func (ru *RestaurantUpdate) AddTags(t ...*Tag) *RestaurantUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ru.AddTagIDs(ids...)
+}
+
+// AddOwnerIDs adds the owner edge to RestaurantOwner by ids.
+func (ru *RestaurantUpdate) AddOwnerIDs(ids ...int) *RestaurantUpdate {
+	ru.mutation.AddOwnerIDs(ids...)
+	return ru
+}
+
+// AddOwner adds the owner edges to RestaurantOwner.
+func (ru *RestaurantUpdate) AddOwner(r ...*RestaurantOwner) *RestaurantUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return ru.AddOwnerIDs(ids...)
+}
+
+// AddProductIDs adds the products edge to Product by ids.
+func (ru *RestaurantUpdate) AddProductIDs(ids ...int) *RestaurantUpdate {
+	ru.mutation.AddProductIDs(ids...)
+	return ru
+}
+
+// AddProducts adds the products edges to Product.
+func (ru *RestaurantUpdate) AddProducts(p ...*Product) *RestaurantUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ru.AddProductIDs(ids...)
+}
+
 // Mutation returns the RestaurantMutation object of the builder.
 func (ru *RestaurantUpdate) Mutation() *RestaurantMutation {
 	return ru.mutation
@@ -62,6 +116,69 @@ func (ru *RestaurantUpdate) Mutation() *RestaurantMutation {
 func (ru *RestaurantUpdate) ClearAddress() *RestaurantUpdate {
 	ru.mutation.ClearAddress()
 	return ru
+}
+
+// ClearTags clears all "tags" edges to type Tag.
+func (ru *RestaurantUpdate) ClearTags() *RestaurantUpdate {
+	ru.mutation.ClearTags()
+	return ru
+}
+
+// RemoveTagIDs removes the tags edge to Tag by ids.
+func (ru *RestaurantUpdate) RemoveTagIDs(ids ...int) *RestaurantUpdate {
+	ru.mutation.RemoveTagIDs(ids...)
+	return ru
+}
+
+// RemoveTags removes tags edges to Tag.
+func (ru *RestaurantUpdate) RemoveTags(t ...*Tag) *RestaurantUpdate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ru.RemoveTagIDs(ids...)
+}
+
+// ClearOwner clears all "owner" edges to type RestaurantOwner.
+func (ru *RestaurantUpdate) ClearOwner() *RestaurantUpdate {
+	ru.mutation.ClearOwner()
+	return ru
+}
+
+// RemoveOwnerIDs removes the owner edge to RestaurantOwner by ids.
+func (ru *RestaurantUpdate) RemoveOwnerIDs(ids ...int) *RestaurantUpdate {
+	ru.mutation.RemoveOwnerIDs(ids...)
+	return ru
+}
+
+// RemoveOwner removes owner edges to RestaurantOwner.
+func (ru *RestaurantUpdate) RemoveOwner(r ...*RestaurantOwner) *RestaurantUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return ru.RemoveOwnerIDs(ids...)
+}
+
+// ClearProducts clears all "products" edges to type Product.
+func (ru *RestaurantUpdate) ClearProducts() *RestaurantUpdate {
+	ru.mutation.ClearProducts()
+	return ru
+}
+
+// RemoveProductIDs removes the products edge to Product by ids.
+func (ru *RestaurantUpdate) RemoveProductIDs(ids ...int) *RestaurantUpdate {
+	ru.mutation.RemoveProductIDs(ids...)
+	return ru
+}
+
+// RemoveProducts removes products edges to Product.
+func (ru *RestaurantUpdate) RemoveProducts(p ...*Product) *RestaurantUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ru.RemoveProductIDs(ids...)
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -140,6 +257,13 @@ func (ru *RestaurantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: restaurant.FieldName,
 		})
 	}
+	if value, ok := ru.mutation.Description(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: restaurant.FieldDescription,
+		})
+	}
 	if ru.mutation.AddressCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -175,6 +299,168 @@ func (ru *RestaurantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if ru.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.TagsTable,
+			Columns: restaurant.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedTagsIDs(); len(nodes) > 0 && !ru.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.TagsTable,
+			Columns: restaurant.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.TagsTable,
+			Columns: restaurant.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ru.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   restaurant.OwnerTable,
+			Columns: []string{restaurant.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurantowner.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedOwnerIDs(); len(nodes) > 0 && !ru.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   restaurant.OwnerTable,
+			Columns: []string{restaurant.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurantowner.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   restaurant.OwnerTable,
+			Columns: []string{restaurant.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurantowner.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ru.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.ProductsTable,
+			Columns: restaurant.ProductsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedProductsIDs(); len(nodes) > 0 && !ru.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.ProductsTable,
+			Columns: restaurant.ProductsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.ProductsTable,
+			Columns: restaurant.ProductsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{restaurant.Label}
@@ -199,6 +485,12 @@ func (ruo *RestaurantUpdateOne) SetName(s string) *RestaurantUpdateOne {
 	return ruo
 }
 
+// SetDescription sets the description field.
+func (ruo *RestaurantUpdateOne) SetDescription(s string) *RestaurantUpdateOne {
+	ruo.mutation.SetDescription(s)
+	return ruo
+}
+
 // SetAddressID sets the address edge to Address by id.
 func (ruo *RestaurantUpdateOne) SetAddressID(id int) *RestaurantUpdateOne {
 	ruo.mutation.SetAddressID(id)
@@ -218,6 +510,51 @@ func (ruo *RestaurantUpdateOne) SetAddress(a *Address) *RestaurantUpdateOne {
 	return ruo.SetAddressID(a.ID)
 }
 
+// AddTagIDs adds the tags edge to Tag by ids.
+func (ruo *RestaurantUpdateOne) AddTagIDs(ids ...int) *RestaurantUpdateOne {
+	ruo.mutation.AddTagIDs(ids...)
+	return ruo
+}
+
+// AddTags adds the tags edges to Tag.
+func (ruo *RestaurantUpdateOne) AddTags(t ...*Tag) *RestaurantUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ruo.AddTagIDs(ids...)
+}
+
+// AddOwnerIDs adds the owner edge to RestaurantOwner by ids.
+func (ruo *RestaurantUpdateOne) AddOwnerIDs(ids ...int) *RestaurantUpdateOne {
+	ruo.mutation.AddOwnerIDs(ids...)
+	return ruo
+}
+
+// AddOwner adds the owner edges to RestaurantOwner.
+func (ruo *RestaurantUpdateOne) AddOwner(r ...*RestaurantOwner) *RestaurantUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return ruo.AddOwnerIDs(ids...)
+}
+
+// AddProductIDs adds the products edge to Product by ids.
+func (ruo *RestaurantUpdateOne) AddProductIDs(ids ...int) *RestaurantUpdateOne {
+	ruo.mutation.AddProductIDs(ids...)
+	return ruo
+}
+
+// AddProducts adds the products edges to Product.
+func (ruo *RestaurantUpdateOne) AddProducts(p ...*Product) *RestaurantUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ruo.AddProductIDs(ids...)
+}
+
 // Mutation returns the RestaurantMutation object of the builder.
 func (ruo *RestaurantUpdateOne) Mutation() *RestaurantMutation {
 	return ruo.mutation
@@ -227,6 +564,69 @@ func (ruo *RestaurantUpdateOne) Mutation() *RestaurantMutation {
 func (ruo *RestaurantUpdateOne) ClearAddress() *RestaurantUpdateOne {
 	ruo.mutation.ClearAddress()
 	return ruo
+}
+
+// ClearTags clears all "tags" edges to type Tag.
+func (ruo *RestaurantUpdateOne) ClearTags() *RestaurantUpdateOne {
+	ruo.mutation.ClearTags()
+	return ruo
+}
+
+// RemoveTagIDs removes the tags edge to Tag by ids.
+func (ruo *RestaurantUpdateOne) RemoveTagIDs(ids ...int) *RestaurantUpdateOne {
+	ruo.mutation.RemoveTagIDs(ids...)
+	return ruo
+}
+
+// RemoveTags removes tags edges to Tag.
+func (ruo *RestaurantUpdateOne) RemoveTags(t ...*Tag) *RestaurantUpdateOne {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return ruo.RemoveTagIDs(ids...)
+}
+
+// ClearOwner clears all "owner" edges to type RestaurantOwner.
+func (ruo *RestaurantUpdateOne) ClearOwner() *RestaurantUpdateOne {
+	ruo.mutation.ClearOwner()
+	return ruo
+}
+
+// RemoveOwnerIDs removes the owner edge to RestaurantOwner by ids.
+func (ruo *RestaurantUpdateOne) RemoveOwnerIDs(ids ...int) *RestaurantUpdateOne {
+	ruo.mutation.RemoveOwnerIDs(ids...)
+	return ruo
+}
+
+// RemoveOwner removes owner edges to RestaurantOwner.
+func (ruo *RestaurantUpdateOne) RemoveOwner(r ...*RestaurantOwner) *RestaurantUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return ruo.RemoveOwnerIDs(ids...)
+}
+
+// ClearProducts clears all "products" edges to type Product.
+func (ruo *RestaurantUpdateOne) ClearProducts() *RestaurantUpdateOne {
+	ruo.mutation.ClearProducts()
+	return ruo
+}
+
+// RemoveProductIDs removes the products edge to Product by ids.
+func (ruo *RestaurantUpdateOne) RemoveProductIDs(ids ...int) *RestaurantUpdateOne {
+	ruo.mutation.RemoveProductIDs(ids...)
+	return ruo
+}
+
+// RemoveProducts removes products edges to Product.
+func (ruo *RestaurantUpdateOne) RemoveProducts(p ...*Product) *RestaurantUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ruo.RemoveProductIDs(ids...)
 }
 
 // Save executes the query and returns the updated entity.
@@ -303,6 +703,13 @@ func (ruo *RestaurantUpdateOne) sqlSave(ctx context.Context) (_node *Restaurant,
 			Column: restaurant.FieldName,
 		})
 	}
+	if value, ok := ruo.mutation.Description(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: restaurant.FieldDescription,
+		})
+	}
 	if ruo.mutation.AddressCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -330,6 +737,168 @@ func (ruo *RestaurantUpdateOne) sqlSave(ctx context.Context) (_node *Restaurant,
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ruo.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.TagsTable,
+			Columns: restaurant.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedTagsIDs(); len(nodes) > 0 && !ruo.mutation.TagsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.TagsTable,
+			Columns: restaurant.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.TagsTable,
+			Columns: restaurant.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ruo.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   restaurant.OwnerTable,
+			Columns: []string{restaurant.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurantowner.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedOwnerIDs(); len(nodes) > 0 && !ruo.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   restaurant.OwnerTable,
+			Columns: []string{restaurant.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurantowner.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   restaurant.OwnerTable,
+			Columns: []string{restaurant.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurantowner.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ruo.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.ProductsTable,
+			Columns: restaurant.ProductsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedProductsIDs(); len(nodes) > 0 && !ruo.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.ProductsTable,
+			Columns: restaurant.ProductsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.ProductsTable,
+			Columns: restaurant.ProductsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
 				},
 			},
 		}

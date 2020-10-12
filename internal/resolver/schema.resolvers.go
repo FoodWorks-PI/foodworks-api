@@ -56,34 +56,6 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 	return newCustomer.ID, nil
 }
 
-func (r *mutationResolver) CreateRestaurantOwnerProfile(ctx context.Context, input model.RegisterRestaurantOwnerInput) (int, error) {
-	currentUser := auth.ForContext(ctx)
-
-	newBankingData, err := r.EntClient.BankingData.
-		Create().
-		SetBankAccount(input.Banking.BankAccount).
-		Save(ctx)
-
-	if err != nil {
-		return -1, err
-	}
-
-	newRestaurantOwner, err := r.EntClient.RestaurantOwner.
-		Create().
-		SetName(input.Name).
-		SetEmail(currentUser.Email).
-		SetKratosID(currentUser.ID).
-		SetPhone(input.Phone).
-		SetBankingData(newBankingData).
-		Save(ctx)
-
-	if err != nil {
-		return -1, err
-	}
-
-	return newRestaurantOwner.ID, nil
-}
-
 func (r *mutationResolver) UpdateCustomerProfile(ctx context.Context, input model.UpdateCustomerInput) (int, error) {
 	kratosSessionUser := auth.ForContext(ctx)
 
@@ -166,6 +138,34 @@ func (r *mutationResolver) DeleteCustomerProfile(ctx context.Context) (int, erro
 	return currentUser.ID, nil
 }
 
+func (r *mutationResolver) CreateRestaurantOwnerProfile(ctx context.Context, input model.RegisterRestaurantOwnerInput) (int, error) {
+	currentUser := auth.ForContext(ctx)
+
+	newBankingData, err := r.EntClient.BankingData.
+		Create().
+		SetBankAccount(input.Banking.BankAccount).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	newRestaurantOwner, err := r.EntClient.RestaurantOwner.
+		Create().
+		SetName(input.Name).
+		SetEmail(currentUser.Email).
+		SetKratosID(currentUser.ID).
+		SetPhone(input.Phone).
+		SetBankingData(newBankingData).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return newRestaurantOwner.ID, nil
+}
+
 func (r *mutationResolver) UpdateRestaurantOwnerProfile(ctx context.Context, input model.UpdateRestaurantOwnerInput) (int, error) {
 	kratosSessionUser := auth.ForContext(ctx)
 
@@ -225,10 +225,6 @@ func (r *mutationResolver) UpdateRestaurantOwnerBankingData(ctx context.Context,
 	return currentUser.ID, nil
 }
 
-func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.RegisterRestaurantInput) (int, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
 func (r *mutationResolver) DeleteRestaurantOwnerProfile(ctx context.Context) (int, error) {
 	kratosSessionUser := auth.ForContext(ctx)
 
@@ -248,6 +244,54 @@ func (r *mutationResolver) DeleteRestaurantOwnerProfile(ctx context.Context) (in
 	}
 
 	return currentUser.ID, nil
+}
+
+func (r *mutationResolver) CreateProduct(ctx context.Context, input model.RegisterProductInput) (int, error) {
+	//currentUser := auth.ForContext(ctx)
+
+	//TODO: FALTA TAGS
+
+	newProduct, err := r.EntClient.Product.
+		Create().
+		SetName(input.Name).
+		SetDescription(input.Description).
+		SetCost(input.Cost).
+		SetIsActive(input.Active).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return newProduct.ID, nil
+}
+
+func (r *mutationResolver) UpdateProduct(ctx context.Context, input model.RegisterProductInput) (int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) ToggleProductStatus(ctx context.Context, input int) (bool, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) DeleteProduct(ctx context.Context) (int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.RegisterRestaurantInput) (int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) DeleteRestaurant(ctx context.Context) (int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]*ent.Tag, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *productResolver) Restaurant(ctx context.Context, obj *ent.Product) (*ent.Restaurant, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, error) {
@@ -329,7 +373,19 @@ func (r *queryResolver) GetCurrentRestaurantOwner(ctx context.Context) (*ent.Res
 	return currentRestaurantOwner, nil
 }
 
-func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input *string) ([]*model.Product, error) {
+func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) ([]*ent.Product, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) GetProductsByRestaurantID(ctx context.Context, input model.ProductsFilterByRestaurantInput) ([]*ent.Product, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) GetRestaurantByID(ctx context.Context, input int) (*ent.Restaurant, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) GetTags(ctx context.Context, input *string) ([]*ent.Tag, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -337,15 +393,11 @@ func (r *restaurantResolver) Address(ctx context.Context, obj *ent.Restaurant) (
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *restaurantResolver) Description(ctx context.Context, obj *ent.Restaurant) (string, error) {
+func (r *restaurantResolver) Tags(ctx context.Context, obj *ent.Restaurant) ([]*ent.Tag, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *restaurantResolver) Tags(ctx context.Context, obj *ent.Restaurant) ([]*model.Tag, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *restaurantResolver) Products(ctx context.Context, obj *ent.Restaurant) ([]*model.Product, error) {
+func (r *restaurantResolver) Products(ctx context.Context, obj *ent.Restaurant) ([]*ent.Product, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -368,6 +420,9 @@ func (r *Resolver) Customer() generated.CustomerResolver { return &customerResol
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
+// Product returns generated.ProductResolver implementation.
+func (r *Resolver) Product() generated.ProductResolver { return &productResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
@@ -381,6 +436,17 @@ func (r *Resolver) RestaurantOwner() generated.RestaurantOwnerResolver {
 
 type customerResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
+type productResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type restaurantResolver struct{ *Resolver }
 type restaurantOwnerResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *restaurantResolver) Description(ctx context.Context, obj *ent.Restaurant) (string, error) {
+	panic(fmt.Errorf("not implemented"))
+}

@@ -8,7 +8,10 @@ import (
 	"fmt"
 
 	"foodworks.ml/m/internal/generated/ent/address"
+	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
+	"foodworks.ml/m/internal/generated/ent/restaurantowner"
+	"foodworks.ml/m/internal/generated/ent/tag"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -23,6 +26,12 @@ type RestaurantCreate struct {
 // SetName sets the name field.
 func (rc *RestaurantCreate) SetName(s string) *RestaurantCreate {
 	rc.mutation.SetName(s)
+	return rc
+}
+
+// SetDescription sets the description field.
+func (rc *RestaurantCreate) SetDescription(s string) *RestaurantCreate {
+	rc.mutation.SetDescription(s)
 	return rc
 }
 
@@ -43,6 +52,51 @@ func (rc *RestaurantCreate) SetNillableAddressID(id *int) *RestaurantCreate {
 // SetAddress sets the address edge to Address.
 func (rc *RestaurantCreate) SetAddress(a *Address) *RestaurantCreate {
 	return rc.SetAddressID(a.ID)
+}
+
+// AddTagIDs adds the tags edge to Tag by ids.
+func (rc *RestaurantCreate) AddTagIDs(ids ...int) *RestaurantCreate {
+	rc.mutation.AddTagIDs(ids...)
+	return rc
+}
+
+// AddTags adds the tags edges to Tag.
+func (rc *RestaurantCreate) AddTags(t ...*Tag) *RestaurantCreate {
+	ids := make([]int, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
+	}
+	return rc.AddTagIDs(ids...)
+}
+
+// AddOwnerIDs adds the owner edge to RestaurantOwner by ids.
+func (rc *RestaurantCreate) AddOwnerIDs(ids ...int) *RestaurantCreate {
+	rc.mutation.AddOwnerIDs(ids...)
+	return rc
+}
+
+// AddOwner adds the owner edges to RestaurantOwner.
+func (rc *RestaurantCreate) AddOwner(r ...*RestaurantOwner) *RestaurantCreate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return rc.AddOwnerIDs(ids...)
+}
+
+// AddProductIDs adds the products edge to Product by ids.
+func (rc *RestaurantCreate) AddProductIDs(ids ...int) *RestaurantCreate {
+	rc.mutation.AddProductIDs(ids...)
+	return rc
+}
+
+// AddProducts adds the products edges to Product.
+func (rc *RestaurantCreate) AddProducts(p ...*Product) *RestaurantCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return rc.AddProductIDs(ids...)
 }
 
 // Mutation returns the RestaurantMutation object of the builder.
@@ -99,6 +153,9 @@ func (rc *RestaurantCreate) check() error {
 	if _, ok := rc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
 	}
+	if _, ok := rc.mutation.Description(); !ok {
+		return &ValidationError{Name: "description", err: errors.New("ent: missing required field \"description\"")}
+	}
 	return nil
 }
 
@@ -134,6 +191,14 @@ func (rc *RestaurantCreate) createSpec() (*Restaurant, *sqlgraph.CreateSpec) {
 		})
 		_node.Name = value
 	}
+	if value, ok := rc.mutation.Description(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: restaurant.FieldDescription,
+		})
+		_node.Description = value
+	}
 	if nodes := rc.mutation.AddressIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -145,6 +210,63 @@ func (rc *RestaurantCreate) createSpec() (*Restaurant, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.TagsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.TagsTable,
+			Columns: restaurant.TagsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: tag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   restaurant.OwnerTable,
+			Columns: []string{restaurant.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurantowner.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   restaurant.ProductsTable,
+			Columns: restaurant.ProductsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
 				},
 			},
 		}

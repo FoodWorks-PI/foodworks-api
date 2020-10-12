@@ -18,6 +18,8 @@ const (
 
 	// EdgeBankingData holds the string denoting the banking_data edge name in mutations.
 	EdgeBankingData = "banking_data"
+	// EdgeRestaurant holds the string denoting the restaurant edge name in mutations.
+	EdgeRestaurant = "restaurant"
 
 	// Table holds the table name of the restaurantowner in the database.
 	Table = "restaurant_owners"
@@ -28,6 +30,13 @@ const (
 	BankingDataInverseTable = "banking_data"
 	// BankingDataColumn is the table column denoting the banking_data relation/edge.
 	BankingDataColumn = "restaurant_owner_banking_data"
+	// RestaurantTable is the table the holds the restaurant relation/edge.
+	RestaurantTable = "restaurant_owners"
+	// RestaurantInverseTable is the table name for the Restaurant entity.
+	// It exists in this package in order to avoid circular dependency with the "restaurant" package.
+	RestaurantInverseTable = "restaurants"
+	// RestaurantColumn is the table column denoting the restaurant relation/edge.
+	RestaurantColumn = "restaurant_owner_restaurant"
 )
 
 // Columns holds all SQL columns for restaurantowner fields.
@@ -42,6 +51,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the RestaurantOwner type.
 var ForeignKeys = []string{
 	"restaurant_owner_banking_data",
+	"restaurant_owner_restaurant",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

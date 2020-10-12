@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"foodworks.ml/m/internal/generated/ent/bankingdata"
+	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -61,6 +62,25 @@ func (roc *RestaurantOwnerCreate) SetNillableBankingDataID(id *int) *RestaurantO
 // SetBankingData sets the banking_data edge to BankingData.
 func (roc *RestaurantOwnerCreate) SetBankingData(b *BankingData) *RestaurantOwnerCreate {
 	return roc.SetBankingDataID(b.ID)
+}
+
+// SetRestaurantID sets the restaurant edge to Restaurant by id.
+func (roc *RestaurantOwnerCreate) SetRestaurantID(id int) *RestaurantOwnerCreate {
+	roc.mutation.SetRestaurantID(id)
+	return roc
+}
+
+// SetNillableRestaurantID sets the restaurant edge to Restaurant by id if the given value is not nil.
+func (roc *RestaurantOwnerCreate) SetNillableRestaurantID(id *int) *RestaurantOwnerCreate {
+	if id != nil {
+		roc = roc.SetRestaurantID(*id)
+	}
+	return roc
+}
+
+// SetRestaurant sets the restaurant edge to Restaurant.
+func (roc *RestaurantOwnerCreate) SetRestaurant(r *Restaurant) *RestaurantOwnerCreate {
+	return roc.SetRestaurantID(r.ID)
 }
 
 // Mutation returns the RestaurantOwnerMutation object of the builder.
@@ -196,6 +216,25 @@ func (roc *RestaurantOwnerCreate) createSpec() (*RestaurantOwner, *sqlgraph.Crea
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: bankingdata.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := roc.mutation.RestaurantIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   restaurantowner.RestaurantTable,
+			Columns: []string{restaurantowner.RestaurantColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: restaurant.FieldID,
 				},
 			},
 		}

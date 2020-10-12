@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"foodworks.ml/m/internal/generated/ent/bankingdata"
+	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	"github.com/facebook/ent/dialect/sql"
 )
@@ -28,15 +29,18 @@ type RestaurantOwner struct {
 	// The values are being populated by the RestaurantOwnerQuery when eager-loading is set.
 	Edges                         RestaurantOwnerEdges `json:"edges"`
 	restaurant_owner_banking_data *int
+	restaurant_owner_restaurant   *int
 }
 
 // RestaurantOwnerEdges holds the relations/edges for other nodes in the graph.
 type RestaurantOwnerEdges struct {
 	// BankingData holds the value of the banking_data edge.
 	BankingData *BankingData
+	// Restaurant holds the value of the restaurant edge.
+	Restaurant *Restaurant
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // BankingDataOrErr returns the BankingData value or an error if the edge
@@ -51,6 +55,20 @@ func (e RestaurantOwnerEdges) BankingDataOrErr() (*BankingData, error) {
 		return e.BankingData, nil
 	}
 	return nil, &NotLoadedError{edge: "banking_data"}
+}
+
+// RestaurantOrErr returns the Restaurant value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RestaurantOwnerEdges) RestaurantOrErr() (*Restaurant, error) {
+	if e.loadedTypes[1] {
+		if e.Restaurant == nil {
+			// The edge restaurant was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: restaurant.Label}
+		}
+		return e.Restaurant, nil
+	}
+	return nil, &NotLoadedError{edge: "restaurant"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -68,6 +86,7 @@ func (*RestaurantOwner) scanValues() []interface{} {
 func (*RestaurantOwner) fkValues() []interface{} {
 	return []interface{}{
 		&sql.NullInt64{}, // restaurant_owner_banking_data
+		&sql.NullInt64{}, // restaurant_owner_restaurant
 	}
 }
 
@@ -111,6 +130,12 @@ func (ro *RestaurantOwner) assignValues(values ...interface{}) error {
 			ro.restaurant_owner_banking_data = new(int)
 			*ro.restaurant_owner_banking_data = int(value.Int64)
 		}
+		if value, ok := values[1].(*sql.NullInt64); !ok {
+			return fmt.Errorf("unexpected type %T for edge-field restaurant_owner_restaurant", value)
+		} else if value.Valid {
+			ro.restaurant_owner_restaurant = new(int)
+			*ro.restaurant_owner_restaurant = int(value.Int64)
+		}
 	}
 	return nil
 }
@@ -118,6 +143,11 @@ func (ro *RestaurantOwner) assignValues(values ...interface{}) error {
 // QueryBankingData queries the banking_data edge of the RestaurantOwner.
 func (ro *RestaurantOwner) QueryBankingData() *BankingDataQuery {
 	return (&RestaurantOwnerClient{config: ro.config}).QueryBankingData(ro)
+}
+
+// QueryRestaurant queries the restaurant edge of the RestaurantOwner.
+func (ro *RestaurantOwner) QueryRestaurant() *RestaurantQuery {
+	return (&RestaurantOwnerClient{config: ro.config}).QueryRestaurant(ro)
 }
 
 // Update returns a builder for updating this RestaurantOwner.
