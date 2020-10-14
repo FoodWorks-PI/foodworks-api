@@ -19,6 +19,7 @@ func main() {
 	}
 
 	db, client := platform.NewEntClient(dataStoreConfig)
+	_ = platform.NewElasticSearchClient(dataStoreConfig)
 
 	rdb := platform.NewRedisClient(dataStoreConfig)
 
