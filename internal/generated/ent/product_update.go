@@ -41,6 +41,20 @@ func (pu *ProductUpdate) SetDescription(s string) *ProductUpdate {
 	return pu
 }
 
+// SetNillableDescription sets the description field if the given value is not nil.
+func (pu *ProductUpdate) SetNillableDescription(s *string) *ProductUpdate {
+	if s != nil {
+		pu.SetDescription(*s)
+	}
+	return pu
+}
+
+// ClearDescription clears the value of description.
+func (pu *ProductUpdate) ClearDescription() *ProductUpdate {
+	pu.mutation.ClearDescription()
+	return pu
+}
+
 // SetCost sets the cost field.
 func (pu *ProductUpdate) SetCost(i int) *ProductUpdate {
 	pu.mutation.ResetCost()
@@ -220,6 +234,12 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: product.FieldDescription,
 		})
 	}
+	if pu.mutation.DescriptionCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: product.FieldDescription,
+		})
+	}
 	if value, ok := pu.mutation.Cost(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
@@ -376,6 +396,20 @@ func (puo *ProductUpdateOne) SetName(s string) *ProductUpdateOne {
 // SetDescription sets the description field.
 func (puo *ProductUpdateOne) SetDescription(s string) *ProductUpdateOne {
 	puo.mutation.SetDescription(s)
+	return puo
+}
+
+// SetNillableDescription sets the description field if the given value is not nil.
+func (puo *ProductUpdateOne) SetNillableDescription(s *string) *ProductUpdateOne {
+	if s != nil {
+		puo.SetDescription(*s)
+	}
+	return puo
+}
+
+// ClearDescription clears the value of description.
+func (puo *ProductUpdateOne) ClearDescription() *ProductUpdateOne {
+	puo.mutation.ClearDescription()
 	return puo
 }
 
@@ -553,6 +587,12 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: product.FieldDescription,
+		})
+	}
+	if puo.mutation.DescriptionCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: product.FieldDescription,
 		})
 	}

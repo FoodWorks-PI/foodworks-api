@@ -2,10 +2,12 @@ package platform
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 
 	"foodworks.ml/m/internal/generated/ent"
+	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/tag"
@@ -68,31 +70,70 @@ func NewElasticSearchClient(config DataStoreConfig) *elasticsearch6.Client {
 	return client
 }
 
-// Open new db connection
-func NewEntClient(config DataStoreConfig) (*sqlx.DB, *ent.Client) {
-	//db, err := sql.Open("pgx", config.DatabaseURL)
-	db, err := sqlx.Connect("pgx", config.DatabaseURL)
-
+func prepareZombo(tx *sqlx.DB) error {
+	stmt := `SELECT typname, nspname FROM pg_catalog.pg_type JOIN pg_catalog.pg_namespace ON pg_namespace.oid = pg_type.typnamespace WHERE typtype = 'd' and typname='my_completion';`
+	rows, err := tx.Exec(stmt)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-
-	// Create an ent.Driver from `db`.
-	drv := entsql.OpenDB(dialect.Postgres, db.DB)
-	client := ent.NewClient(ent.Driver(drv))
-	if err := client.Schema.Create(context.Background()); err != nil {
-		log.Printf("failed creating schema resources: %v", err)
-	}
-	tx, err := db.Begin()
+	rowsAffected, err := rows.RowsAffected()
 	if err != nil {
-		log.Printf("Error %v", err)
+		return err
 	}
-	_, err = tx.Exec(`
+	if rowsAffected == 0 {
+		stmt = `
+		create domain my_completion as text;
+		SELECT zdb.define_type_mapping('my_completion'::regtype, '{
+          "type": "completion"
+        }'::json);
+		`
+		_, err = tx.Exec(stmt)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func seed(db *sqlx.DB) error {
+	var err error
+	rows, err := db.Exec(`SELECT * from seed_status`)
+	if err != nil && err.Error() != `ERROR: relation "seed_status" does not exist (SQLSTATE 42P01)` {
+		return err
+	}
+	if err == nil {
+		rowsAffected, _ := rows.RowsAffected()
+		if rowsAffected > 0 {
+			return nil
+		}
+	}
+	_, err = db.Exec(`
+	CREATE TABLE seed_status(
+	id int GENERATED ALWAYS AS IDENTITY
+	);
+	INSERT INTO seed_status default values;`)
+	if err != nil {
+		return err
+	}
+	tables := []string{tag.Table, address.Table, product.Table, restaurant.Table, restaurant.TagsTable, product.TagsTable, restaurant.ProductsTable}
+	var stmt string
+	for _, table := range tables {
+		stmt = fmt.Sprintf(`COPY %s FROM '/foodworks/seed/%s.csv' DELIMITER ',' CSV HEADER;`, table, table)
+		_, err := db.Exec(stmt)
+		if err != nil {
+			fmt.Print(err)
+		}
+	}
+	return err
+}
+
+func preparePostgis(tx *sql.Tx) error {
+	_, err := tx.Exec(`
 		ALTER TABLE addresses
 		ADD COLUMN IF NOT EXISTS geom geometry(POINT);
 	`)
 	if err != nil {
-		log.Printf("Error %v", err)
+		return err
 	}
 	_, err = tx.Exec(`
 		CREATE OR REPLACE FUNCTION insert_coordinates()
@@ -112,7 +153,7 @@ func NewEntClient(config DataStoreConfig) (*sqlx.DB, *ent.Client) {
 		$$;
 	`)
 	if err != nil {
-		log.Printf("Error %v", err)
+		return err
 	}
 	_, err = tx.Exec(`
 	DO
@@ -129,8 +170,13 @@ func NewEntClient(config DataStoreConfig) (*sqlx.DB, *ent.Client) {
 	$$;
 	`)
 	if err != nil {
-		log.Printf("Error %v", err)
+		return err
 	}
+	return nil
+
+}
+
+func createZomboIndexes(tx *sql.Tx, config DataStoreConfig) error {
 	var stmt string
 	collections := []string{restaurant.Table, product.Table, tag.Table}
 	for _, collection := range collections {
@@ -139,12 +185,52 @@ func NewEntClient(config DataStoreConfig) (*sqlx.DB, *ent.Client) {
 		ON %s
 		USING zombodb ((%s.*))
 		WITH (url='%s')`, collection, collection, collection, config.ElasticsearchDBURL)
-		_, err = tx.Exec(stmt)
+		_, err := tx.Exec(stmt)
 		if err != nil {
-			log.Printf("Error %v", err)
+			return err
 		}
 	}
+	return nil
+}
+
+// Open new db connection
+func NewEntClient(config DataStoreConfig) (*sqlx.DB, *ent.Client) {
+	//db, err := sql.Open("pgx", config.DatabaseURL)
+	db, err := sqlx.Connect("pgx", config.DatabaseURL)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create an ent.Driver from `db`.
+	drv := entsql.OpenDB(dialect.Postgres, db.DB)
+	client := ent.NewClient(ent.Driver(drv))
+	tx, err := db.Begin()
+	if err != nil {
+		log.Printf("Error %v", err)
+	}
+	err = prepareZombo(db)
+	if err != nil {
+		log.Printf("Error %v", err)
+	}
+	if err := client.Schema.Create(context.Background()); err != nil {
+		log.Printf("failed creating schema resources: %v", err)
+	}
+	err = preparePostgis(tx)
+	if err != nil {
+		log.Printf("Error %v", err)
+	}
+
+	err = createZomboIndexes(tx, config)
+	if err != nil {
+		log.Printf("Error %v", err)
+	}
 	err = tx.Commit()
+	if err != nil {
+		log.Printf("Error %v", err)
+	}
+	err = seed(db)
+
 	if err != nil {
 		log.Printf("Error %v", err)
 	}
