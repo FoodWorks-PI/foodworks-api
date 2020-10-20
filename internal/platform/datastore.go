@@ -8,8 +8,11 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent"
 	"foodworks.ml/m/internal/generated/ent/address"
+	"foodworks.ml/m/internal/generated/ent/bankingdata"
+	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
+	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	"foodworks.ml/m/internal/generated/ent/tag"
 	elasticsearch6 "github.com/elastic/go-elasticsearch/v6"
 	"github.com/facebook/ent/dialect"
@@ -115,7 +118,10 @@ func seed(db *sqlx.DB) error {
 	if err != nil {
 		return err
 	}
-	tables := []string{tag.Table, address.Table, product.Table, restaurant.Table, restaurant.TagsTable, product.TagsTable, restaurant.ProductsTable}
+	tables := []string{tag.Table, address.Table, product.Table, restaurant.Table,
+		restaurant.TagsTable, product.TagsTable, restaurant.ProductsTable,
+		customer.Table, bankingdata.Table, restaurantowner.Table,
+	}
 	var stmt string
 	for _, table := range tables {
 		stmt = fmt.Sprintf(`COPY %s FROM '/foodworks/seed/%s.csv' DELIMITER ',' CSV HEADER;`, table, table)
