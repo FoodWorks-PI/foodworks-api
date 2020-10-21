@@ -201,7 +201,6 @@ func createZomboIndexes(tx *sql.Tx, config DataStoreConfig) error {
 
 // Open new db connection
 func NewEntClient(config DataStoreConfig) (*sqlx.DB, *ent.Client) {
-	//db, err := sql.Open("pgx", config.DatabaseURL)
 	db, err := sqlx.Connect("pgx", config.DatabaseURL)
 
 	if err != nil {
