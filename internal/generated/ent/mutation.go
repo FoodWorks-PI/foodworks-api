@@ -1499,9 +1499,22 @@ func (m *ProductMutation) OldDescription(ctx context.Context) (v string, err err
 	return oldValue.Description, nil
 }
 
+// ClearDescription clears the value of description.
+func (m *ProductMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[product.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the field description was cleared in this mutation.
+func (m *ProductMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[product.FieldDescription]
+	return ok
+}
+
 // ResetDescription reset all changes of the "description" field.
 func (m *ProductMutation) ResetDescription() {
 	m.description = nil
+	delete(m.clearedFields, product.FieldDescription)
 }
 
 // SetCost sets the cost field.
@@ -1845,7 +1858,11 @@ func (m *ProductMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared
 // during this mutation.
 func (m *ProductMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(product.FieldDescription) {
+		fields = append(fields, product.FieldDescription)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicates if this field was
@@ -1858,6 +1875,11 @@ func (m *ProductMutation) FieldCleared(name string) bool {
 // ClearField clears the value for the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ProductMutation) ClearField(name string) error {
+	switch name {
+	case product.FieldDescription:
+		m.ClearDescription()
+		return nil
+	}
 	return fmt.Errorf("unknown Product nullable field %s", name)
 }
 
@@ -2169,9 +2191,22 @@ func (m *RestaurantMutation) OldDescription(ctx context.Context) (v string, err 
 	return oldValue.Description, nil
 }
 
+// ClearDescription clears the value of description.
+func (m *RestaurantMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[restaurant.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the field description was cleared in this mutation.
+func (m *RestaurantMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[restaurant.FieldDescription]
+	return ok
+}
+
 // ResetDescription reset all changes of the "description" field.
 func (m *RestaurantMutation) ResetDescription() {
 	m.description = nil
+	delete(m.clearedFields, restaurant.FieldDescription)
 }
 
 // SetAddressID sets the address edge to Address by id.
@@ -2470,7 +2505,11 @@ func (m *RestaurantMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared
 // during this mutation.
 func (m *RestaurantMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(restaurant.FieldDescription) {
+		fields = append(fields, restaurant.FieldDescription)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicates if this field was
@@ -2483,6 +2522,11 @@ func (m *RestaurantMutation) FieldCleared(name string) bool {
 // ClearField clears the value for the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *RestaurantMutation) ClearField(name string) error {
+	switch name {
+	case restaurant.FieldDescription:
+		m.ClearDescription()
+		return nil
+	}
 	return fmt.Errorf("unknown Restaurant nullable field %s", name)
 }
 

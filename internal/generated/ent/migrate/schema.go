@@ -69,7 +69,7 @@ var (
 	ProductsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "description", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "zdb.fulltext"}},
 		{Name: "cost", Type: field.TypeInt},
 		{Name: "is_active", Type: field.TypeBool},
 	}
@@ -84,7 +84,7 @@ var (
 	RestaurantsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "description", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "zdb.fulltext"}},
 		{Name: "restaurant_address", Type: field.TypeInt, Nullable: true},
 	}
 	// RestaurantsTable holds the schema information for the "restaurants" table.
@@ -144,7 +144,7 @@ var (
 	// TagsColumns holds the columns for the "tags" table.
 	TagsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "name", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString, SchemaType: map[string]string{"postgres": "my_completion"}},
 	}
 	// TagsTable holds the schema information for the "tags" table.
 	TagsTable = &schema.Table{

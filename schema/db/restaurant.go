@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/facebook/ent"
+	"github.com/facebook/ent/dialect"
 	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
 )
@@ -15,7 +16,11 @@ type Restaurant struct {
 func (Restaurant) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name"),
-		field.String("description"),
+		field.String("description").
+			Optional().
+			SchemaType(map[string]string{
+				dialect.Postgres: "zdb.fulltext",
+			}),
 	}
 }
 

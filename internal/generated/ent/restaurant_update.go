@@ -43,6 +43,20 @@ func (ru *RestaurantUpdate) SetDescription(s string) *RestaurantUpdate {
 	return ru
 }
 
+// SetNillableDescription sets the description field if the given value is not nil.
+func (ru *RestaurantUpdate) SetNillableDescription(s *string) *RestaurantUpdate {
+	if s != nil {
+		ru.SetDescription(*s)
+	}
+	return ru
+}
+
+// ClearDescription clears the value of description.
+func (ru *RestaurantUpdate) ClearDescription() *RestaurantUpdate {
+	ru.mutation.ClearDescription()
+	return ru
+}
+
 // SetAddressID sets the address edge to Address by id.
 func (ru *RestaurantUpdate) SetAddressID(id int) *RestaurantUpdate {
 	ru.mutation.SetAddressID(id)
@@ -261,6 +275,12 @@ func (ru *RestaurantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: restaurant.FieldDescription,
+		})
+	}
+	if ru.mutation.DescriptionCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: restaurant.FieldDescription,
 		})
 	}
@@ -491,6 +511,20 @@ func (ruo *RestaurantUpdateOne) SetDescription(s string) *RestaurantUpdateOne {
 	return ruo
 }
 
+// SetNillableDescription sets the description field if the given value is not nil.
+func (ruo *RestaurantUpdateOne) SetNillableDescription(s *string) *RestaurantUpdateOne {
+	if s != nil {
+		ruo.SetDescription(*s)
+	}
+	return ruo
+}
+
+// ClearDescription clears the value of description.
+func (ruo *RestaurantUpdateOne) ClearDescription() *RestaurantUpdateOne {
+	ruo.mutation.ClearDescription()
+	return ruo
+}
+
 // SetAddressID sets the address edge to Address by id.
 func (ruo *RestaurantUpdateOne) SetAddressID(id int) *RestaurantUpdateOne {
 	ruo.mutation.SetAddressID(id)
@@ -707,6 +741,12 @@ func (ruo *RestaurantUpdateOne) sqlSave(ctx context.Context) (_node *Restaurant,
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: restaurant.FieldDescription,
+		})
+	}
+	if ruo.mutation.DescriptionCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: restaurant.FieldDescription,
 		})
 	}

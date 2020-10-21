@@ -35,6 +35,14 @@ func (rc *RestaurantCreate) SetDescription(s string) *RestaurantCreate {
 	return rc
 }
 
+// SetNillableDescription sets the description field if the given value is not nil.
+func (rc *RestaurantCreate) SetNillableDescription(s *string) *RestaurantCreate {
+	if s != nil {
+		rc.SetDescription(*s)
+	}
+	return rc
+}
+
 // SetAddressID sets the address edge to Address by id.
 func (rc *RestaurantCreate) SetAddressID(id int) *RestaurantCreate {
 	rc.mutation.SetAddressID(id)
@@ -152,9 +160,6 @@ func (rc *RestaurantCreate) SaveX(ctx context.Context) *Restaurant {
 func (rc *RestaurantCreate) check() error {
 	if _, ok := rc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
-	}
-	if _, ok := rc.mutation.Description(); !ok {
-		return &ValidationError{Name: "description", err: errors.New("ent: missing required field \"description\"")}
 	}
 	return nil
 }

@@ -33,6 +33,14 @@ func (pc *ProductCreate) SetDescription(s string) *ProductCreate {
 	return pc
 }
 
+// SetNillableDescription sets the description field if the given value is not nil.
+func (pc *ProductCreate) SetNillableDescription(s *string) *ProductCreate {
+	if s != nil {
+		pc.SetDescription(*s)
+	}
+	return pc
+}
+
 // SetCost sets the cost field.
 func (pc *ProductCreate) SetCost(i int) *ProductCreate {
 	pc.mutation.SetCost(i)
@@ -128,9 +136,6 @@ func (pc *ProductCreate) SaveX(ctx context.Context) *Product {
 func (pc *ProductCreate) check() error {
 	if _, ok := pc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
-	}
-	if _, ok := pc.mutation.Description(); !ok {
-		return &ValidationError{Name: "description", err: errors.New("ent: missing required field \"description\"")}
 	}
 	if _, ok := pc.mutation.Cost(); !ok {
 		return &ValidationError{Name: "cost", err: errors.New("ent: missing required field \"cost\"")}
