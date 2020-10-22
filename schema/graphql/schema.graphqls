@@ -65,6 +65,15 @@ input RegisterProductInput {
   restaurantID: ID! # Es necesario?
 }
 
+input UpdateProductInput {
+  productID: ID!
+  name: String!
+  description: String!
+  tags: [RegisterTagInput!]!
+  cost: Int! # Manejar como centavos
+  active: Boolean!
+}
+
 input ProductsFilterConfigInput {
   includeInactive: Boolean
   #oderByField: smt
@@ -186,16 +195,16 @@ type Mutation {
   deleteRestaurantOwnerProfile: ID!
 
   createProduct(input: RegisterProductInput!): ID!
-  updateProduct(input: RegisterProductInput!): ID!
+  updateProduct(input: UpdateProductInput!): ID!
   toggleProductStatus(input: ID!): Boolean!
   uploadProductPhoto(input: UploadInput): String!
   deleteProductPhoto(input: String!): ID!
-  deleteProduct: ID!
+  deleteProduct(input: ID!): ID!
 
   updateRestaurant(input:RegisterRestaurantInput!): ID!
   uploadRestaurantPhoto(input: UploadInput): String!
   deleteRestuarantPhoto(input: String!): ID!
-  deleteRestaurant: ID!
+  deleteRestaurant(input: ID!): ID!
 
   uploadPhotoDemo(input:UploadInput!): String!
 
