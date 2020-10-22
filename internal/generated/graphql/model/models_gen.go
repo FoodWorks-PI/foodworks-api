@@ -86,6 +86,15 @@ type UpdateCustomerInput struct {
 	Phone    string `json:"phone"`
 }
 
+type UpdateProductInput struct {
+	ProductID   int                 `json:"productID"`
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
+	Tags        []*RegisterTagInput `json:"tags"`
+	Cost        int                 `json:"cost"`
+	Active      bool                `json:"active"`
+}
+
 type UpdateRestaurantOwnerInput struct {
 	Name     string `json:"name"`
 	LastName string `json:"lastName"`
