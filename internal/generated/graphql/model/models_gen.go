@@ -7,6 +7,10 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+type DeleteImageInput struct {
+	FileNames []*string `json:"fileNames"`
+}
+
 type ProductsByAllFieldsInput struct {
 	SearchString        string                     `json:"searchString"`
 	ProductFilterConfig *ProductsFilterConfigInput `json:"productFilterConfig"`
@@ -102,6 +106,6 @@ type UpdateRestaurantOwnerInput struct {
 	Phone    string `json:"phone"`
 }
 
-type UploadInput struct {
-	File graphql.Upload `json:"file"`
+type UploadImageInput struct {
+	Files []*graphql.Upload `json:"files"`
 }

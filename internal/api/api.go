@@ -69,8 +69,9 @@ func (a *API) SetupRoutes(entClient *ent.Client, dbClient *sqlx.DB, redisClient 
 		})
 		router.HandleFunc("/echoAuth", EchoRequest)
 		router.Route("/graphql", func(router chi.Router) {
-			srv := newGraphQLServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{EntClient: entClient, Redis: redisClient, DBClient: dbClient,
-				ElasticClient: elasticClient, FileHandler: fileHandler}}))
+			srv := newGraphQLServer(generated.NewExecutableSchema(generated.Config{
+				Resolvers: &resolver.Resolver{EntClient: entClient, Redis: redisClient, DBClient: dbClient,
+					ElasticClient: elasticClient, FileHandler: fileHandler}}))
 			router.Handle("/", srv)
 			router.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 		})

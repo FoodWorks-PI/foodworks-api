@@ -169,8 +169,13 @@ type RestaurantSearchResult {
 }
 
 scalar Upload
-input UploadInput{
-  file: Upload!
+
+input UploadImageInput{
+  files: [Upload!]!
+}
+
+input DeleteImageInput {
+  fileNames: [String]!
 }
 
 type Query {
@@ -181,6 +186,7 @@ type Query {
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getRestaurantByID(input: ID!): Restaurant!
   getTags(input: String): [Tag]!
+  autoCompleteTag(input: String!): [Tag]!
 }
 
 type Mutation {
@@ -197,16 +203,16 @@ type Mutation {
   createProduct(input: RegisterProductInput!): ID!
   updateProduct(input: UpdateProductInput!): ID!
   toggleProductStatus(input: ID!): Boolean!
-  uploadProductPhoto(input: UploadInput): String!
-  deleteProductPhoto(input: String!): ID!
+  uploadProductPhoto(input: UploadImageInput!): [String!]!
+  deleteProductPhoto(input: [String!]!): ID!
   deleteProduct(input: ID!): ID!
 
   updateRestaurant(input:RegisterRestaurantInput!): ID!
-  uploadRestaurantPhoto(input: UploadInput): String!
-  deleteRestuarantPhoto(input: String!): ID!
+  uploadRestaurantPhoto(input: UploadImageInput!): [String!]!
+  deleteRestuarantPhoto(input: DeleteImageInput!): ID!
   deleteRestaurant(input: ID!): ID!
 
-  uploadPhotoDemo(input:UploadInput!): String!
+  uploadPhotoDemo(input:UploadImageInput!): [String!]!
 
   # createOrder(input: CreateOrderInput): CreateOrderPayload!
   # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!

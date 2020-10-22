@@ -348,11 +348,11 @@ func (r *mutationResolver) ToggleProductStatus(ctx context.Context, input int) (
 	return updatedProduct.IsActive, nil
 }
 
-func (r *mutationResolver) UploadProductPhoto(ctx context.Context, input *model.UploadInput) (string, error) {
+func (r *mutationResolver) UploadProductPhoto(ctx context.Context, input model.UploadImageInput) ([]string, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) DeleteProductPhoto(ctx context.Context, input string) (int, error) {
+func (r *mutationResolver) DeleteProductPhoto(ctx context.Context, input []string) (int, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -415,11 +415,11 @@ func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.Reg
 	return currentUser.ID, nil
 }
 
-func (r *mutationResolver) UploadRestaurantPhoto(ctx context.Context, input *model.UploadInput) (string, error) {
+func (r *mutationResolver) UploadRestaurantPhoto(ctx context.Context, input model.UploadImageInput) ([]string, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) DeleteRestuarantPhoto(ctx context.Context, input string) (int, error) {
+func (r *mutationResolver) DeleteRestuarantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -433,14 +433,20 @@ func (r *mutationResolver) DeleteRestaurant(ctx context.Context, input int) (int
 	return input, nil
 }
 
-func (r *mutationResolver) UploadPhotoDemo(ctx context.Context, input model.UploadInput) (string, error) {
+func (r *mutationResolver) UploadPhotoDemo(ctx context.Context, input model.UploadImageInput) ([]string, error) {
 	// TODO: Why do we need to dereference to a variable?
 	fileHandler := *r.FileHandler
-	path, err := fileHandler.Upload(input.File)
-	if err != nil {
-		return "", err
+	paths := make([]string, len(input.Files))
+	for i, image := range input.Files {
+		path, err := fileHandler.Upload(image)
+		if err != nil {
+			return nil, err
+		}
+		paths[i] = path
 	}
-	return path, nil
+
+	return paths, nil
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]*ent.Tag, error) {
@@ -574,6 +580,10 @@ func (r *queryResolver) GetTags(ctx context.Context, input *string) ([]*ent.Tag,
 	}
 
 	return tags, nil
+}
+
+func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*ent.Tag, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *restaurantResolver) Address(ctx context.Context, obj *ent.Restaurant) (*ent.Address, error) {

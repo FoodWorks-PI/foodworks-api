@@ -13,7 +13,7 @@ import (
 )
 
 type FileHandler interface {
-	Upload(upload graphql.Upload) (string, error)
+	Upload(upload *graphql.Upload) (string, error)
 	Delete() (string, error)
 	Download(w http.ResponseWriter, r *http.Request, fileName string)
 }
@@ -44,7 +44,7 @@ func (du *DiskUploader) Download(w http.ResponseWriter, r *http.Request, fileNam
 	http.ServeFile(w, r, filePath)
 }
 
-func (du *DiskUploader) Upload(upload graphql.Upload) (string, error) {
+func (du *DiskUploader) Upload(upload *graphql.Upload) (string, error) {
 	content, err := ioutil.ReadAll(upload.File)
 	if err != nil {
 		return "", err
