@@ -6,6 +6,9 @@ import (
 	"os"
 	"time"
 
+	"foodworks.ml/m/internal/platform/filehandler"
+	"github.com/elastic/go-elasticsearch/v6"
+
 	"github.com/jmoiron/sqlx"
 
 	"foodworks.ml/m/internal/platform"
@@ -35,7 +38,9 @@ type API struct {
 	Router *chi.Mux
 }
 
-func (a *API) SetupRoutes(entClient *ent.Client, dbClient *sqlx.DB, redisClient *redis.Client, dataStoreConfig platform.DataStoreConfig) {
+func (a *API) SetupRoutes(entClient *ent.Client, dbClient *sqlx.DB, redisClient *redis.Client,
+	dataStoreConfig platform.DataStoreConfig, elasticClient *elasticsearch.Client, fileHandler *filehandler.FileHandler) {
+	localFileHandler := *fileHandler
 	// init server
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer)
@@ -58,9 +63,14 @@ func (a *API) SetupRoutes(entClient *ent.Client, dbClient *sqlx.DB, redisClient 
 		} else {
 			log.Info().Msg("Auth Disabled")
 		}
+		router.Get("/media/{path}", func(w http.ResponseWriter, r *http.Request) {
+			path := chi.URLParam(r, "path")
+			localFileHandler.Download(w, r, path)
+		})
 		router.HandleFunc("/echoAuth", EchoRequest)
 		router.Route("/graphql", func(router chi.Router) {
-			srv := newGraphQLServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{EntClient: entClient, Redis: redisClient, DBClient: dbClient}}))
+			srv := newGraphQLServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{EntClient: entClient, Redis: redisClient, DBClient: dbClient,
+				ElasticClient: elasticClient, FileHandler: fileHandler}}))
 			router.Handle("/", srv)
 			router.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 		})

@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 
+	"foodworks.ml/m/internal/platform/filehandler"
+
 	"foodworks.ml/m/internal/api"
 	"foodworks.ml/m/internal/platform"
 )
@@ -21,12 +23,14 @@ func main() {
 	}
 
 	db, client := platform.NewEntClient(dataStoreConfig)
-	_ = platform.NewElasticSearchClient(dataStoreConfig)
+	elasticClient := platform.NewElasticSearchClient(dataStoreConfig)
 
 	rdb := platform.NewRedisClient(dataStoreConfig)
 
+	fileHandler := filehandler.NewDiskUploader()
+
 	api := api.API{}
-	api.SetupRoutes(client, db, rdb, dataStoreConfig)
+	api.SetupRoutes(client, db, rdb, dataStoreConfig, elasticClient, &fileHandler)
 	api.StartServer()
 
 	// Cleanup

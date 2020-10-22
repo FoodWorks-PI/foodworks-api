@@ -159,6 +159,11 @@ type RestaurantSearchResult {
   distance: Float!
 }
 
+scalar Upload
+input UploadInput{
+  file: Upload!
+}
+
 type Query {
   getCurrentCustomer: Customer!
   getClosestRestaurants(input: Int): [RestaurantSearchResult!]!
@@ -183,10 +188,16 @@ type Mutation {
   createProduct(input: RegisterProductInput!): ID!
   updateProduct(input: RegisterProductInput!): ID!
   toggleProductStatus(input: ID!): Boolean!
+  uploadProductPhoto(input: UploadInput): String!
+  deleteProductPhoto(input: String!): ID!
   deleteProduct: ID!
 
   updateRestaurant(input:RegisterRestaurantInput!): ID!
+  uploadRestaurantPhoto(input: UploadInput): String!
+  deleteRestuarantPhoto(input: String!): ID!
   deleteRestaurant: ID!
+
+  uploadPhotoDemo(input:UploadInput!): String!
 
   # createOrder(input: CreateOrderInput): CreateOrderPayload!
   # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!

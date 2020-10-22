@@ -286,6 +286,16 @@ func (r *mutationResolver) DeleteRestaurant(ctx context.Context) (int, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
+func (r *mutationResolver) UploadPhotoDemo(ctx context.Context, input model.UploadInput) (string, error) {
+	// TODO: Why do we need to dereference to a variable?
+	fileHandler := *r.FileHandler
+	path, err := fileHandler.Upload(input.File)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]*ent.Tag, error) {
 	panic(fmt.Errorf("not implemented"))
 }

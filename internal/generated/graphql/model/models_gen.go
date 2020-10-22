@@ -4,6 +4,7 @@ package model
 
 import (
 	"foodworks.ml/m/internal/generated/ent"
+	"github.com/99designs/gqlgen/graphql"
 )
 
 type ProductsByAllFieldsInput struct {
@@ -90,4 +91,8 @@ type UpdateRestaurantOwnerInput struct {
 	Name     string `json:"name"`
 	LastName string `json:"lastName"`
 	Phone    string `json:"phone"`
+}
+
+type UploadInput struct {
+	File graphql.Upload `json:"file"`
 }
