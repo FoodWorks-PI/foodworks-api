@@ -313,6 +313,20 @@ func DescriptionHasSuffix(v string) predicate.Restaurant {
 	})
 }
 
+// DescriptionIsNil applies the IsNil predicate on the "description" field.
+func DescriptionIsNil() predicate.Restaurant {
+	return predicate.Restaurant(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldDescription)))
+	})
+}
+
+// DescriptionNotNil applies the NotNil predicate on the "description" field.
+func DescriptionNotNil() predicate.Restaurant {
+	return predicate.Restaurant(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldDescription)))
+	})
+}
+
 // DescriptionEqualFold applies the EqualFold predicate on the "description" field.
 func DescriptionEqualFold(v string) predicate.Restaurant {
 	return predicate.Restaurant(func(s *sql.Selector) {
