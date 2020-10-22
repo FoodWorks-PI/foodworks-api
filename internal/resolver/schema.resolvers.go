@@ -383,7 +383,7 @@ func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.Reg
 		return -1, err
 	}
 
-	//TODO falta set tags.
+	// TODO falta set tags.
 
 	updatedRestaurant, err := currentUser.Edges.Restaurant.
 		Update().
