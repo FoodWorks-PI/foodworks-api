@@ -71,6 +71,7 @@ type ComplexityRoot struct {
 		CreateProduct                    func(childComplexity int, input model.RegisterProductInput) int
 		CreateRestaurantOwnerProfile     func(childComplexity int, input model.RegisterRestaurantOwnerInput) int
 		DeleteCustomerProfile            func(childComplexity int) int
+		DeletePhotoDemo                  func(childComplexity int, input model.DeleteImageInput) int
 		DeleteProduct                    func(childComplexity int, input int) int
 		DeleteProductPhoto               func(childComplexity int, input []string) int
 		DeleteRestaurant                 func(childComplexity int, input int) int
@@ -162,6 +163,7 @@ type MutationResolver interface {
 	DeleteRestuarantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error)
 	DeleteRestaurant(ctx context.Context, input int) (int, error)
 	UploadPhotoDemo(ctx context.Context, input model.UploadImageInput) ([]string, error)
+	DeletePhotoDemo(ctx context.Context, input model.DeleteImageInput) ([]string, error)
 }
 type ProductResolver interface {
 	Tags(ctx context.Context, obj *ent.Product) ([]*ent.Tag, error)
@@ -309,6 +311,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteCustomerProfile(childComplexity), true
+
+	case "Mutation.deletePhotoDemo":
+		if e.complexity.Mutation.DeletePhotoDemo == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deletePhotoDemo_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeletePhotoDemo(childComplexity, args["input"].(model.DeleteImageInput)), true
 
 	case "Mutation.deleteProduct":
 		if e.complexity.Mutation.DeleteProduct == nil {
@@ -980,7 +994,7 @@ input UploadImageInput{
 }
 
 input DeleteImageInput {
-  fileNames: [String]!
+  fileNames: [String!]!
 }
 
 type Query {
@@ -1018,6 +1032,7 @@ type Mutation {
   deleteRestaurant(input: ID!): ID!
 
   uploadPhotoDemo(input:UploadImageInput!): [String!]!
+  deletePhotoDemo(input:DeleteImageInput!): [String!]!
 
   # createOrder(input: CreateOrderInput): CreateOrderPayload!
   # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!
@@ -1067,6 +1082,21 @@ func (ec *executionContext) field_Mutation_createRestaurantOwnerProfile_args(ctx
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNRegisterRestaurantOwnerInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterRestaurantOwnerInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deletePhotoDemo_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.DeleteImageInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNDeleteImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐDeleteImageInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2511,6 +2541,48 @@ func (ec *executionContext) _Mutation_uploadPhotoDemo(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().UploadPhotoDemo(rctx, args["input"].(model.UploadImageInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deletePhotoDemo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deletePhotoDemo_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeletePhotoDemo(rctx, args["input"].(model.DeleteImageInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4851,7 +4923,7 @@ func (ec *executionContext) unmarshalInputDeleteImageInput(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileNames"))
-			it.FileNames, err = ec.unmarshalNString2ᚕᚖstring(ctx, v)
+			it.FileNames, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5656,6 +5728,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "uploadPhotoDemo":
 			out.Values[i] = ec._Mutation_uploadPhotoDemo(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deletePhotoDemo":
+			out.Values[i] = ec._Mutation_deletePhotoDemo(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6703,36 +6780,6 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	ret := make(graphql.Array, len(v))
 	for i := range v {
 		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
-	}
-
-	return ret
-}
-
-func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*string, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
 	}
 
 	return ret

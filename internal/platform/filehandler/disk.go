@@ -14,7 +14,7 @@ import (
 
 type FileHandler interface {
 	Upload(upload *graphql.Upload) (string, error)
-	Delete() (string, error)
+	Delete(fileName string) error
 	Download(w http.ResponseWriter, r *http.Request, fileName string)
 }
 
@@ -35,8 +35,13 @@ func NewDiskUploader() FileHandler {
 	return &DiskUploader{}
 }
 
-func (du *DiskUploader) Delete() (string, error) {
-	return "", nil
+func (du *DiskUploader) Delete(fileName string) error {
+	imagePath := path.Join(mediaPath, fileName)
+	err := os.Remove(imagePath)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (du *DiskUploader) Download(w http.ResponseWriter, r *http.Request, fileName string) {

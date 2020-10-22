@@ -8,7 +8,7 @@ import (
 )
 
 type DeleteImageInput struct {
-	FileNames []*string `json:"fileNames"`
+	FileNames []string `json:"fileNames"`
 }
 
 type ProductsByAllFieldsInput struct {

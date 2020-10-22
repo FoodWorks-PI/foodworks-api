@@ -446,7 +446,18 @@ func (r *mutationResolver) UploadPhotoDemo(ctx context.Context, input model.Uplo
 	}
 
 	return paths, nil
-	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) DeletePhotoDemo(ctx context.Context, input model.DeleteImageInput) ([]string, error) {
+	fileHandler := *r.FileHandler
+	for _, image := range input.FileNames {
+		err := fileHandler.Delete(image)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return input.FileNames, nil
 }
 
 func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]*ent.Tag, error) {

@@ -175,7 +175,7 @@ input UploadImageInput{
 }
 
 input DeleteImageInput {
-  fileNames: [String]!
+  fileNames: [String!]!
 }
 
 type Query {
@@ -213,6 +213,7 @@ type Mutation {
   deleteRestaurant(input: ID!): ID!
 
   uploadPhotoDemo(input:UploadImageInput!): [String!]!
+  deletePhotoDemo(input:DeleteImageInput!): [String!]!
 
   # createOrder(input: CreateOrderInput): CreateOrderPayload!
   # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!
