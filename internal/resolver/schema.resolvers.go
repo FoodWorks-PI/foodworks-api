@@ -348,8 +348,15 @@ func (r *mutationResolver) ToggleProductStatus(ctx context.Context, input int) (
 	return updatedProduct.IsActive, nil
 }
 
-func (r *mutationResolver) DeleteProduct(ctx context.Context, input int) (int, error) {
+func (r *mutationResolver) UploadProductPhoto(ctx context.Context, input *model.UploadInput) (string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
 
+func (r *mutationResolver) DeleteProductPhoto(ctx context.Context, input string) (int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) DeleteProduct(ctx context.Context, input int) (int, error) {
 	err := r.EntClient.Product.DeleteOneID(input).Exec(ctx)
 
 	if err != nil {
@@ -406,6 +413,14 @@ func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.Reg
 	}
 
 	return currentUser.ID, nil
+}
+
+func (r *mutationResolver) UploadRestaurantPhoto(ctx context.Context, input *model.UploadInput) (string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) DeleteRestuarantPhoto(ctx context.Context, input string) (int, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) DeleteRestaurant(ctx context.Context, input int) (int, error) {

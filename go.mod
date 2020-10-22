@@ -31,7 +31,7 @@ require (
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/steinfletcher/apitest v1.4.11
 	github.com/stretchr/testify v1.6.1
-	github.com/vektah/gqlparser/v2 v2.1.0 // indirect
+	github.com/vektah/gqlparser/v2 v2.1.0
 	go.opentelemetry.io/otel v0.12.0 // indirect
 	golang.org/x/crypto v0.0.0-20200930160638-afb6bcd081ae // indirect
 	golang.org/x/net v0.0.0-20200930145003-4acb6c075d10 // indirect
