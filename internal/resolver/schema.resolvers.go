@@ -279,6 +279,10 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Regist
 		Query().
 		Where(restaurant.ID(input.RestaurantID)).
 		First(ctx)
+	
+	if err != nil {
+		return -1, err
+	}
 
 	newProduct, err := r.EntClient.Product.
 		Create().
