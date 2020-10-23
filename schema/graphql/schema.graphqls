@@ -59,7 +59,7 @@ type Customer {
 input RegisterProductInput {
   name: String!
   description: String!
-  tags: [RegisterTagInput!]!
+  tags: [TagInput!]!
   cost: Int! # Manejar como centavos
   active: Boolean!
   restaurantID: ID! # Es necesario?
@@ -69,7 +69,7 @@ input UpdateProductInput {
   productID: ID!
   name: String!
   description: String!
-  tags: [RegisterTagInput!]!
+  tags: [TagInput!]!
   cost: Int! # Manejar como centavos
   active: Boolean!
 }
@@ -111,7 +111,7 @@ input RegisterRestaurantInput {
   name: String!
   address: RegisterAddressInput!
   description: String!
-  tags: [RegisterTagInput!]!
+  tags: [TagInput!]!
 }
 
 type Restaurant {
@@ -124,20 +124,13 @@ type Restaurant {
   restaurantOwner: RestaurantOwner!
 }
 
-input RegisterTagInput {
-  ID: ID
-  name: String
-}
-
-input TagInput {
-  id: ID!
-}
-
 type Tag {
-  ID: ID!
   name: String!
 }
 
+input TagInput {
+ name: String!
+}
 
 input RegisterRestaurantOwnerInput {
   name: String!
@@ -185,7 +178,6 @@ type Query {
   getProductsByAllFields(input: ProductsByAllFieldsInput!): [Product!]!
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getRestaurantByID(input: ID!): Restaurant!
-  getTags(input: String): [Tag]!
   autoCompleteTag(input: String!): [Tag]!
 }
 

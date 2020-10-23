@@ -2,7 +2,6 @@ package db
 
 import (
 	"github.com/facebook/ent"
-	"github.com/facebook/ent/dialect"
 	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
 )
@@ -15,10 +14,7 @@ type Tag struct {
 // Fields of the Tag.
 func (Tag) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("name").
-			SchemaType(map[string]string{
-				dialect.Postgres: "my_completion",
-			}),
+		field.String("name"),
 	}
 }
 

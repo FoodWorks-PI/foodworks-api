@@ -48,19 +48,19 @@ type RegisterCustomerInput struct {
 }
 
 type RegisterProductInput struct {
-	Name         string              `json:"name"`
-	Description  string              `json:"description"`
-	Tags         []*RegisterTagInput `json:"tags"`
-	Cost         int                 `json:"cost"`
-	Active       bool                `json:"active"`
-	RestaurantID int                 `json:"restaurantID"`
+	Name         string      `json:"name"`
+	Description  string      `json:"description"`
+	Tags         []*TagInput `json:"tags"`
+	Cost         int         `json:"cost"`
+	Active       bool        `json:"active"`
+	RestaurantID int         `json:"restaurantID"`
 }
 
 type RegisterRestaurantInput struct {
 	Name        string                `json:"name"`
 	Address     *RegisterAddressInput `json:"address"`
 	Description string                `json:"description"`
-	Tags        []*RegisterTagInput   `json:"tags"`
+	Tags        []*TagInput           `json:"tags"`
 }
 
 type RegisterRestaurantOwnerInput struct {
@@ -71,18 +71,13 @@ type RegisterRestaurantOwnerInput struct {
 	Restaurant *RegisterRestaurantInput `json:"restaurant"`
 }
 
-type RegisterTagInput struct {
-	ID   *int    `json:"ID"`
-	Name *string `json:"name"`
-}
-
 type RestaurantSearchResult struct {
 	Restaurant *ent.Restaurant `json:"restaurant"`
 	Distance   float64         `json:"distance"`
 }
 
 type TagInput struct {
-	ID int `json:"id"`
+	Name string `json:"name"`
 }
 
 type UpdateCustomerInput struct {
@@ -92,12 +87,12 @@ type UpdateCustomerInput struct {
 }
 
 type UpdateProductInput struct {
-	ProductID   int                 `json:"productID"`
-	Name        string              `json:"name"`
-	Description string              `json:"description"`
-	Tags        []*RegisterTagInput `json:"tags"`
-	Cost        int                 `json:"cost"`
-	Active      bool                `json:"active"`
+	ProductID   int         `json:"productID"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Tags        []*TagInput `json:"tags"`
+	Cost        int         `json:"cost"`
+	Active      bool        `json:"active"`
 }
 
 type UpdateRestaurantOwnerInput struct {

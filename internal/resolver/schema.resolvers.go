@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"foodworks.ml/m/internal/auth"
@@ -18,6 +19,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	generated "foodworks.ml/m/internal/generated/graphql"
 	"foodworks.ml/m/internal/generated/graphql/model"
+	gabs "github.com/Jeffail/gabs/v2"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/rs/zerolog/log"
 )
@@ -162,11 +164,14 @@ func (r *mutationResolver) CreateRestaurantOwnerProfile(ctx context.Context, inp
 		return -1, err
 	}
 
+	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Restaurant.Tags, ctx)
+
 	newRestaurant, err := r.EntClient.Restaurant.
 		Create().
 		SetName(input.Restaurant.Name).
 		SetDescription(input.Restaurant.Description).
 		SetAddress(newAddress).
+		AddTags(tagEntities...).
 		Save(ctx)
 
 	if err != nil {
@@ -283,6 +288,7 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Regist
 	if err != nil {
 		return -1, err
 	}
+	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Tags, ctx)
 
 	newProduct, err := r.EntClient.Product.
 		Create().
@@ -291,6 +297,7 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Regist
 		SetCost(input.Cost).
 		SetIsActive(input.Active).
 		AddRestaurant(restaurantRef).
+		AddTags(tagEntities...).
 		Save(ctx)
 
 	if err != nil {
@@ -301,23 +308,21 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Regist
 }
 
 func (r *mutationResolver) UpdateProduct(ctx context.Context, input model.UpdateProductInput) (int, error) {
+	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Tags, ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
 	p, err := r.EntClient.Product.
 		UpdateOneID(input.ProductID).
 		SetName(input.Name).
 		SetDescription(input.Description).
 		SetCost(input.Cost).
 		SetIsActive(input.Active).
+		ClearTags().
+		AddTags(tagEntities...).
 		Save(ctx)
-
-	if err != nil {
-		return -1, err
-	}
-
-	/* TODO Luego
-	updatedTags, err := p.Edges.Tags.
-	Update().ClearTags().
-	AddTags(input.Tags).
-	Save(ctx)*/
 
 	if err != nil {
 		return -1, err
@@ -366,6 +371,7 @@ func (r *mutationResolver) DeleteProduct(ctx context.Context, input int) (int, e
 	return input, nil
 }
 
+// TODO: Why do we need to traverse the whole graph?
 func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.RegisterRestaurantInput) (int, error) {
 	kratosSessionUser := auth.ForContext(ctx)
 
@@ -390,13 +396,17 @@ func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.Reg
 		return -1, err
 	}
 
-	// TODO falta set tags.
-
+	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Tags, ctx)
+	if err != nil {
+		return -1, err
+	}
 	updatedRestaurant, err := currentUser.Edges.Restaurant.
 		Update().
 		SetName(input.Name).
 		SetDescription(input.Description).
 		SetAddress(updatedAddress).
+		ClearTags().
+		AddTags(tagEntities...).
 		Save(ctx)
 
 	if err != nil {
@@ -486,6 +496,7 @@ func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, 
 }
 
 func (r *queryResolver) GetClosestRestaurants(ctx context.Context, input *int) ([]*model.RestaurantSearchResult, error) {
+	// TODO: Add comments
 	kratosUser := auth.ForContext(ctx)
 	currentUser, err := r.EntClient.Customer.
 		Query().
@@ -582,19 +593,44 @@ func (r *queryResolver) GetRestaurantByID(ctx context.Context, input int) (*ent.
 }
 
 func (r *queryResolver) GetTags(ctx context.Context, input *string) ([]*ent.Tag, error) {
-	tags, err := r.EntClient.Tag.
-		Query().
-		All(ctx)
+	//tags := []string{"pizza", "breakfast", "desayuno"}
+	//tagEntities, err := GetOrCreateTagId(r.Resolver, tags, ctx)
 
-	if err != nil {
-		return nil, err
-	}
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	return tags, nil
+	//return tagEntities, nil
+	panic("Not implemented")
 }
 
 func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*ent.Tag, error) {
-	panic(fmt.Errorf("not implemented"))
+	jsonObj := gabs.New()
+	_, _ = jsonObj.SetP(1, "suggest.suggestion.completion.fuzzy.fuzziness")
+	_, _ = jsonObj.SetP("autocomplete", "suggest.suggestion.completion.field")
+	_, _ = jsonObj.SetP(input, "suggest.suggestion.prefix")
+	body := jsonObj.String()
+	results, err := r.ElasticClient.Search(
+		r.ElasticClient.Search.WithBody(strings.NewReader(body)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer results.Body.Close()
+	parsed, err := gabs.ParseJSONBuffer(results.Body)
+	if err != nil {
+		return nil, err
+	}
+	tags := make([]*ent.Tag, 0)
+	for _, child := range parsed.Path("suggest.suggestion.0.options").Children() {
+		var tag ent.Tag
+		source := child.S("_source")
+		tag.Name = source.S("name").Data().(string)
+		tag.ID, _ = strconv.Atoi(source.S("id").String())
+		tags = append(tags, &tag)
+		// fmt.Printf("key: %v, value: %v\n", key, child.Data().(float64))
+	}
+	return tags, nil
 }
 
 func (r *restaurantResolver) Address(ctx context.Context, obj *ent.Restaurant) (*ent.Address, error) {
