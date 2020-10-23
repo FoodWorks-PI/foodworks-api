@@ -371,7 +371,6 @@ func (r *mutationResolver) DeleteProduct(ctx context.Context, input int) (int, e
 	return input, nil
 }
 
-// TODO: Why do we need to traverse the whole graph?
 func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.RegisterRestaurantInput) (int, error) {
 	kratosSessionUser := auth.ForContext(ctx)
 
@@ -590,18 +589,6 @@ func (r *queryResolver) GetRestaurantByID(ctx context.Context, input int) (*ent.
 	}
 
 	return restaurant, nil
-}
-
-func (r *queryResolver) GetTags(ctx context.Context, input *string) ([]*ent.Tag, error) {
-	//tags := []string{"pizza", "breakfast", "desayuno"}
-	//tagEntities, err := GetOrCreateTagId(r.Resolver, tags, ctx)
-
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//return tagEntities, nil
-	panic("Not implemented")
 }
 
 func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*ent.Tag, error) {
