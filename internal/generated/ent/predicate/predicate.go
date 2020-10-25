@@ -18,6 +18,9 @@ type Customer func(*sql.Selector)
 // Product is the predicate function for product builders.
 type Product func(*sql.Selector)
 
+// Rating is the predicate function for rating builders.
+type Rating func(*sql.Selector)
+
 // Restaurant is the predicate function for restaurant builders.
 type Restaurant func(*sql.Selector)
 

@@ -14,6 +14,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/product"
+	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	generated "foodworks.ml/m/internal/generated/graphql"
@@ -349,7 +350,6 @@ func (r *mutationResolver) ToggleProductStatus(ctx context.Context, input int) (
 }
 
 func (r *mutationResolver) DeleteProduct(ctx context.Context, input int) (int, error) {
-
 	err := r.EntClient.Product.DeleteOneID(input).Exec(ctx)
 
 	if err != nil {
@@ -410,6 +410,44 @@ func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.Reg
 
 func (r *mutationResolver) DeleteRestaurant(ctx context.Context, input int) (int, error) {
 	err := r.EntClient.Restaurant.DeleteOneID(input).Exec(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return input, nil
+}
+
+func (r *mutationResolver) CreateRating(ctx context.Context, input model.RegisterRatingInput) (int, error) {
+	newRating, err := r.EntClient.Rating.
+		Create().
+		SetProductRate(input.ProductRate).
+		SetProductID(input.ProductID).
+		SetCustomerID(input.CustomerID).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return newRating.ID, nil
+}
+
+func (r *mutationResolver) UpdateRating(ctx context.Context, input model.UpdateRatingInput) (int, error) {
+	rating, err := r.EntClient.Rating.
+		UpdateOneID(input.RatingID).
+		SetProductRate(input.ProductRate).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return rating.ID, nil
+}
+
+func (r *mutationResolver) DeleteRating(ctx context.Context, input int) (int, error) {
+	err := r.EntClient.Rating.DeleteOneID(input).Exec(ctx)
 
 	if err != nil {
 		return -1, err
@@ -549,6 +587,32 @@ func (r *queryResolver) GetTags(ctx context.Context, input *string) ([]*ent.Tag,
 	}
 
 	return tags, nil
+}
+
+func (r *queryResolver) GetRatingsByCustomerID(ctx context.Context, input int) ([]*ent.Rating, error) {
+	ratingsByCustomerID, err := r.EntClient.Rating.
+		Query().
+		Where(rating.CustomerIDEQ(input)).
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ratingsByCustomerID, nil
+}
+
+func (r *queryResolver) GetRatingsByProductID(ctx context.Context, input int) ([]*ent.Rating, error) {
+	ratingsByProductID, err := r.EntClient.Rating.
+		Query().
+		Where(rating.ProductIDEQ(input)).
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ratingsByProductID, nil
 }
 
 func (r *restaurantResolver) Address(ctx context.Context, obj *ent.Restaurant) (*ent.Address, error) {

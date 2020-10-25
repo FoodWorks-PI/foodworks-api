@@ -13,6 +13,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/bankingdata"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/product"
+	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	"foodworks.ml/m/internal/generated/ent/tag"
@@ -35,6 +36,8 @@ type Client struct {
 	Customer *CustomerClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
+	// Rating is the client for interacting with the Rating builders.
+	Rating *RatingClient
 	// Restaurant is the client for interacting with the Restaurant builders.
 	Restaurant *RestaurantClient
 	// RestaurantOwner is the client for interacting with the RestaurantOwner builders.
@@ -58,6 +61,7 @@ func (c *Client) init() {
 	c.BankingData = NewBankingDataClient(c.config)
 	c.Customer = NewCustomerClient(c.config)
 	c.Product = NewProductClient(c.config)
+	c.Rating = NewRatingClient(c.config)
 	c.Restaurant = NewRestaurantClient(c.config)
 	c.RestaurantOwner = NewRestaurantOwnerClient(c.config)
 	c.Tag = NewTagClient(c.config)
@@ -97,6 +101,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		BankingData:     NewBankingDataClient(cfg),
 		Customer:        NewCustomerClient(cfg),
 		Product:         NewProductClient(cfg),
+		Rating:          NewRatingClient(cfg),
 		Restaurant:      NewRestaurantClient(cfg),
 		RestaurantOwner: NewRestaurantOwnerClient(cfg),
 		Tag:             NewTagClient(cfg),
@@ -119,6 +124,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		BankingData:     NewBankingDataClient(cfg),
 		Customer:        NewCustomerClient(cfg),
 		Product:         NewProductClient(cfg),
+		Rating:          NewRatingClient(cfg),
 		Restaurant:      NewRestaurantClient(cfg),
 		RestaurantOwner: NewRestaurantOwnerClient(cfg),
 		Tag:             NewTagClient(cfg),
@@ -154,6 +160,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.BankingData.Use(hooks...)
 	c.Customer.Use(hooks...)
 	c.Product.Use(hooks...)
+	c.Rating.Use(hooks...)
 	c.Restaurant.Use(hooks...)
 	c.RestaurantOwner.Use(hooks...)
 	c.Tag.Use(hooks...)
@@ -557,6 +564,94 @@ func (c *ProductClient) QueryRestaurant(pr *Product) *RestaurantQuery {
 // Hooks returns the client hooks.
 func (c *ProductClient) Hooks() []Hook {
 	return c.hooks.Product
+}
+
+// RatingClient is a client for the Rating schema.
+type RatingClient struct {
+	config
+}
+
+// NewRatingClient returns a client for the Rating from the given config.
+func NewRatingClient(c config) *RatingClient {
+	return &RatingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `rating.Hooks(f(g(h())))`.
+func (c *RatingClient) Use(hooks ...Hook) {
+	c.hooks.Rating = append(c.hooks.Rating, hooks...)
+}
+
+// Create returns a create builder for Rating.
+func (c *RatingClient) Create() *RatingCreate {
+	mutation := newRatingMutation(c.config, OpCreate)
+	return &RatingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of Rating entities.
+func (c *RatingClient) CreateBulk(builders ...*RatingCreate) *RatingCreateBulk {
+	return &RatingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Rating.
+func (c *RatingClient) Update() *RatingUpdate {
+	mutation := newRatingMutation(c.config, OpUpdate)
+	return &RatingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RatingClient) UpdateOne(r *Rating) *RatingUpdateOne {
+	mutation := newRatingMutation(c.config, OpUpdateOne, withRating(r))
+	return &RatingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RatingClient) UpdateOneID(id int) *RatingUpdateOne {
+	mutation := newRatingMutation(c.config, OpUpdateOne, withRatingID(id))
+	return &RatingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Rating.
+func (c *RatingClient) Delete() *RatingDelete {
+	mutation := newRatingMutation(c.config, OpDelete)
+	return &RatingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *RatingClient) DeleteOne(r *Rating) *RatingDeleteOne {
+	return c.DeleteOneID(r.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *RatingClient) DeleteOneID(id int) *RatingDeleteOne {
+	builder := c.Delete().Where(rating.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RatingDeleteOne{builder}
+}
+
+// Query returns a query builder for Rating.
+func (c *RatingClient) Query() *RatingQuery {
+	return &RatingQuery{config: c.config}
+}
+
+// Get returns a Rating entity by its id.
+func (c *RatingClient) Get(ctx context.Context, id int) (*Rating, error) {
+	return c.Query().Where(rating.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RatingClient) GetX(ctx context.Context, id int) *Rating {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RatingClient) Hooks() []Hook {
+	return c.hooks.Rating
 }
 
 // RestaurantClient is a client for the Restaurant schema.

@@ -51,6 +51,12 @@ type RegisterProductInput struct {
 	RestaurantID int                 `json:"restaurantID"`
 }
 
+type RegisterRatingInput struct {
+	ProductRate int `json:"productRate"`
+	ProductID   int `json:"productID"`
+	CustomerID  int `json:"customerID"`
+}
+
 type RegisterRestaurantInput struct {
 	Name        string                `json:"name"`
 	Address     *RegisterAddressInput `json:"address"`
@@ -93,6 +99,11 @@ type UpdateProductInput struct {
 	Tags        []*RegisterTagInput `json:"tags"`
 	Cost        int                 `json:"cost"`
 	Active      bool                `json:"active"`
+}
+
+type UpdateRatingInput struct {
+	RatingID    int `json:"ratingID"`
+	ProductRate int `json:"productRate"`
 }
 
 type UpdateRestaurantOwnerInput struct {

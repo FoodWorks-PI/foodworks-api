@@ -69,15 +69,18 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateCustomerProfile            func(childComplexity int, input model.RegisterCustomerInput) int
 		CreateProduct                    func(childComplexity int, input model.RegisterProductInput) int
+		CreateRating                     func(childComplexity int, input model.RegisterRatingInput) int
 		CreateRestaurantOwnerProfile     func(childComplexity int, input model.RegisterRestaurantOwnerInput) int
 		DeleteCustomerProfile            func(childComplexity int) int
 		DeleteProduct                    func(childComplexity int, input int) int
+		DeleteRating                     func(childComplexity int, input int) int
 		DeleteRestaurant                 func(childComplexity int, input int) int
 		DeleteRestaurantOwnerProfile     func(childComplexity int) int
 		ToggleProductStatus              func(childComplexity int, input int) int
 		UpdateCustomerAddress            func(childComplexity int, input model.RegisterAddressInput) int
 		UpdateCustomerProfile            func(childComplexity int, input model.UpdateCustomerInput) int
 		UpdateProduct                    func(childComplexity int, input model.UpdateProductInput) int
+		UpdateRating                     func(childComplexity int, input model.UpdateRatingInput) int
 		UpdateRestaurant                 func(childComplexity int, input model.RegisterRestaurantInput) int
 		UpdateRestaurantOwnerBankingData func(childComplexity int, input model.RegisterBankingInput) int
 		UpdateRestaurantOwnerProfile     func(childComplexity int, input model.UpdateRestaurantOwnerInput) int
@@ -99,8 +102,17 @@ type ComplexityRoot struct {
 		GetCurrentRestaurantOwner func(childComplexity int) int
 		GetProductsByAllFields    func(childComplexity int, input model.ProductsByAllFieldsInput) int
 		GetProductsByRestaurantID func(childComplexity int, input model.ProductsFilterByRestaurantInput) int
+		GetRatingsByCustomerID    func(childComplexity int, input int) int
+		GetRatingsByProductID     func(childComplexity int, input int) int
 		GetRestaurantByID         func(childComplexity int, input int) int
 		GetTags                   func(childComplexity int, input *string) int
+	}
+
+	Rating struct {
+		CustomerID  func(childComplexity int) int
+		ID          func(childComplexity int) int
+		ProductID   func(childComplexity int) int
+		ProductRate func(childComplexity int) int
 	}
 
 	Restaurant struct {
@@ -151,6 +163,9 @@ type MutationResolver interface {
 	DeleteProduct(ctx context.Context, input int) (int, error)
 	UpdateRestaurant(ctx context.Context, input model.RegisterRestaurantInput) (int, error)
 	DeleteRestaurant(ctx context.Context, input int) (int, error)
+	CreateRating(ctx context.Context, input model.RegisterRatingInput) (int, error)
+	UpdateRating(ctx context.Context, input model.UpdateRatingInput) (int, error)
+	DeleteRating(ctx context.Context, input int) (int, error)
 }
 type ProductResolver interface {
 	Tags(ctx context.Context, obj *ent.Product) ([]*ent.Tag, error)
@@ -165,6 +180,8 @@ type QueryResolver interface {
 	GetProductsByRestaurantID(ctx context.Context, input model.ProductsFilterByRestaurantInput) ([]*ent.Product, error)
 	GetRestaurantByID(ctx context.Context, input int) (*ent.Restaurant, error)
 	GetTags(ctx context.Context, input *string) ([]*ent.Tag, error)
+	GetRatingsByCustomerID(ctx context.Context, input int) ([]*ent.Rating, error)
+	GetRatingsByProductID(ctx context.Context, input int) ([]*ent.Rating, error)
 }
 type RestaurantResolver interface {
 	Address(ctx context.Context, obj *ent.Restaurant) (*ent.Address, error)
@@ -279,6 +296,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateProduct(childComplexity, args["input"].(model.RegisterProductInput)), true
 
+	case "Mutation.createRating":
+		if e.complexity.Mutation.CreateRating == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createRating_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateRating(childComplexity, args["input"].(model.RegisterRatingInput)), true
+
 	case "Mutation.createRestaurantOwnerProfile":
 		if e.complexity.Mutation.CreateRestaurantOwnerProfile == nil {
 			break
@@ -309,6 +338,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteProduct(childComplexity, args["input"].(int)), true
+
+	case "Mutation.deleteRating":
+		if e.complexity.Mutation.DeleteRating == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteRating_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteRating(childComplexity, args["input"].(int)), true
 
 	case "Mutation.deleteRestaurant":
 		if e.complexity.Mutation.DeleteRestaurant == nil {
@@ -376,6 +417,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateProduct(childComplexity, args["input"].(model.UpdateProductInput)), true
+
+	case "Mutation.updateRating":
+		if e.complexity.Mutation.UpdateRating == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateRating_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateRating(childComplexity, args["input"].(model.UpdateRatingInput)), true
 
 	case "Mutation.updateRestaurant":
 		if e.complexity.Mutation.UpdateRestaurant == nil {
@@ -512,6 +565,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetProductsByRestaurantID(childComplexity, args["input"].(model.ProductsFilterByRestaurantInput)), true
 
+	case "Query.getRatingsByCustomerID":
+		if e.complexity.Query.GetRatingsByCustomerID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getRatingsByCustomerID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetRatingsByCustomerID(childComplexity, args["input"].(int)), true
+
+	case "Query.getRatingsByProductID":
+		if e.complexity.Query.GetRatingsByProductID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getRatingsByProductID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetRatingsByProductID(childComplexity, args["input"].(int)), true
+
 	case "Query.getRestaurantByID":
 		if e.complexity.Query.GetRestaurantByID == nil {
 			break
@@ -535,6 +612,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetTags(childComplexity, args["input"].(*string)), true
+
+	case "Rating.customerID":
+		if e.complexity.Rating.CustomerID == nil {
+			break
+		}
+
+		return e.complexity.Rating.CustomerID(childComplexity), true
+
+	case "Rating.ID":
+		if e.complexity.Rating.ID == nil {
+			break
+		}
+
+		return e.complexity.Rating.ID(childComplexity), true
+
+	case "Rating.productID":
+		if e.complexity.Rating.ProductID == nil {
+			break
+		}
+
+		return e.complexity.Rating.ProductID(childComplexity), true
+
+	case "Rating.productRate":
+		if e.complexity.Rating.ProductRate == nil {
+			break
+		}
+
+		return e.complexity.Rating.ProductRate(childComplexity), true
 
 	case "Restaurant.address":
 		if e.complexity.Restaurant.Address == nil {
@@ -827,6 +932,23 @@ type Product {
   # recurrence: Recurrence
 }
 
+input RegisterRatingInput {
+  productRate : Int!
+  productID : ID!
+  customerID : ID!
+}
+
+input UpdateRatingInput {
+  ratingID : ID!
+  productRate : Int!
+}
+
+type Rating {
+  ID: ID!
+  productRate: Int!
+  productID: ID!
+  customerID: ID!
+}
 
 input RegisterRestaurantInput {
   name: String!
@@ -897,6 +1019,8 @@ type Query {
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getRestaurantByID(input: ID!): Restaurant!
   getTags(input: String): [Tag]!
+  getRatingsByCustomerID(input: ID!): [Rating!]!
+  getRatingsByProductID(input: ID!): [Rating!]!
 }
 
 type Mutation {
@@ -917,6 +1041,10 @@ type Mutation {
 
   updateRestaurant(input:RegisterRestaurantInput!): ID!
   deleteRestaurant(input: ID!): ID!
+
+  createRating(input: RegisterRatingInput!): ID!
+  updateRating(input: UpdateRatingInput!): ID!
+  deleteRating(input: ID!): ID!
 
   # createOrder(input: CreateOrderInput): CreateOrderPayload!
   # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!
@@ -959,6 +1087,21 @@ func (ec *executionContext) field_Mutation_createProduct_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createRating_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.RegisterRatingInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNRegisterRatingInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterRatingInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createRestaurantOwnerProfile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -975,6 +1118,21 @@ func (ec *executionContext) field_Mutation_createRestaurantOwnerProfile_args(ctx
 }
 
 func (ec *executionContext) field_Mutation_deleteProduct_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteRating_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
@@ -1056,6 +1214,21 @@ func (ec *executionContext) field_Mutation_updateProduct_args(ctx context.Contex
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNUpdateProductInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUpdateProductInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateRating_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UpdateRatingInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNUpdateRatingInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUpdateRatingInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1161,6 +1334,36 @@ func (ec *executionContext) field_Query_getProductsByRestaurantID_args(ctx conte
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNProductsFilterByRestaurantInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐProductsFilterByRestaurantInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getRatingsByCustomerID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getRatingsByProductID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2126,6 +2329,132 @@ func (ec *executionContext) _Mutation_deleteRestaurant(ctx context.Context, fiel
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_createRating(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createRating_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateRating(rctx, args["input"].(model.RegisterRatingInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateRating(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateRating_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateRating(rctx, args["input"].(model.UpdateRatingInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteRating(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteRating_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteRating(rctx, args["input"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Product_ID(ctx context.Context, field graphql.CollectedField, obj *ent.Product) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2648,6 +2977,90 @@ func (ec *executionContext) _Query_getTags(ctx context.Context, field graphql.Co
 	return ec.marshalNTag2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐTag(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_getRatingsByCustomerID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getRatingsByCustomerID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetRatingsByCustomerID(rctx, args["input"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Rating)
+	fc.Result = res
+	return ec.marshalNRating2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRatingᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getRatingsByProductID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getRatingsByProductID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetRatingsByProductID(rctx, args["input"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Rating)
+	fc.Result = res
+	return ec.marshalNRating2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRatingᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2717,6 +3130,146 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Rating_ID(ctx context.Context, field graphql.CollectedField, obj *ent.Rating) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Rating_productRate(ctx context.Context, field graphql.CollectedField, obj *ent.Rating) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProductRate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Rating_productID(ctx context.Context, field graphql.CollectedField, obj *ent.Rating) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProductID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Rating_customerID(ctx context.Context, field graphql.CollectedField, obj *ent.Rating) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Rating",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CustomerID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Restaurant_ID(ctx context.Context, field graphql.CollectedField, obj *ent.Restaurant) (ret graphql.Marshaler) {
@@ -4662,6 +5215,42 @@ func (ec *executionContext) unmarshalInputRegisterProductInput(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRegisterRatingInput(ctx context.Context, obj interface{}) (model.RegisterRatingInput, error) {
+	var it model.RegisterRatingInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "productRate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productRate"))
+			it.ProductRate, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "productID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productID"))
+			it.ProductID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "customerID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerID"))
+			it.CustomerID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRegisterRestaurantInput(ctx context.Context, obj interface{}) (model.RegisterRestaurantInput, error) {
 	var it model.RegisterRestaurantInput
 	var asMap = obj.(map[string]interface{})
@@ -4893,6 +5482,34 @@ func (ec *executionContext) unmarshalInputUpdateProductInput(ctx context.Context
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("active"))
 			it.Active, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateRatingInput(ctx context.Context, obj interface{}) (model.UpdateRatingInput, error) {
+	var it model.UpdateRatingInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "ratingID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ratingID"))
+			it.RatingID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "productRate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productRate"))
+			it.ProductRate, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5151,6 +5768,21 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "createRating":
+			out.Values[i] = ec._Mutation_createRating(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateRating":
+			out.Values[i] = ec._Mutation_updateRating(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteRating":
+			out.Values[i] = ec._Mutation_deleteRating(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5347,10 +5979,80 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "getRatingsByCustomerID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getRatingsByCustomerID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "getRatingsByProductID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getRatingsByProductID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ratingImplementors = []string{"Rating"}
+
+func (ec *executionContext) _Rating(ctx context.Context, sel ast.SelectionSet, obj *ent.Rating) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ratingImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Rating")
+		case "ID":
+			out.Values[i] = ec._Rating_ID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "productRate":
+			out.Values[i] = ec._Rating_productRate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "productID":
+			out.Values[i] = ec._Rating_productID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "customerID":
+			out.Values[i] = ec._Rating_customerID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5990,6 +6692,53 @@ func (ec *executionContext) unmarshalNProductsFilterByRestaurantInput2foodworks�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNRating2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRatingᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Rating) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRating2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRating(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNRating2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRating(ctx context.Context, sel ast.SelectionSet, v *ent.Rating) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Rating(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNRegisterAddressInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterAddressInput(ctx context.Context, v interface{}) (model.RegisterAddressInput, error) {
 	res, err := ec.unmarshalInputRegisterAddressInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6017,6 +6766,11 @@ func (ec *executionContext) unmarshalNRegisterCustomerInput2foodworksᚗmlᚋm�
 
 func (ec *executionContext) unmarshalNRegisterProductInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterProductInput(ctx context.Context, v interface{}) (model.RegisterProductInput, error) {
 	res, err := ec.unmarshalInputRegisterProductInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNRegisterRatingInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterRatingInput(ctx context.Context, v interface{}) (model.RegisterRatingInput, error) {
+	res, err := ec.unmarshalInputRegisterRatingInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -6242,6 +6996,11 @@ func (ec *executionContext) unmarshalNUpdateCustomerInput2foodworksᚗmlᚋmᚋi
 
 func (ec *executionContext) unmarshalNUpdateProductInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUpdateProductInput(ctx context.Context, v interface{}) (model.UpdateProductInput, error) {
 	res, err := ec.unmarshalInputUpdateProductInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateRatingInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUpdateRatingInput(ctx context.Context, v interface{}) (model.UpdateRatingInput, error) {
+	res, err := ec.unmarshalInputUpdateRatingInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

@@ -80,6 +80,20 @@ var (
 		PrimaryKey:  []*schema.Column{ProductsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{},
 	}
+	// RatingsColumns holds the columns for the "ratings" table.
+	RatingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "product_rate", Type: field.TypeInt},
+		{Name: "product_id", Type: field.TypeInt},
+		{Name: "customer_id", Type: field.TypeInt},
+	}
+	// RatingsTable holds the schema information for the "ratings" table.
+	RatingsTable = &schema.Table{
+		Name:        "ratings",
+		Columns:     RatingsColumns,
+		PrimaryKey:  []*schema.Column{RatingsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{},
+	}
 	// RestaurantsColumns holds the columns for the "restaurants" table.
 	RestaurantsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -240,6 +254,7 @@ var (
 		BankingDataTable,
 		CustomersTable,
 		ProductsTable,
+		RatingsTable,
 		RestaurantsTable,
 		RestaurantOwnersTable,
 		TagsTable,

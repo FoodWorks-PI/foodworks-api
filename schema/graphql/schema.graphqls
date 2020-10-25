@@ -106,6 +106,23 @@ type Product {
   # recurrence: Recurrence
 }
 
+input RegisterRatingInput {
+  productRate : Int!
+  productID : ID!
+  customerID : ID!
+}
+
+input UpdateRatingInput {
+  ratingID : ID!
+  productRate : Int!
+}
+
+type Rating {
+  ID: ID!
+  productRate: Int!
+  productID: ID!
+  customerID: ID!
+}
 
 input RegisterRestaurantInput {
   name: String!
@@ -176,6 +193,8 @@ type Query {
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getRestaurantByID(input: ID!): Restaurant!
   getTags(input: String): [Tag]!
+  getRatingsByCustomerID(input: ID!): [Rating!]!
+  getRatingsByProductID(input: ID!): [Rating!]!
 }
 
 type Mutation {
@@ -196,6 +215,10 @@ type Mutation {
 
   updateRestaurant(input:RegisterRestaurantInput!): ID!
   deleteRestaurant(input: ID!): ID!
+
+  createRating(input: RegisterRatingInput!): ID!
+  updateRating(input: UpdateRatingInput!): ID!
+  deleteRating(input: ID!): ID!
 
   # createOrder(input: CreateOrderInput): CreateOrderPayload!
   # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!

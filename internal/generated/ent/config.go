@@ -28,6 +28,7 @@ type hooks struct {
 	BankingData     []ent.Hook
 	Customer        []ent.Hook
 	Product         []ent.Hook
+	Rating          []ent.Hook
 	Restaurant      []ent.Hook
 	RestaurantOwner []ent.Hook
 	Tag             []ent.Hook
