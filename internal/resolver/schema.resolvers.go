@@ -30,6 +30,10 @@ func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (*ent
 	return address, ent.MaskNotFound(err)
 }
 
+func (r *customerResolver) RatedProducts(ctx context.Context, obj *ent.Customer) ([]*ent.Rating, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input model.RegisterCustomerInput) (int, error) {
 	currentUser := auth.ForContext(ctx)
 
@@ -443,42 +447,12 @@ func (r *mutationResolver) DeleteRestaurant(ctx context.Context, input int) (int
 	return input, nil
 }
 
-func (r *mutationResolver) CreateRating(ctx context.Context, input model.RegisterRatingInput) (int, error) {
-	newRating, err := r.EntClient.Rating.
-		Create().
-		SetProductRate(input.ProductRate).
-		SetProductID(input.ProductID).
-		SetCustomerID(input.CustomerID).
-		Save(ctx)
-
-	if err != nil {
-		return -1, err
-	}
-
-	return newRating.ID, nil
+func (r *mutationResolver) CreateProductRating(ctx context.Context, input model.RegisterRatingInput) (int, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) UpdateRating(ctx context.Context, input model.UpdateRatingInput) (int, error) {
-	rating, err := r.EntClient.Rating.
-		UpdateOneID(input.RatingID).
-		SetProductRate(input.ProductRate).
-		Save(ctx)
-
-	if err != nil {
-		return -1, err
-	}
-
-	return rating.ID, nil
-}
-
-func (r *mutationResolver) DeleteRating(ctx context.Context, input int) (int, error) {
-	err := r.EntClient.Rating.DeleteOneID(input).Exec(ctx)
-
-	if err != nil {
-		return -1, err
-	}
-
-	return input, nil
+func (r *mutationResolver) DeleteRating(ctx context.Context, input model.RegisterRatingInput) (int, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) UploadPhotoDemo(ctx context.Context, input model.UploadImageInput) ([]string, error) {
@@ -511,6 +485,14 @@ func (r *mutationResolver) DeletePhotoDemo(ctx context.Context, input model.Dele
 func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]*ent.Tag, error) {
 	tags, err := r.EntClient.Product.QueryTags(obj).All(ctx)
 	return tags, ent.MaskNotFound(err)
+}
+
+func (r *productResolver) AverageRating(ctx context.Context, obj *ent.Product) (float64, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *productResolver) Ratings(ctx context.Context, obj *ent.Product) ([]*ent.Rating, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *productResolver) Restaurant(ctx context.Context, obj *ent.Product) (*ent.Restaurant, error) {
@@ -642,19 +624,6 @@ func (r *queryResolver) GetRestaurantByID(ctx context.Context, input int) (*ent.
 	return restaurant, nil
 }
 
-func (r *queryResolver) GetRatingsByCustomerID(ctx context.Context, input int) ([]*ent.Rating, error) {
-	ratingsByCustomerID, err := r.EntClient.Rating.
-		Query().
-		Where(rating.CustomerIDEQ(input)).
-		All(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return ratingsByCustomerID, nil
-}
-
 func (r *queryResolver) GetRatingsByProductID(ctx context.Context, input int) ([]*ent.Rating, error) {
 	ratingsByProductID, err := r.EntClient.Rating.
 		Query().
@@ -695,6 +664,22 @@ func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*e
 		// fmt.Printf("key: %v, value: %v\n", key, child.Data().(float64))
 	}
 	return tags, nil
+}
+
+func (r *ratingResolver) Rating(ctx context.Context, obj *ent.Rating) (int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *ratingResolver) Product(ctx context.Context, obj *ent.Rating) (*ent.Product, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *ratingResolver) Customer(ctx context.Context, obj *ent.Rating) (*ent.Customer, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *ratingResolver) Comment(ctx context.Context, obj *ent.Rating) (*string, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *restaurantResolver) Address(ctx context.Context, obj *ent.Restaurant) (*ent.Address, error) {
@@ -739,6 +724,9 @@ func (r *Resolver) Product() generated.ProductResolver { return &productResolver
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Rating returns generated.RatingResolver implementation.
+func (r *Resolver) Rating() generated.RatingResolver { return &ratingResolver{r} }
+
 // Restaurant returns generated.RestaurantResolver implementation.
 func (r *Resolver) Restaurant() generated.RestaurantResolver { return &restaurantResolver{r} }
 
@@ -751,5 +739,6 @@ type customerResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type productResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type ratingResolver struct{ *Resolver }
 type restaurantResolver struct{ *Resolver }
 type restaurantOwnerResolver struct{ *Resolver }

@@ -52,6 +52,7 @@ type Customer {
   email: String!
   address: Address!
   phone: String!
+  ratedProducts: [Rating!]!
   # favoriteProducts: [Product]
 }
 
@@ -101,27 +102,31 @@ type Product {
   tags: [Tag!]!
   cost: Int! # Manejar como centavos
   isActive: Boolean!
-  restaurant: Restaurant # Es necesario?
+  averageRating: Float!
+  ratings: [Rating!]!
+  restaurant: Restaurant! # Es necesario?
   # quantity: Int!
   # recurrence: Recurrence
 }
 
 input RegisterRatingInput {
-  productRate : Int!
   productID : ID!
-  customerID : ID!
+  rating: Int!
+  comment: String
 }
 
 input UpdateRatingInput {
-  ratingID : ID!
-  productRate : Int!
+  productID : ID!
+  rating : Int!
+  comment: String
 }
 
 type Rating {
   ID: ID!
-  productRate: Int!
-  productID: ID!
-  customerID: ID!
+  rating: Int!
+  product: Product!
+  customer: Customer!
+  comment: String
 }
 
 input RegisterRestaurantInput {
@@ -137,7 +142,7 @@ type Restaurant {
   description: String!
   address: Address!
   tags: [Tag!]!
-  products: [Product]
+  products: [Product!]!
   restaurantOwner: RestaurantOwner!
 }
 
@@ -191,7 +196,6 @@ type Query {
   getProductsByAllFields(input: ProductsByAllFieldsInput!): [Product!]!
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getRestaurantByID(input: ID!): Restaurant!
-  getRatingsByCustomerID(input: ID!): [Rating!]!
   getRatingsByProductID(input: ID!): [Rating!]!
   autoCompleteTag(input: String!): [Tag]!
 }
@@ -219,13 +223,11 @@ type Mutation {
   deleteRestuarantPhoto(input: DeleteImageInput!): ID!
   deleteRestaurant(input: ID!): ID!
 
-  createRating(input: RegisterRatingInput!): ID!
-  updateRating(input: UpdateRatingInput!): ID!
-  deleteRating(input: ID!): ID!
+  createProductRating(input: RegisterRatingInput!): ID!
+  deleteRating(input: RegisterRatingInput!): ID!
 
   uploadPhotoDemo(input:UploadImageInput!): [String!]!
   deletePhotoDemo(input:DeleteImageInput!): [String!]!
-
 
   # createOrder(input: CreateOrderInput): CreateOrderPayload!
   # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!

@@ -57,9 +57,9 @@ type RegisterProductInput struct {
 }
 
 type RegisterRatingInput struct {
-	ProductRate int `json:"productRate"`
-	ProductID   int `json:"productID"`
-	CustomerID  int `json:"customerID"`
+	ProductID int     `json:"productID"`
+	Rating    int     `json:"rating"`
+	Comment   *string `json:"comment"`
 }
 
 type RegisterRestaurantInput struct {
@@ -98,8 +98,9 @@ type UpdateProductInput struct {
 }
 
 type UpdateRatingInput struct {
-	RatingID    int `json:"ratingID"`
-	ProductRate int `json:"productRate"`
+	ProductID int     `json:"productID"`
+	Rating    int     `json:"rating"`
+	Comment   *string `json:"comment"`
 }
 
 type UpdateRestaurantOwnerInput struct {
