@@ -124,7 +124,22 @@ func seed(db *sqlx.DB) error {
 	}
 	var stmt string
 	for _, table := range tables {
-		stmt = fmt.Sprintf(`COPY %s FROM '/foodworks/seed/%s.csv' DELIMITER ',' CSV HEADER;`, table, table)
+		stmt = fmt.Sprintf(`
+			COPY %s FROM '/foodworks/seed/%s.csv' DELIMITER ',' CSV HEADER;
+		`, table, table)
+		_, err := db.Exec(stmt)
+		if err != nil {
+			fmt.Print(err)
+		}
+	}
+	// Reset Indexes
+	tables = []string{tag.Table, address.Table, product.Table, restaurant.Table,
+		customer.Table, bankingdata.Table, restaurantowner.Table,
+	}
+	for _, table := range tables {
+		stmt = fmt.Sprintf(`
+			SELECT setval('%s_id_seq', max(id)) FROM %s
+		`, table, table)
 		_, err := db.Exec(stmt)
 		if err != nil {
 			fmt.Print(err)
@@ -182,16 +197,49 @@ func preparePostgis(tx *sql.Tx) error {
 
 }
 
-func createZomboIndexes(tx *sql.Tx, config DataStoreConfig) error {
+func createZomboIndexes(db *sqlx.DB, config DataStoreConfig) error {
 	var stmt string
+	stmt = `
+	ALTER TABLE TAGS ADD COLUMN IF NOT EXISTS autocomplete my_completion;
+	CREATE OR REPLACE FUNCTION copy_autocomplete()
+	RETURNS TRIGGER
+	LANGUAGE PLPGSQL
+	AS
+	$$
+	BEGIN
+		IF (NEW.name <> OLD.name) OR (TG_OP = 'INSERT') THEN
+			update tags
+				set autocomplete = NEW.name
+			where id=NEW.id;
+		END IF;
+		RETURN NEW;
+	END;
+	$$;
+	DO
+	$$
+	BEGIN
+		IF NOT EXISTS(select trigger_name from information_schema.triggers where trigger_name = 'copy_autocomplete') THEN
+			CREATE TRIGGER copy_autocomplete
+			AFTER INSERT OR UPDATE
+			ON tags
+			FOR EACH ROW
+			EXECUTE PROCEDURE copy_autocomplete();
+		END IF;
+	END;
+	$$;
+	`
+	_, err := db.Exec(stmt)
+	if err != nil {
+		return err
+	}
 	collections := []string{restaurant.Table, product.Table, tag.Table}
 	for _, collection := range collections {
 		stmt = fmt.Sprintf(`
 		CREATE INDEX IF NOT EXISTS %s_zombo_idx
 		ON %s
 		USING zombodb ((%s.*))
-		WITH (url='%s')`, collection, collection, collection, config.ElasticsearchDBURL)
-		_, err := tx.Exec(stmt)
+		WITH (url='%s');`, collection, collection, collection, config.ElasticsearchDBURL)
+		_, err := db.Exec(stmt)
 		if err != nil {
 			return err
 		}
@@ -225,12 +273,12 @@ func NewEntClient(config DataStoreConfig) (*sqlx.DB, *ent.Client) {
 	if err != nil {
 		log.Printf("Error %v", err)
 	}
-
-	err = createZomboIndexes(tx, config)
+	err = tx.Commit()
 	if err != nil {
 		log.Printf("Error %v", err)
 	}
-	err = tx.Commit()
+	err = createZomboIndexes(db, config)
+
 	if err != nil {
 		log.Printf("Error %v", err)
 	}

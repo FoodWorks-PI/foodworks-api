@@ -14,6 +14,7 @@ var (
 		{Name: "latitude", Type: field.TypeFloat64},
 		{Name: "longitude", Type: field.TypeFloat64},
 		{Name: "street_line", Type: field.TypeString},
+		{Name: "geom", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "geometry(POINT)"}},
 	}
 	// AddressesTable holds the schema information for the "addresses" table.
 	AddressesTable = &schema.Table{
@@ -144,7 +145,7 @@ var (
 	// TagsColumns holds the columns for the "tags" table.
 	TagsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "name", Type: field.TypeString, SchemaType: map[string]string{"postgres": "my_completion"}},
+		{Name: "name", Type: field.TypeString},
 	}
 	// TagsTable holds the schema information for the "tags" table.
 	TagsTable = &schema.Table{

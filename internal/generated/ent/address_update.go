@@ -59,6 +59,26 @@ func (au *AddressUpdate) SetStreetLine(s string) *AddressUpdate {
 	return au
 }
 
+// SetGeom sets the geom field.
+func (au *AddressUpdate) SetGeom(s string) *AddressUpdate {
+	au.mutation.SetGeom(s)
+	return au
+}
+
+// SetNillableGeom sets the geom field if the given value is not nil.
+func (au *AddressUpdate) SetNillableGeom(s *string) *AddressUpdate {
+	if s != nil {
+		au.SetGeom(*s)
+	}
+	return au
+}
+
+// ClearGeom clears the value of geom.
+func (au *AddressUpdate) ClearGeom() *AddressUpdate {
+	au.mutation.ClearGeom()
+	return au
+}
+
 // Mutation returns the AddressMutation object of the builder.
 func (au *AddressUpdate) Mutation() *AddressMutation {
 	return au.mutation
@@ -168,6 +188,19 @@ func (au *AddressUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: address.FieldStreetLine,
 		})
 	}
+	if value, ok := au.mutation.Geom(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldGeom,
+		})
+	}
+	if au.mutation.GeomCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: address.FieldGeom,
+		})
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{address.Label}
@@ -215,6 +248,26 @@ func (auo *AddressUpdateOne) AddLongitude(f float64) *AddressUpdateOne {
 // SetStreetLine sets the streetLine field.
 func (auo *AddressUpdateOne) SetStreetLine(s string) *AddressUpdateOne {
 	auo.mutation.SetStreetLine(s)
+	return auo
+}
+
+// SetGeom sets the geom field.
+func (auo *AddressUpdateOne) SetGeom(s string) *AddressUpdateOne {
+	auo.mutation.SetGeom(s)
+	return auo
+}
+
+// SetNillableGeom sets the geom field if the given value is not nil.
+func (auo *AddressUpdateOne) SetNillableGeom(s *string) *AddressUpdateOne {
+	if s != nil {
+		auo.SetGeom(*s)
+	}
+	return auo
+}
+
+// ClearGeom clears the value of geom.
+func (auo *AddressUpdateOne) ClearGeom() *AddressUpdateOne {
+	auo.mutation.ClearGeom()
 	return auo
 }
 
@@ -323,6 +376,19 @@ func (auo *AddressUpdateOne) sqlSave(ctx context.Context) (_node *Address, err e
 			Type:   field.TypeString,
 			Value:  value,
 			Column: address.FieldStreetLine,
+		})
+	}
+	if value, ok := auo.mutation.Geom(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldGeom,
+		})
+	}
+	if auo.mutation.GeomCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: address.FieldGeom,
 		})
 	}
 	_node = &Address{config: auo.config}
