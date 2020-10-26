@@ -84,9 +84,8 @@ var (
 	// RatingsColumns holds the columns for the "ratings" table.
 	RatingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "product_rate", Type: field.TypeInt},
-		{Name: "product_id", Type: field.TypeInt},
-		{Name: "customer_id", Type: field.TypeInt},
+		{Name: "comment", Type: field.TypeString},
+		{Name: "rating", Type: field.TypeInt},
 	}
 	// RatingsTable holds the schema information for the "ratings" table.
 	RatingsTable = &schema.Table{
@@ -168,6 +167,33 @@ var (
 		PrimaryKey:  []*schema.Column{TagsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{},
 	}
+	// CustomerRatingsColumns holds the columns for the "customer_ratings" table.
+	CustomerRatingsColumns = []*schema.Column{
+		{Name: "customer_id", Type: field.TypeInt},
+		{Name: "rating_id", Type: field.TypeInt},
+	}
+	// CustomerRatingsTable holds the schema information for the "customer_ratings" table.
+	CustomerRatingsTable = &schema.Table{
+		Name:       "customer_ratings",
+		Columns:    CustomerRatingsColumns,
+		PrimaryKey: []*schema.Column{CustomerRatingsColumns[0], CustomerRatingsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "customer_ratings_customer_id",
+				Columns: []*schema.Column{CustomerRatingsColumns[0]},
+
+				RefColumns: []*schema.Column{CustomersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "customer_ratings_rating_id",
+				Columns: []*schema.Column{CustomerRatingsColumns[1]},
+
+				RefColumns: []*schema.Column{RatingsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// ProductTagsColumns holds the columns for the "product_tags" table.
 	ProductTagsColumns = []*schema.Column{
 		{Name: "product_id", Type: field.TypeInt},
@@ -191,6 +217,33 @@ var (
 				Columns: []*schema.Column{ProductTagsColumns[1]},
 
 				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// ProductRatingsColumns holds the columns for the "product_ratings" table.
+	ProductRatingsColumns = []*schema.Column{
+		{Name: "product_id", Type: field.TypeInt},
+		{Name: "rating_id", Type: field.TypeInt},
+	}
+	// ProductRatingsTable holds the schema information for the "product_ratings" table.
+	ProductRatingsTable = &schema.Table{
+		Name:       "product_ratings",
+		Columns:    ProductRatingsColumns,
+		PrimaryKey: []*schema.Column{ProductRatingsColumns[0], ProductRatingsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "product_ratings_product_id",
+				Columns: []*schema.Column{ProductRatingsColumns[0]},
+
+				RefColumns: []*schema.Column{ProductsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "product_ratings_rating_id",
+				Columns: []*schema.Column{ProductRatingsColumns[1]},
+
+				RefColumns: []*schema.Column{RatingsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
@@ -259,7 +312,9 @@ var (
 		RestaurantsTable,
 		RestaurantOwnersTable,
 		TagsTable,
+		CustomerRatingsTable,
 		ProductTagsTable,
+		ProductRatingsTable,
 		RestaurantTagsTable,
 		RestaurantProductsTable,
 	}
@@ -270,8 +325,12 @@ func init() {
 	RestaurantsTable.ForeignKeys[0].RefTable = AddressesTable
 	RestaurantOwnersTable.ForeignKeys[0].RefTable = BankingDataTable
 	RestaurantOwnersTable.ForeignKeys[1].RefTable = RestaurantsTable
+	CustomerRatingsTable.ForeignKeys[0].RefTable = CustomersTable
+	CustomerRatingsTable.ForeignKeys[1].RefTable = RatingsTable
 	ProductTagsTable.ForeignKeys[0].RefTable = ProductsTable
 	ProductTagsTable.ForeignKeys[1].RefTable = TagsTable
+	ProductRatingsTable.ForeignKeys[0].RefTable = ProductsTable
+	ProductRatingsTable.ForeignKeys[1].RefTable = RatingsTable
 	RestaurantTagsTable.ForeignKeys[0].RefTable = RestaurantsTable
 	RestaurantTagsTable.ForeignKeys[1].RefTable = TagsTable
 	RestaurantProductsTable.ForeignKeys[0].RefTable = RestaurantsTable

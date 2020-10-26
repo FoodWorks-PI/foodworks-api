@@ -11,6 +11,7 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"foodworks.ml/m/internal/generated/ent/product"
+	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/tag"
 	"github.com/facebook/ent/dialect/sql"
@@ -28,6 +29,7 @@ type ProductQuery struct {
 	predicates []predicate.Product
 	// eager-loading edges.
 	withTags       *TagQuery
+	withRatings    *RatingQuery
 	withRestaurant *RestaurantQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -73,6 +75,28 @@ func (pq *ProductQuery) QueryTags() *TagQuery {
 			sqlgraph.From(product.Table, product.FieldID, selector),
 			sqlgraph.To(tag.Table, tag.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, product.TagsTable, product.TagsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRatings chains the current query on the ratings edge.
+func (pq *ProductQuery) QueryRatings() *RatingQuery {
+	query := &RatingQuery{config: pq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, selector),
+			sqlgraph.To(rating.Table, rating.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, product.RatingsTable, product.RatingsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -292,6 +316,17 @@ func (pq *ProductQuery) WithTags(opts ...func(*TagQuery)) *ProductQuery {
 	return pq
 }
 
+//  WithRatings tells the query-builder to eager-loads the nodes that are connected to
+// the "ratings" edge. The optional arguments used to configure the query builder of the edge.
+func (pq *ProductQuery) WithRatings(opts ...func(*RatingQuery)) *ProductQuery {
+	query := &RatingQuery{config: pq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withRatings = query
+	return pq
+}
+
 //  WithRestaurant tells the query-builder to eager-loads the nodes that are connected to
 // the "restaurant" edge. The optional arguments used to configure the query builder of the edge.
 func (pq *ProductQuery) WithRestaurant(opts ...func(*RestaurantQuery)) *ProductQuery {
@@ -369,8 +404,9 @@ func (pq *ProductQuery) sqlAll(ctx context.Context) ([]*Product, error) {
 	var (
 		nodes       = []*Product{}
 		_spec       = pq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			pq.withTags != nil,
+			pq.withRatings != nil,
 			pq.withRestaurant != nil,
 		}
 	)
@@ -454,6 +490,69 @@ func (pq *ProductQuery) sqlAll(ctx context.Context) ([]*Product, error) {
 			}
 			for i := range nodes {
 				nodes[i].Edges.Tags = append(nodes[i].Edges.Tags, n)
+			}
+		}
+	}
+
+	if query := pq.withRatings; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Product, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Product)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   product.RatingsTable,
+				Columns: product.RatingsPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(product.RatingsPrimaryKey[0], fks...))
+			},
+
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				edgeids = append(edgeids, inValue)
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, pq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "ratings": %v`, err)
+		}
+		query.Where(rating.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "ratings" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Ratings = append(nodes[i].Edges.Ratings, n)
 			}
 		}
 	}

@@ -15,7 +15,6 @@ import (
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/product"
-	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	generated "foodworks.ml/m/internal/generated/graphql"
@@ -625,16 +624,7 @@ func (r *queryResolver) GetRestaurantByID(ctx context.Context, input int) (*ent.
 }
 
 func (r *queryResolver) GetRatingsByProductID(ctx context.Context, input int) ([]*ent.Rating, error) {
-	ratingsByProductID, err := r.EntClient.Rating.
-		Query().
-		Where(rating.ProductIDEQ(input)).
-		All(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return ratingsByProductID, nil
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*ent.Tag, error) {
@@ -666,19 +656,11 @@ func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*e
 	return tags, nil
 }
 
-func (r *ratingResolver) Rating(ctx context.Context, obj *ent.Rating) (int, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
 func (r *ratingResolver) Product(ctx context.Context, obj *ent.Rating) (*ent.Product, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *ratingResolver) Customer(ctx context.Context, obj *ent.Rating) (*ent.Customer, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *ratingResolver) Comment(ctx context.Context, obj *ent.Rating) (*string, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -742,3 +724,16 @@ type queryResolver struct{ *Resolver }
 type ratingResolver struct{ *Resolver }
 type restaurantResolver struct{ *Resolver }
 type restaurantOwnerResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *ratingResolver) Rating(ctx context.Context, obj *ent.Rating) (int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+func (r *ratingResolver) Comment(ctx context.Context, obj *ent.Rating) (*string, error) {
+	panic(fmt.Errorf("not implemented"))
+}

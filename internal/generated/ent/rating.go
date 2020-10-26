@@ -15,21 +15,50 @@ type Rating struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
-	// ProductRate holds the value of the "ProductRate" field.
-	ProductRate int `json:"ProductRate,omitempty"`
-	// ProductID holds the value of the "ProductID" field.
-	ProductID int `json:"ProductID,omitempty"`
-	// CustomerID holds the value of the "CustomerID" field.
-	CustomerID int `json:"CustomerID,omitempty"`
+	// Comment holds the value of the "comment" field.
+	Comment string `json:"comment,omitempty"`
+	// Rating holds the value of the "rating" field.
+	Rating int `json:"rating,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the RatingQuery when eager-loading is set.
+	Edges RatingEdges `json:"edges"`
+}
+
+// RatingEdges holds the relations/edges for other nodes in the graph.
+type RatingEdges struct {
+	// Customer holds the value of the customer edge.
+	Customer []*Customer
+	// Product holds the value of the product edge.
+	Product []*Product
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// CustomerOrErr returns the Customer value or an error if the edge
+// was not loaded in eager-loading.
+func (e RatingEdges) CustomerOrErr() ([]*Customer, error) {
+	if e.loadedTypes[0] {
+		return e.Customer, nil
+	}
+	return nil, &NotLoadedError{edge: "customer"}
+}
+
+// ProductOrErr returns the Product value or an error if the edge
+// was not loaded in eager-loading.
+func (e RatingEdges) ProductOrErr() ([]*Product, error) {
+	if e.loadedTypes[1] {
+		return e.Product, nil
+	}
+	return nil, &NotLoadedError{edge: "product"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Rating) scanValues() []interface{} {
 	return []interface{}{
-		&sql.NullInt64{}, // id
-		&sql.NullInt64{}, // ProductRate
-		&sql.NullInt64{}, // ProductID
-		&sql.NullInt64{}, // CustomerID
+		&sql.NullInt64{},  // id
+		&sql.NullString{}, // comment
+		&sql.NullInt64{},  // rating
 	}
 }
 
@@ -45,22 +74,27 @@ func (r *Rating) assignValues(values ...interface{}) error {
 	}
 	r.ID = int(value.Int64)
 	values = values[1:]
-	if value, ok := values[0].(*sql.NullInt64); !ok {
-		return fmt.Errorf("unexpected type %T for field ProductRate", values[0])
+	if value, ok := values[0].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field comment", values[0])
 	} else if value.Valid {
-		r.ProductRate = int(value.Int64)
+		r.Comment = value.String
 	}
 	if value, ok := values[1].(*sql.NullInt64); !ok {
-		return fmt.Errorf("unexpected type %T for field ProductID", values[1])
+		return fmt.Errorf("unexpected type %T for field rating", values[1])
 	} else if value.Valid {
-		r.ProductID = int(value.Int64)
-	}
-	if value, ok := values[2].(*sql.NullInt64); !ok {
-		return fmt.Errorf("unexpected type %T for field CustomerID", values[2])
-	} else if value.Valid {
-		r.CustomerID = int(value.Int64)
+		r.Rating = int(value.Int64)
 	}
 	return nil
+}
+
+// QueryCustomer queries the customer edge of the Rating.
+func (r *Rating) QueryCustomer() *CustomerQuery {
+	return (&RatingClient{config: r.config}).QueryCustomer(r)
+}
+
+// QueryProduct queries the product edge of the Rating.
+func (r *Rating) QueryProduct() *ProductQuery {
+	return (&RatingClient{config: r.config}).QueryProduct(r)
 }
 
 // Update returns a builder for updating this Rating.
@@ -86,12 +120,10 @@ func (r *Rating) String() string {
 	var builder strings.Builder
 	builder.WriteString("Rating(")
 	builder.WriteString(fmt.Sprintf("id=%v", r.ID))
-	builder.WriteString(", ProductRate=")
-	builder.WriteString(fmt.Sprintf("%v", r.ProductRate))
-	builder.WriteString(", ProductID=")
-	builder.WriteString(fmt.Sprintf("%v", r.ProductID))
-	builder.WriteString(", CustomerID=")
-	builder.WriteString(fmt.Sprintf("%v", r.CustomerID))
+	builder.WriteString(", comment=")
+	builder.WriteString(r.Comment)
+	builder.WriteString(", rating=")
+	builder.WriteString(fmt.Sprintf("%v", r.Rating))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -441,6 +441,22 @@ func (c *CustomerClient) QueryAddress(cu *Customer) *AddressQuery {
 	return query
 }
 
+// QueryRatings queries the ratings edge of a Customer.
+func (c *CustomerClient) QueryRatings(cu *Customer) *RatingQuery {
+	query := &RatingQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := cu.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, id),
+			sqlgraph.To(rating.Table, rating.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, customer.RatingsTable, customer.RatingsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CustomerClient) Hooks() []Hook {
 	return c.hooks.Customer
@@ -538,6 +554,22 @@ func (c *ProductClient) QueryTags(pr *Product) *TagQuery {
 			sqlgraph.From(product.Table, product.FieldID, id),
 			sqlgraph.To(tag.Table, tag.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, product.TagsTable, product.TagsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRatings queries the ratings edge of a Product.
+func (c *ProductClient) QueryRatings(pr *Product) *RatingQuery {
+	query := &RatingQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(rating.Table, rating.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, product.RatingsTable, product.RatingsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -647,6 +679,38 @@ func (c *RatingClient) GetX(ctx context.Context, id int) *Rating {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryCustomer queries the customer edge of a Rating.
+func (c *RatingClient) QueryCustomer(r *Rating) *CustomerQuery {
+	query := &CustomerQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rating.Table, rating.FieldID, id),
+			sqlgraph.To(customer.Table, customer.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, rating.CustomerTable, rating.CustomerPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProduct queries the product edge of a Rating.
+func (c *RatingClient) QueryProduct(r *Rating) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rating.Table, rating.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, rating.ProductTable, rating.ProductPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

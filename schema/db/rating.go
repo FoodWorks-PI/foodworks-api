@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/facebook/ent"
+	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
 )
 
@@ -13,13 +14,15 @@ type Rating struct {
 // Fields of the Rating.
 func (Rating) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int("ProductRate"),
-		field.Int("ProductID"),
-		field.Int("CustomerID"),
+		field.String("comment"),
+		field.Int("rating"),
 	}
 }
 
 // Edges of the Rating.
 func (Rating) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.From("customer", Customer.Type).Ref("ratings"),
+		edge.From("product", Product.Type).Ref("ratings"),
+	}
 }

@@ -7,24 +7,45 @@ const (
 	Label = "rating"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldProductRate holds the string denoting the productrate field in the database.
-	FieldProductRate = "product_rate"
-	// FieldProductID holds the string denoting the productid field in the database.
-	FieldProductID = "product_id"
-	// FieldCustomerID holds the string denoting the customerid field in the database.
-	FieldCustomerID = "customer_id"
+	// FieldComment holds the string denoting the comment field in the database.
+	FieldComment = "comment"
+	// FieldRating holds the string denoting the rating field in the database.
+	FieldRating = "rating"
+
+	// EdgeCustomer holds the string denoting the customer edge name in mutations.
+	EdgeCustomer = "customer"
+	// EdgeProduct holds the string denoting the product edge name in mutations.
+	EdgeProduct = "product"
 
 	// Table holds the table name of the rating in the database.
 	Table = "ratings"
+	// CustomerTable is the table the holds the customer relation/edge. The primary key declared below.
+	CustomerTable = "customer_ratings"
+	// CustomerInverseTable is the table name for the Customer entity.
+	// It exists in this package in order to avoid circular dependency with the "customer" package.
+	CustomerInverseTable = "customers"
+	// ProductTable is the table the holds the product relation/edge. The primary key declared below.
+	ProductTable = "product_ratings"
+	// ProductInverseTable is the table name for the Product entity.
+	// It exists in this package in order to avoid circular dependency with the "product" package.
+	ProductInverseTable = "products"
 )
 
 // Columns holds all SQL columns for rating fields.
 var Columns = []string{
 	FieldID,
-	FieldProductRate,
-	FieldProductID,
-	FieldCustomerID,
+	FieldComment,
+	FieldRating,
 }
+
+var (
+	// CustomerPrimaryKey and CustomerColumn2 are the table columns denoting the
+	// primary key for the customer relation (M2M).
+	CustomerPrimaryKey = []string{"customer_id", "rating_id"}
+	// ProductPrimaryKey and ProductColumn2 are the table columns denoting the
+	// primary key for the product relation (M2M).
+	ProductPrimaryKey = []string{"product_id", "rating_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

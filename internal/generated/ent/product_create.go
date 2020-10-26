@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"foodworks.ml/m/internal/generated/ent/product"
+	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/tag"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -66,6 +67,21 @@ func (pc *ProductCreate) AddTags(t ...*Tag) *ProductCreate {
 		ids[i] = t[i].ID
 	}
 	return pc.AddTagIDs(ids...)
+}
+
+// AddRatingIDs adds the ratings edge to Rating by ids.
+func (pc *ProductCreate) AddRatingIDs(ids ...int) *ProductCreate {
+	pc.mutation.AddRatingIDs(ids...)
+	return pc
+}
+
+// AddRatings adds the ratings edges to Rating.
+func (pc *ProductCreate) AddRatings(r ...*Rating) *ProductCreate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return pc.AddRatingIDs(ids...)
 }
 
 // AddRestaurantIDs adds the restaurant edge to Restaurant by ids.
@@ -213,6 +229,25 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: tag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.RatingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   product.RatingsTable,
+			Columns: product.RatingsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
 				},
 			},
 		}

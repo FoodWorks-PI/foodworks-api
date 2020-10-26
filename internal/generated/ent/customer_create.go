@@ -9,6 +9,7 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/rating"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -61,6 +62,21 @@ func (cc *CustomerCreate) SetNillableAddressID(id *int) *CustomerCreate {
 // SetAddress sets the address edge to Address.
 func (cc *CustomerCreate) SetAddress(a *Address) *CustomerCreate {
 	return cc.SetAddressID(a.ID)
+}
+
+// AddRatingIDs adds the ratings edge to Rating by ids.
+func (cc *CustomerCreate) AddRatingIDs(ids ...int) *CustomerCreate {
+	cc.mutation.AddRatingIDs(ids...)
+	return cc
+}
+
+// AddRatings adds the ratings edges to Rating.
+func (cc *CustomerCreate) AddRatings(r ...*Rating) *CustomerCreate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return cc.AddRatingIDs(ids...)
 }
 
 // Mutation returns the CustomerMutation object of the builder.
@@ -196,6 +212,25 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.RatingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.RatingsTable,
+			Columns: customer.RatingsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
 				},
 			},
 		}

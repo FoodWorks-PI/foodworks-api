@@ -6,7 +6,9 @@ import (
 	"context"
 	"fmt"
 
+	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/predicate"
+	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/rating"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -27,48 +29,100 @@ func (ru *RatingUpdate) Where(ps ...predicate.Rating) *RatingUpdate {
 	return ru
 }
 
-// SetProductRate sets the ProductRate field.
-func (ru *RatingUpdate) SetProductRate(i int) *RatingUpdate {
-	ru.mutation.ResetProductRate()
-	ru.mutation.SetProductRate(i)
+// SetComment sets the comment field.
+func (ru *RatingUpdate) SetComment(s string) *RatingUpdate {
+	ru.mutation.SetComment(s)
 	return ru
 }
 
-// AddProductRate adds i to ProductRate.
-func (ru *RatingUpdate) AddProductRate(i int) *RatingUpdate {
-	ru.mutation.AddProductRate(i)
+// SetRating sets the rating field.
+func (ru *RatingUpdate) SetRating(i int) *RatingUpdate {
+	ru.mutation.ResetRating()
+	ru.mutation.SetRating(i)
 	return ru
 }
 
-// SetProductID sets the ProductID field.
-func (ru *RatingUpdate) SetProductID(i int) *RatingUpdate {
-	ru.mutation.ResetProductID()
-	ru.mutation.SetProductID(i)
+// AddRating adds i to rating.
+func (ru *RatingUpdate) AddRating(i int) *RatingUpdate {
+	ru.mutation.AddRating(i)
 	return ru
 }
 
-// AddProductID adds i to ProductID.
-func (ru *RatingUpdate) AddProductID(i int) *RatingUpdate {
-	ru.mutation.AddProductID(i)
+// AddCustomerIDs adds the customer edge to Customer by ids.
+func (ru *RatingUpdate) AddCustomerIDs(ids ...int) *RatingUpdate {
+	ru.mutation.AddCustomerIDs(ids...)
 	return ru
 }
 
-// SetCustomerID sets the CustomerID field.
-func (ru *RatingUpdate) SetCustomerID(i int) *RatingUpdate {
-	ru.mutation.ResetCustomerID()
-	ru.mutation.SetCustomerID(i)
+// AddCustomer adds the customer edges to Customer.
+func (ru *RatingUpdate) AddCustomer(c ...*Customer) *RatingUpdate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return ru.AddCustomerIDs(ids...)
+}
+
+// AddProductIDs adds the product edge to Product by ids.
+func (ru *RatingUpdate) AddProductIDs(ids ...int) *RatingUpdate {
+	ru.mutation.AddProductIDs(ids...)
 	return ru
 }
 
-// AddCustomerID adds i to CustomerID.
-func (ru *RatingUpdate) AddCustomerID(i int) *RatingUpdate {
-	ru.mutation.AddCustomerID(i)
-	return ru
+// AddProduct adds the product edges to Product.
+func (ru *RatingUpdate) AddProduct(p ...*Product) *RatingUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ru.AddProductIDs(ids...)
 }
 
 // Mutation returns the RatingMutation object of the builder.
 func (ru *RatingUpdate) Mutation() *RatingMutation {
 	return ru.mutation
+}
+
+// ClearCustomer clears all "customer" edges to type Customer.
+func (ru *RatingUpdate) ClearCustomer() *RatingUpdate {
+	ru.mutation.ClearCustomer()
+	return ru
+}
+
+// RemoveCustomerIDs removes the customer edge to Customer by ids.
+func (ru *RatingUpdate) RemoveCustomerIDs(ids ...int) *RatingUpdate {
+	ru.mutation.RemoveCustomerIDs(ids...)
+	return ru
+}
+
+// RemoveCustomer removes customer edges to Customer.
+func (ru *RatingUpdate) RemoveCustomer(c ...*Customer) *RatingUpdate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return ru.RemoveCustomerIDs(ids...)
+}
+
+// ClearProduct clears all "product" edges to type Product.
+func (ru *RatingUpdate) ClearProduct() *RatingUpdate {
+	ru.mutation.ClearProduct()
+	return ru
+}
+
+// RemoveProductIDs removes the product edge to Product by ids.
+func (ru *RatingUpdate) RemoveProductIDs(ids ...int) *RatingUpdate {
+	ru.mutation.RemoveProductIDs(ids...)
+	return ru
+}
+
+// RemoveProduct removes product edges to Product.
+func (ru *RatingUpdate) RemoveProduct(p ...*Product) *RatingUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ru.RemoveProductIDs(ids...)
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -140,47 +194,134 @@ func (ru *RatingUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := ru.mutation.ProductRate(); ok {
+	if value, ok := ru.mutation.Comment(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: rating.FieldComment,
+		})
+	}
+	if value, ok := ru.mutation.Rating(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
 			Value:  value,
-			Column: rating.FieldProductRate,
+			Column: rating.FieldRating,
 		})
 	}
-	if value, ok := ru.mutation.AddedProductRate(); ok {
+	if value, ok := ru.mutation.AddedRating(); ok {
 		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
 			Value:  value,
-			Column: rating.FieldProductRate,
+			Column: rating.FieldRating,
 		})
 	}
-	if value, ok := ru.mutation.ProductID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: rating.FieldProductID,
-		})
+	if ru.mutation.CustomerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.CustomerTable,
+			Columns: rating.CustomerPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: customer.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := ru.mutation.AddedProductID(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: rating.FieldProductID,
-		})
+	if nodes := ru.mutation.RemovedCustomerIDs(); len(nodes) > 0 && !ru.mutation.CustomerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.CustomerTable,
+			Columns: rating.CustomerPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: customer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := ru.mutation.CustomerID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: rating.FieldCustomerID,
-		})
+	if nodes := ru.mutation.CustomerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.CustomerTable,
+			Columns: rating.CustomerPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: customer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if value, ok := ru.mutation.AddedCustomerID(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: rating.FieldCustomerID,
-		})
+	if ru.mutation.ProductCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.ProductTable,
+			Columns: rating.ProductPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedProductIDs(); len(nodes) > 0 && !ru.mutation.ProductCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.ProductTable,
+			Columns: rating.ProductPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.ProductIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.ProductTable,
+			Columns: rating.ProductPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -200,48 +341,100 @@ type RatingUpdateOne struct {
 	mutation *RatingMutation
 }
 
-// SetProductRate sets the ProductRate field.
-func (ruo *RatingUpdateOne) SetProductRate(i int) *RatingUpdateOne {
-	ruo.mutation.ResetProductRate()
-	ruo.mutation.SetProductRate(i)
+// SetComment sets the comment field.
+func (ruo *RatingUpdateOne) SetComment(s string) *RatingUpdateOne {
+	ruo.mutation.SetComment(s)
 	return ruo
 }
 
-// AddProductRate adds i to ProductRate.
-func (ruo *RatingUpdateOne) AddProductRate(i int) *RatingUpdateOne {
-	ruo.mutation.AddProductRate(i)
+// SetRating sets the rating field.
+func (ruo *RatingUpdateOne) SetRating(i int) *RatingUpdateOne {
+	ruo.mutation.ResetRating()
+	ruo.mutation.SetRating(i)
 	return ruo
 }
 
-// SetProductID sets the ProductID field.
-func (ruo *RatingUpdateOne) SetProductID(i int) *RatingUpdateOne {
-	ruo.mutation.ResetProductID()
-	ruo.mutation.SetProductID(i)
+// AddRating adds i to rating.
+func (ruo *RatingUpdateOne) AddRating(i int) *RatingUpdateOne {
+	ruo.mutation.AddRating(i)
 	return ruo
 }
 
-// AddProductID adds i to ProductID.
-func (ruo *RatingUpdateOne) AddProductID(i int) *RatingUpdateOne {
-	ruo.mutation.AddProductID(i)
+// AddCustomerIDs adds the customer edge to Customer by ids.
+func (ruo *RatingUpdateOne) AddCustomerIDs(ids ...int) *RatingUpdateOne {
+	ruo.mutation.AddCustomerIDs(ids...)
 	return ruo
 }
 
-// SetCustomerID sets the CustomerID field.
-func (ruo *RatingUpdateOne) SetCustomerID(i int) *RatingUpdateOne {
-	ruo.mutation.ResetCustomerID()
-	ruo.mutation.SetCustomerID(i)
+// AddCustomer adds the customer edges to Customer.
+func (ruo *RatingUpdateOne) AddCustomer(c ...*Customer) *RatingUpdateOne {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return ruo.AddCustomerIDs(ids...)
+}
+
+// AddProductIDs adds the product edge to Product by ids.
+func (ruo *RatingUpdateOne) AddProductIDs(ids ...int) *RatingUpdateOne {
+	ruo.mutation.AddProductIDs(ids...)
 	return ruo
 }
 
-// AddCustomerID adds i to CustomerID.
-func (ruo *RatingUpdateOne) AddCustomerID(i int) *RatingUpdateOne {
-	ruo.mutation.AddCustomerID(i)
-	return ruo
+// AddProduct adds the product edges to Product.
+func (ruo *RatingUpdateOne) AddProduct(p ...*Product) *RatingUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ruo.AddProductIDs(ids...)
 }
 
 // Mutation returns the RatingMutation object of the builder.
 func (ruo *RatingUpdateOne) Mutation() *RatingMutation {
 	return ruo.mutation
+}
+
+// ClearCustomer clears all "customer" edges to type Customer.
+func (ruo *RatingUpdateOne) ClearCustomer() *RatingUpdateOne {
+	ruo.mutation.ClearCustomer()
+	return ruo
+}
+
+// RemoveCustomerIDs removes the customer edge to Customer by ids.
+func (ruo *RatingUpdateOne) RemoveCustomerIDs(ids ...int) *RatingUpdateOne {
+	ruo.mutation.RemoveCustomerIDs(ids...)
+	return ruo
+}
+
+// RemoveCustomer removes customer edges to Customer.
+func (ruo *RatingUpdateOne) RemoveCustomer(c ...*Customer) *RatingUpdateOne {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return ruo.RemoveCustomerIDs(ids...)
+}
+
+// ClearProduct clears all "product" edges to type Product.
+func (ruo *RatingUpdateOne) ClearProduct() *RatingUpdateOne {
+	ruo.mutation.ClearProduct()
+	return ruo
+}
+
+// RemoveProductIDs removes the product edge to Product by ids.
+func (ruo *RatingUpdateOne) RemoveProductIDs(ids ...int) *RatingUpdateOne {
+	ruo.mutation.RemoveProductIDs(ids...)
+	return ruo
+}
+
+// RemoveProduct removes product edges to Product.
+func (ruo *RatingUpdateOne) RemoveProduct(p ...*Product) *RatingUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ruo.RemoveProductIDs(ids...)
 }
 
 // Save executes the query and returns the updated entity.
@@ -311,47 +504,134 @@ func (ruo *RatingUpdateOne) sqlSave(ctx context.Context) (_node *Rating, err err
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Rating.ID for update")}
 	}
 	_spec.Node.ID.Value = id
-	if value, ok := ruo.mutation.ProductRate(); ok {
+	if value, ok := ruo.mutation.Comment(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: rating.FieldComment,
+		})
+	}
+	if value, ok := ruo.mutation.Rating(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
 			Value:  value,
-			Column: rating.FieldProductRate,
+			Column: rating.FieldRating,
 		})
 	}
-	if value, ok := ruo.mutation.AddedProductRate(); ok {
+	if value, ok := ruo.mutation.AddedRating(); ok {
 		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
 			Value:  value,
-			Column: rating.FieldProductRate,
+			Column: rating.FieldRating,
 		})
 	}
-	if value, ok := ruo.mutation.ProductID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: rating.FieldProductID,
-		})
+	if ruo.mutation.CustomerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.CustomerTable,
+			Columns: rating.CustomerPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: customer.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := ruo.mutation.AddedProductID(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: rating.FieldProductID,
-		})
+	if nodes := ruo.mutation.RemovedCustomerIDs(); len(nodes) > 0 && !ruo.mutation.CustomerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.CustomerTable,
+			Columns: rating.CustomerPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: customer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if value, ok := ruo.mutation.CustomerID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: rating.FieldCustomerID,
-		})
+	if nodes := ruo.mutation.CustomerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.CustomerTable,
+			Columns: rating.CustomerPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: customer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if value, ok := ruo.mutation.AddedCustomerID(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: rating.FieldCustomerID,
-		})
+	if ruo.mutation.ProductCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.ProductTable,
+			Columns: rating.ProductPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedProductIDs(); len(nodes) > 0 && !ruo.mutation.ProductCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.ProductTable,
+			Columns: rating.ProductPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.ProductIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.ProductTable,
+			Columns: rating.ProductPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Rating{config: ruo.config}
 	_spec.Assign = _node.assignValues

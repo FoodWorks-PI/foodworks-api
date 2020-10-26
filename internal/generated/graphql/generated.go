@@ -200,10 +200,8 @@ type QueryResolver interface {
 	AutoCompleteTag(ctx context.Context, input string) ([]*ent.Tag, error)
 }
 type RatingResolver interface {
-	Rating(ctx context.Context, obj *ent.Rating) (int, error)
 	Product(ctx context.Context, obj *ent.Rating) (*ent.Product, error)
 	Customer(ctx context.Context, obj *ent.Rating) (*ent.Customer, error)
-	Comment(ctx context.Context, obj *ent.Rating) (*string, error)
 }
 type RestaurantResolver interface {
 	Address(ctx context.Context, obj *ent.Restaurant) (*ent.Address, error)
@@ -3614,14 +3612,14 @@ func (ec *executionContext) _Rating_rating(ctx context.Context, field graphql.Co
 		Object:     "Rating",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Rating().Rating(rctx, obj)
+		return obj.Rating, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3719,14 +3717,14 @@ func (ec *executionContext) _Rating_comment(ctx context.Context, field graphql.C
 		Object:     "Rating",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Rating().Comment(rctx, obj)
+		return obj.Comment, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3735,9 +3733,9 @@ func (ec *executionContext) _Rating_comment(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Restaurant_ID(ctx context.Context, field graphql.CollectedField, obj *ent.Restaurant) (ret graphql.Marshaler) {
@@ -6531,19 +6529,10 @@ func (ec *executionContext) _Rating(ctx context.Context, sel ast.SelectionSet, o
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "rating":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Rating_rating(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._Rating_rating(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "product":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -6573,16 +6562,7 @@ func (ec *executionContext) _Rating(ctx context.Context, sel ast.SelectionSet, o
 				return res
 			})
 		case "comment":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Rating_comment(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Rating_comment(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

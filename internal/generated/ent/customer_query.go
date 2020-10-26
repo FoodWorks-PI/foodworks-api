@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -11,6 +12,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/predicate"
+	"foodworks.ml/m/internal/generated/ent/rating"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -26,6 +28,7 @@ type CustomerQuery struct {
 	predicates []predicate.Customer
 	// eager-loading edges.
 	withAddress *AddressQuery
+	withRatings *RatingQuery
 	withFKs     bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -71,6 +74,28 @@ func (cq *CustomerQuery) QueryAddress() *AddressQuery {
 			sqlgraph.From(customer.Table, customer.FieldID, selector),
 			sqlgraph.To(address.Table, address.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, customer.AddressTable, customer.AddressColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRatings chains the current query on the ratings edge.
+func (cq *CustomerQuery) QueryRatings() *RatingQuery {
+	query := &RatingQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(customer.Table, customer.FieldID, selector),
+			sqlgraph.To(rating.Table, rating.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, customer.RatingsTable, customer.RatingsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -268,6 +293,17 @@ func (cq *CustomerQuery) WithAddress(opts ...func(*AddressQuery)) *CustomerQuery
 	return cq
 }
 
+//  WithRatings tells the query-builder to eager-loads the nodes that are connected to
+// the "ratings" edge. The optional arguments used to configure the query builder of the edge.
+func (cq *CustomerQuery) WithRatings(opts ...func(*RatingQuery)) *CustomerQuery {
+	query := &RatingQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withRatings = query
+	return cq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -335,8 +371,9 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 		nodes       = []*Customer{}
 		withFKs     = cq.withFKs
 		_spec       = cq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			cq.withAddress != nil,
+			cq.withRatings != nil,
 		}
 	)
 	if cq.withAddress != nil {
@@ -390,6 +427,69 @@ func (cq *CustomerQuery) sqlAll(ctx context.Context) ([]*Customer, error) {
 			}
 			for i := range nodes {
 				nodes[i].Edges.Address = n
+			}
+		}
+	}
+
+	if query := cq.withRatings; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Customer, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Customer)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   customer.RatingsTable,
+				Columns: customer.RatingsPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(customer.RatingsPrimaryKey[0], fks...))
+			},
+
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				edgeids = append(edgeids, inValue)
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, cq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "ratings": %v`, err)
+		}
+		query.Where(rating.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "ratings" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Ratings = append(nodes[i].Edges.Ratings, n)
 			}
 		}
 	}

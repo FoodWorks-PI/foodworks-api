@@ -5,6 +5,7 @@ package rating
 import (
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"github.com/facebook/ent/dialect/sql"
+	"github.com/facebook/ent/dialect/sql/sqlgraph"
 )
 
 // ID filters vertices based on their identifier.
@@ -90,43 +91,36 @@ func IDLTE(id int) predicate.Rating {
 	})
 }
 
-// ProductRate applies equality check predicate on the "ProductRate" field. It's identical to ProductRateEQ.
-func ProductRate(v int) predicate.Rating {
+// Comment applies equality check predicate on the "comment" field. It's identical to CommentEQ.
+func Comment(v string) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldProductRate), v))
+		s.Where(sql.EQ(s.C(FieldComment), v))
 	})
 }
 
-// ProductID applies equality check predicate on the "ProductID" field. It's identical to ProductIDEQ.
-func ProductID(v int) predicate.Rating {
+// Rating applies equality check predicate on the "rating" field. It's identical to RatingEQ.
+func Rating(v int) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldProductID), v))
+		s.Where(sql.EQ(s.C(FieldRating), v))
 	})
 }
 
-// CustomerID applies equality check predicate on the "CustomerID" field. It's identical to CustomerIDEQ.
-func CustomerID(v int) predicate.Rating {
+// CommentEQ applies the EQ predicate on the "comment" field.
+func CommentEQ(v string) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCustomerID), v))
+		s.Where(sql.EQ(s.C(FieldComment), v))
 	})
 }
 
-// ProductRateEQ applies the EQ predicate on the "ProductRate" field.
-func ProductRateEQ(v int) predicate.Rating {
+// CommentNEQ applies the NEQ predicate on the "comment" field.
+func CommentNEQ(v string) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldProductRate), v))
+		s.Where(sql.NEQ(s.C(FieldComment), v))
 	})
 }
 
-// ProductRateNEQ applies the NEQ predicate on the "ProductRate" field.
-func ProductRateNEQ(v int) predicate.Rating {
-	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldProductRate), v))
-	})
-}
-
-// ProductRateIn applies the In predicate on the "ProductRate" field.
-func ProductRateIn(vs ...int) predicate.Rating {
+// CommentIn applies the In predicate on the "comment" field.
+func CommentIn(vs ...string) predicate.Rating {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -138,12 +132,12 @@ func ProductRateIn(vs ...int) predicate.Rating {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldProductRate), v...))
+		s.Where(sql.In(s.C(FieldComment), v...))
 	})
 }
 
-// ProductRateNotIn applies the NotIn predicate on the "ProductRate" field.
-func ProductRateNotIn(vs ...int) predicate.Rating {
+// CommentNotIn applies the NotIn predicate on the "comment" field.
+func CommentNotIn(vs ...string) predicate.Rating {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -155,54 +149,89 @@ func ProductRateNotIn(vs ...int) predicate.Rating {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldProductRate), v...))
+		s.Where(sql.NotIn(s.C(FieldComment), v...))
 	})
 }
 
-// ProductRateGT applies the GT predicate on the "ProductRate" field.
-func ProductRateGT(v int) predicate.Rating {
+// CommentGT applies the GT predicate on the "comment" field.
+func CommentGT(v string) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldProductRate), v))
+		s.Where(sql.GT(s.C(FieldComment), v))
 	})
 }
 
-// ProductRateGTE applies the GTE predicate on the "ProductRate" field.
-func ProductRateGTE(v int) predicate.Rating {
+// CommentGTE applies the GTE predicate on the "comment" field.
+func CommentGTE(v string) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldProductRate), v))
+		s.Where(sql.GTE(s.C(FieldComment), v))
 	})
 }
 
-// ProductRateLT applies the LT predicate on the "ProductRate" field.
-func ProductRateLT(v int) predicate.Rating {
+// CommentLT applies the LT predicate on the "comment" field.
+func CommentLT(v string) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldProductRate), v))
+		s.Where(sql.LT(s.C(FieldComment), v))
 	})
 }
 
-// ProductRateLTE applies the LTE predicate on the "ProductRate" field.
-func ProductRateLTE(v int) predicate.Rating {
+// CommentLTE applies the LTE predicate on the "comment" field.
+func CommentLTE(v string) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldProductRate), v))
+		s.Where(sql.LTE(s.C(FieldComment), v))
 	})
 }
 
-// ProductIDEQ applies the EQ predicate on the "ProductID" field.
-func ProductIDEQ(v int) predicate.Rating {
+// CommentContains applies the Contains predicate on the "comment" field.
+func CommentContains(v string) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldProductID), v))
+		s.Where(sql.Contains(s.C(FieldComment), v))
 	})
 }
 
-// ProductIDNEQ applies the NEQ predicate on the "ProductID" field.
-func ProductIDNEQ(v int) predicate.Rating {
+// CommentHasPrefix applies the HasPrefix predicate on the "comment" field.
+func CommentHasPrefix(v string) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldProductID), v))
+		s.Where(sql.HasPrefix(s.C(FieldComment), v))
 	})
 }
 
-// ProductIDIn applies the In predicate on the "ProductID" field.
-func ProductIDIn(vs ...int) predicate.Rating {
+// CommentHasSuffix applies the HasSuffix predicate on the "comment" field.
+func CommentHasSuffix(v string) predicate.Rating {
+	return predicate.Rating(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldComment), v))
+	})
+}
+
+// CommentEqualFold applies the EqualFold predicate on the "comment" field.
+func CommentEqualFold(v string) predicate.Rating {
+	return predicate.Rating(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldComment), v))
+	})
+}
+
+// CommentContainsFold applies the ContainsFold predicate on the "comment" field.
+func CommentContainsFold(v string) predicate.Rating {
+	return predicate.Rating(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldComment), v))
+	})
+}
+
+// RatingEQ applies the EQ predicate on the "rating" field.
+func RatingEQ(v int) predicate.Rating {
+	return predicate.Rating(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldRating), v))
+	})
+}
+
+// RatingNEQ applies the NEQ predicate on the "rating" field.
+func RatingNEQ(v int) predicate.Rating {
+	return predicate.Rating(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldRating), v))
+	})
+}
+
+// RatingIn applies the In predicate on the "rating" field.
+func RatingIn(vs ...int) predicate.Rating {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -214,12 +243,12 @@ func ProductIDIn(vs ...int) predicate.Rating {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldProductID), v...))
+		s.Where(sql.In(s.C(FieldRating), v...))
 	})
 }
 
-// ProductIDNotIn applies the NotIn predicate on the "ProductID" field.
-func ProductIDNotIn(vs ...int) predicate.Rating {
+// RatingNotIn applies the NotIn predicate on the "rating" field.
+func RatingNotIn(vs ...int) predicate.Rating {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -231,111 +260,91 @@ func ProductIDNotIn(vs ...int) predicate.Rating {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldProductID), v...))
+		s.Where(sql.NotIn(s.C(FieldRating), v...))
 	})
 }
 
-// ProductIDGT applies the GT predicate on the "ProductID" field.
-func ProductIDGT(v int) predicate.Rating {
+// RatingGT applies the GT predicate on the "rating" field.
+func RatingGT(v int) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldProductID), v))
+		s.Where(sql.GT(s.C(FieldRating), v))
 	})
 }
 
-// ProductIDGTE applies the GTE predicate on the "ProductID" field.
-func ProductIDGTE(v int) predicate.Rating {
+// RatingGTE applies the GTE predicate on the "rating" field.
+func RatingGTE(v int) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldProductID), v))
+		s.Where(sql.GTE(s.C(FieldRating), v))
 	})
 }
 
-// ProductIDLT applies the LT predicate on the "ProductID" field.
-func ProductIDLT(v int) predicate.Rating {
+// RatingLT applies the LT predicate on the "rating" field.
+func RatingLT(v int) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldProductID), v))
+		s.Where(sql.LT(s.C(FieldRating), v))
 	})
 }
 
-// ProductIDLTE applies the LTE predicate on the "ProductID" field.
-func ProductIDLTE(v int) predicate.Rating {
+// RatingLTE applies the LTE predicate on the "rating" field.
+func RatingLTE(v int) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldProductID), v))
+		s.Where(sql.LTE(s.C(FieldRating), v))
 	})
 }
 
-// CustomerIDEQ applies the EQ predicate on the "CustomerID" field.
-func CustomerIDEQ(v int) predicate.Rating {
+// HasCustomer applies the HasEdge predicate on the "customer" edge.
+func HasCustomer() predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldCustomerID), v))
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(CustomerTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, CustomerTable, CustomerPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// CustomerIDNEQ applies the NEQ predicate on the "CustomerID" field.
-func CustomerIDNEQ(v int) predicate.Rating {
+// HasCustomerWith applies the HasEdge predicate on the "customer" edge with a given conditions (other predicates).
+func HasCustomerWith(preds ...predicate.Customer) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldCustomerID), v))
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(CustomerInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, CustomerTable, CustomerPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 
-// CustomerIDIn applies the In predicate on the "CustomerID" field.
-func CustomerIDIn(vs ...int) predicate.Rating {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
+// HasProduct applies the HasEdge predicate on the "product" edge.
+func HasProduct() predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.In(s.C(FieldCustomerID), v...))
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ProductTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, ProductTable, ProductPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// CustomerIDNotIn applies the NotIn predicate on the "CustomerID" field.
-func CustomerIDNotIn(vs ...int) predicate.Rating {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
+// HasProductWith applies the HasEdge predicate on the "product" edge with a given conditions (other predicates).
+func HasProductWith(preds ...predicate.Product) predicate.Rating {
 	return predicate.Rating(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.NotIn(s.C(FieldCustomerID), v...))
-	})
-}
-
-// CustomerIDGT applies the GT predicate on the "CustomerID" field.
-func CustomerIDGT(v int) predicate.Rating {
-	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldCustomerID), v))
-	})
-}
-
-// CustomerIDGTE applies the GTE predicate on the "CustomerID" field.
-func CustomerIDGTE(v int) predicate.Rating {
-	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldCustomerID), v))
-	})
-}
-
-// CustomerIDLT applies the LT predicate on the "CustomerID" field.
-func CustomerIDLT(v int) predicate.Rating {
-	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldCustomerID), v))
-	})
-}
-
-// CustomerIDLTE applies the LTE predicate on the "CustomerID" field.
-func CustomerIDLTE(v int) predicate.Rating {
-	return predicate.Rating(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldCustomerID), v))
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ProductInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, ProductTable, ProductPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

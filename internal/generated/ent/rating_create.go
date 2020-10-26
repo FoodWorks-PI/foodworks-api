@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/rating"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -19,22 +21,46 @@ type RatingCreate struct {
 	hooks    []Hook
 }
 
-// SetProductRate sets the ProductRate field.
-func (rc *RatingCreate) SetProductRate(i int) *RatingCreate {
-	rc.mutation.SetProductRate(i)
+// SetComment sets the comment field.
+func (rc *RatingCreate) SetComment(s string) *RatingCreate {
+	rc.mutation.SetComment(s)
 	return rc
 }
 
-// SetProductID sets the ProductID field.
-func (rc *RatingCreate) SetProductID(i int) *RatingCreate {
-	rc.mutation.SetProductID(i)
+// SetRating sets the rating field.
+func (rc *RatingCreate) SetRating(i int) *RatingCreate {
+	rc.mutation.SetRating(i)
 	return rc
 }
 
-// SetCustomerID sets the CustomerID field.
-func (rc *RatingCreate) SetCustomerID(i int) *RatingCreate {
-	rc.mutation.SetCustomerID(i)
+// AddCustomerIDs adds the customer edge to Customer by ids.
+func (rc *RatingCreate) AddCustomerIDs(ids ...int) *RatingCreate {
+	rc.mutation.AddCustomerIDs(ids...)
 	return rc
+}
+
+// AddCustomer adds the customer edges to Customer.
+func (rc *RatingCreate) AddCustomer(c ...*Customer) *RatingCreate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return rc.AddCustomerIDs(ids...)
+}
+
+// AddProductIDs adds the product edge to Product by ids.
+func (rc *RatingCreate) AddProductIDs(ids ...int) *RatingCreate {
+	rc.mutation.AddProductIDs(ids...)
+	return rc
+}
+
+// AddProduct adds the product edges to Product.
+func (rc *RatingCreate) AddProduct(p ...*Product) *RatingCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return rc.AddProductIDs(ids...)
 }
 
 // Mutation returns the RatingMutation object of the builder.
@@ -88,14 +114,11 @@ func (rc *RatingCreate) SaveX(ctx context.Context) *Rating {
 
 // check runs all checks and user-defined validators on the builder.
 func (rc *RatingCreate) check() error {
-	if _, ok := rc.mutation.ProductRate(); !ok {
-		return &ValidationError{Name: "ProductRate", err: errors.New("ent: missing required field \"ProductRate\"")}
+	if _, ok := rc.mutation.Comment(); !ok {
+		return &ValidationError{Name: "comment", err: errors.New("ent: missing required field \"comment\"")}
 	}
-	if _, ok := rc.mutation.ProductID(); !ok {
-		return &ValidationError{Name: "ProductID", err: errors.New("ent: missing required field \"ProductID\"")}
-	}
-	if _, ok := rc.mutation.CustomerID(); !ok {
-		return &ValidationError{Name: "CustomerID", err: errors.New("ent: missing required field \"CustomerID\"")}
+	if _, ok := rc.mutation.Rating(); !ok {
+		return &ValidationError{Name: "rating", err: errors.New("ent: missing required field \"rating\"")}
 	}
 	return nil
 }
@@ -124,29 +147,59 @@ func (rc *RatingCreate) createSpec() (*Rating, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
-	if value, ok := rc.mutation.ProductRate(); ok {
+	if value, ok := rc.mutation.Comment(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
+			Type:   field.TypeString,
 			Value:  value,
-			Column: rating.FieldProductRate,
+			Column: rating.FieldComment,
 		})
-		_node.ProductRate = value
+		_node.Comment = value
 	}
-	if value, ok := rc.mutation.ProductID(); ok {
+	if value, ok := rc.mutation.Rating(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
 			Value:  value,
-			Column: rating.FieldProductID,
+			Column: rating.FieldRating,
 		})
-		_node.ProductID = value
+		_node.Rating = value
 	}
-	if value, ok := rc.mutation.CustomerID(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
-			Value:  value,
-			Column: rating.FieldCustomerID,
-		})
-		_node.CustomerID = value
+	if nodes := rc.mutation.CustomerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.CustomerTable,
+			Columns: rating.CustomerPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: customer.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.ProductIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   rating.ProductTable,
+			Columns: rating.ProductPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

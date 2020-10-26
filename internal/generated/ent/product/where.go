@@ -473,6 +473,34 @@ func HasTagsWith(preds ...predicate.Tag) predicate.Product {
 	})
 }
 
+// HasRatings applies the HasEdge predicate on the "ratings" edge.
+func HasRatings() predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RatingsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, RatingsTable, RatingsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRatingsWith applies the HasEdge predicate on the "ratings" edge with a given conditions (other predicates).
+func HasRatingsWith(preds ...predicate.Rating) predicate.Product {
+	return predicate.Product(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RatingsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, RatingsTable, RatingsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasRestaurant applies the HasEdge predicate on the "restaurant" edge.
 func HasRestaurant() predicate.Product {
 	return predicate.Product(func(s *sql.Selector) {

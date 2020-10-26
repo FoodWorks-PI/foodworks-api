@@ -591,6 +591,34 @@ func HasAddressWith(preds ...predicate.Address) predicate.Customer {
 	})
 }
 
+// HasRatings applies the HasEdge predicate on the "ratings" edge.
+func HasRatings() predicate.Customer {
+	return predicate.Customer(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RatingsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, RatingsTable, RatingsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRatingsWith applies the HasEdge predicate on the "ratings" edge with a given conditions (other predicates).
+func HasRatingsWith(preds ...predicate.Rating) predicate.Customer {
+	return predicate.Customer(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RatingsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, RatingsTable, RatingsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups list of predicates with the AND operator between them.
 func And(predicates ...predicate.Customer) predicate.Customer {
 	return predicate.Customer(func(s *sql.Selector) {

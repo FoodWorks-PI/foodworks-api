@@ -4,11 +4,14 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
 
+	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/predicate"
+	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/rating"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -23,6 +26,9 @@ type RatingQuery struct {
 	order      []OrderFunc
 	unique     []string
 	predicates []predicate.Rating
+	// eager-loading edges.
+	withCustomer *CustomerQuery
+	withProduct  *ProductQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -50,6 +56,50 @@ func (rq *RatingQuery) Offset(offset int) *RatingQuery {
 func (rq *RatingQuery) Order(o ...OrderFunc) *RatingQuery {
 	rq.order = append(rq.order, o...)
 	return rq
+}
+
+// QueryCustomer chains the current query on the customer edge.
+func (rq *RatingQuery) QueryCustomer() *CustomerQuery {
+	query := &CustomerQuery{config: rq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rating.Table, rating.FieldID, selector),
+			sqlgraph.To(customer.Table, customer.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, rating.CustomerTable, rating.CustomerPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProduct chains the current query on the product edge.
+func (rq *RatingQuery) QueryProduct() *ProductQuery {
+	query := &ProductQuery{config: rq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rating.Table, rating.FieldID, selector),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, rating.ProductTable, rating.ProductPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Rating entity in the query. Returns *NotFoundError when no rating was found.
@@ -231,18 +281,40 @@ func (rq *RatingQuery) Clone() *RatingQuery {
 	}
 }
 
+//  WithCustomer tells the query-builder to eager-loads the nodes that are connected to
+// the "customer" edge. The optional arguments used to configure the query builder of the edge.
+func (rq *RatingQuery) WithCustomer(opts ...func(*CustomerQuery)) *RatingQuery {
+	query := &CustomerQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withCustomer = query
+	return rq
+}
+
+//  WithProduct tells the query-builder to eager-loads the nodes that are connected to
+// the "product" edge. The optional arguments used to configure the query builder of the edge.
+func (rq *RatingQuery) WithProduct(opts ...func(*ProductQuery)) *RatingQuery {
+	query := &ProductQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withProduct = query
+	return rq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
 // Example:
 //
 //	var v []struct {
-//		ProductRate int `json:"ProductRate,omitempty"`
+//		Comment string `json:"comment,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Rating.Query().
-//		GroupBy(rating.FieldProductRate).
+//		GroupBy(rating.FieldComment).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -263,11 +335,11 @@ func (rq *RatingQuery) GroupBy(field string, fields ...string) *RatingGroupBy {
 // Example:
 //
 //	var v []struct {
-//		ProductRate int `json:"ProductRate,omitempty"`
+//		Comment string `json:"comment,omitempty"`
 //	}
 //
 //	client.Rating.Query().
-//		Select(rating.FieldProductRate).
+//		Select(rating.FieldComment).
 //		Scan(ctx, &v)
 //
 func (rq *RatingQuery) Select(field string, fields ...string) *RatingSelect {
@@ -295,8 +367,12 @@ func (rq *RatingQuery) prepareQuery(ctx context.Context) error {
 
 func (rq *RatingQuery) sqlAll(ctx context.Context) ([]*Rating, error) {
 	var (
-		nodes = []*Rating{}
-		_spec = rq.querySpec()
+		nodes       = []*Rating{}
+		_spec       = rq.querySpec()
+		loadedTypes = [2]bool{
+			rq.withCustomer != nil,
+			rq.withProduct != nil,
+		}
 	)
 	_spec.ScanValues = func() []interface{} {
 		node := &Rating{config: rq.config}
@@ -309,6 +385,7 @@ func (rq *RatingQuery) sqlAll(ctx context.Context) ([]*Rating, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(values...)
 	}
 	if err := sqlgraph.QueryNodes(ctx, rq.driver, _spec); err != nil {
@@ -317,6 +394,133 @@ func (rq *RatingQuery) sqlAll(ctx context.Context) ([]*Rating, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := rq.withCustomer; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Rating, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Rating)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: true,
+				Table:   rating.CustomerTable,
+				Columns: rating.CustomerPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(rating.CustomerPrimaryKey[1], fks...))
+			},
+
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				edgeids = append(edgeids, inValue)
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, rq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "customer": %v`, err)
+		}
+		query.Where(customer.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "customer" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Customer = append(nodes[i].Edges.Customer, n)
+			}
+		}
+	}
+
+	if query := rq.withProduct; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Rating, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Rating)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: true,
+				Table:   rating.ProductTable,
+				Columns: rating.ProductPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(rating.ProductPrimaryKey[1], fks...))
+			},
+
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				edgeids = append(edgeids, inValue)
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, rq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "product": %v`, err)
+		}
+		query.Where(product.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "product" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Product = append(nodes[i].Edges.Product, n)
+			}
+		}
+	}
+
 	return nodes, nil
 }
 
