@@ -856,7 +856,7 @@ type Customer {
 input RegisterProductInput {
   name: String!
   description: String!
-  tags: [TagInput!]!
+  tags: [String!]!
   cost: Int! # Manejar como centavos
   active: Boolean!
   restaurantID: ID! # Es necesario?
@@ -866,7 +866,7 @@ input UpdateProductInput {
   productID: ID!
   name: String!
   description: String!
-  tags: [TagInput!]!
+  tags: [String!]!
   cost: Int! # Manejar como centavos
   active: Boolean!
 }
@@ -908,7 +908,7 @@ input RegisterRestaurantInput {
   name: String!
   address: RegisterAddressInput!
   description: String!
-  tags: [TagInput!]!
+  tags: [String!]!
 }
 
 type Restaurant {
@@ -923,10 +923,6 @@ type Restaurant {
 
 type Tag {
   name: String!
-}
-
-input TagInput {
- name: String!
 }
 
 input RegisterRestaurantOwnerInput {
@@ -5041,7 +5037,7 @@ func (ec *executionContext) unmarshalInputRegisterProductInput(ctx context.Conte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
-			it.Tags, err = ec.unmarshalNTagInput2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐTagInputᚄ(ctx, v)
+			it.Tags, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5109,7 +5105,7 @@ func (ec *executionContext) unmarshalInputRegisterRestaurantInput(ctx context.Co
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
-			it.Tags, err = ec.unmarshalNTagInput2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐTagInputᚄ(ctx, v)
+			it.Tags, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5162,26 +5158,6 @@ func (ec *executionContext) unmarshalInputRegisterRestaurantOwnerInput(ctx conte
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("restaurant"))
 			it.Restaurant, err = ec.unmarshalNRegisterRestaurantInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterRestaurantInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputTagInput(ctx context.Context, obj interface{}) (model.TagInput, error) {
-	var it model.TagInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5261,7 +5237,7 @@ func (ec *executionContext) unmarshalInputUpdateProductInput(ctx context.Context
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
-			it.Tags, err = ec.unmarshalNTagInput2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐTagInputᚄ(ctx, v)
+			it.Tags, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6672,32 +6648,6 @@ func (ec *executionContext) marshalNTag2ᚖfoodworksᚗmlᚋmᚋinternalᚋgener
 		return graphql.Null
 	}
 	return ec._Tag(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNTagInput2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐTagInputᚄ(ctx context.Context, v interface{}) ([]*model.TagInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*model.TagInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNTagInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐTagInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalNTagInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐTagInput(ctx context.Context, v interface{}) (*model.TagInput, error) {
-	res, err := ec.unmarshalInputTagInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNUpdateCustomerInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUpdateCustomerInput(ctx context.Context, v interface{}) (model.UpdateCustomerInput, error) {

@@ -4,4 +4,8 @@
         // StaticField defined by templates.
         Distance float64 `json:"distance,omitempty"`
     {{- end }}
+    {{- if eq $.Name "Address" }}
+        // StaticField defined by templates.
+        Distance float64 `json:"distance,omitempty"`
+    {{- end }}
 {{ end }}

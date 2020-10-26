@@ -560,6 +560,18 @@ func (r *queryResolver) GetCurrentRestaurantOwner(ctx context.Context) (*ent.Res
 }
 
 func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) ([]*ent.Product, error) {
+	res, err := r.EntClient.Restaurant.
+		Query().
+		//QueryAddress().
+		WithAddress().
+		Where().
+		Where(OrderByDistanceP()).
+		Where(SelectDistance()).
+		All(ctx)
+	fmt.Println(res)
+	if err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented"))
 }
 

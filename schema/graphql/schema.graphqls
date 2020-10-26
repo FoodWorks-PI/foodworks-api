@@ -59,7 +59,7 @@ type Customer {
 input RegisterProductInput {
   name: String!
   description: String!
-  tags: [TagInput!]!
+  tags: [String!]!
   cost: Int! # Manejar como centavos
   active: Boolean!
   restaurantID: ID! # Es necesario?
@@ -69,7 +69,7 @@ input UpdateProductInput {
   productID: ID!
   name: String!
   description: String!
-  tags: [TagInput!]!
+  tags: [String!]!
   cost: Int! # Manejar como centavos
   active: Boolean!
 }
@@ -111,7 +111,7 @@ input RegisterRestaurantInput {
   name: String!
   address: RegisterAddressInput!
   description: String!
-  tags: [TagInput!]!
+  tags: [String!]!
 }
 
 type Restaurant {
@@ -126,10 +126,6 @@ type Restaurant {
 
 type Tag {
   name: String!
-}
-
-input TagInput {
- name: String!
 }
 
 input RegisterRestaurantOwnerInput {

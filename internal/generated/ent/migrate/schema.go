@@ -14,6 +14,7 @@ var (
 		{Name: "latitude", Type: field.TypeFloat64},
 		{Name: "longitude", Type: field.TypeFloat64},
 		{Name: "street_line", Type: field.TypeString},
+		{Name: "geom", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "geometry(POINT)"}},
 	}
 	// AddressesTable holds the schema information for the "addresses" table.
 	AddressesTable = &schema.Table{

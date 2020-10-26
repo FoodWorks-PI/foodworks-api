@@ -13,6 +13,8 @@ const (
 	FieldLongitude = "longitude"
 	// FieldStreetLine holds the string denoting the streetline field in the database.
 	FieldStreetLine = "street_line"
+	// FieldGeom holds the string denoting the geom field in the database.
+	FieldGeom = "geom"
 
 	// Table holds the table name of the address in the database.
 	Table = "addresses"
@@ -24,6 +26,7 @@ var Columns = []string{
 	FieldLatitude,
 	FieldLongitude,
 	FieldStreetLine,
+	FieldGeom,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

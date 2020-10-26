@@ -111,6 +111,13 @@ func StreetLine(v string) predicate.Address {
 	})
 }
 
+// Geom applies equality check predicate on the "geom" field. It's identical to GeomEQ.
+func Geom(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldGeom), v))
+	})
+}
+
 // LatitudeEQ applies the EQ predicate on the "latitude" field.
 func LatitudeEQ(v float64) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
@@ -371,6 +378,131 @@ func StreetLineEqualFold(v string) predicate.Address {
 func StreetLineContainsFold(v string) predicate.Address {
 	return predicate.Address(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldStreetLine), v))
+	})
+}
+
+// GeomEQ applies the EQ predicate on the "geom" field.
+func GeomEQ(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldGeom), v))
+	})
+}
+
+// GeomNEQ applies the NEQ predicate on the "geom" field.
+func GeomNEQ(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldGeom), v))
+	})
+}
+
+// GeomIn applies the In predicate on the "geom" field.
+func GeomIn(vs ...string) predicate.Address {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Address(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldGeom), v...))
+	})
+}
+
+// GeomNotIn applies the NotIn predicate on the "geom" field.
+func GeomNotIn(vs ...string) predicate.Address {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Address(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldGeom), v...))
+	})
+}
+
+// GeomGT applies the GT predicate on the "geom" field.
+func GeomGT(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldGeom), v))
+	})
+}
+
+// GeomGTE applies the GTE predicate on the "geom" field.
+func GeomGTE(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldGeom), v))
+	})
+}
+
+// GeomLT applies the LT predicate on the "geom" field.
+func GeomLT(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldGeom), v))
+	})
+}
+
+// GeomLTE applies the LTE predicate on the "geom" field.
+func GeomLTE(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldGeom), v))
+	})
+}
+
+// GeomContains applies the Contains predicate on the "geom" field.
+func GeomContains(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldGeom), v))
+	})
+}
+
+// GeomHasPrefix applies the HasPrefix predicate on the "geom" field.
+func GeomHasPrefix(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldGeom), v))
+	})
+}
+
+// GeomHasSuffix applies the HasSuffix predicate on the "geom" field.
+func GeomHasSuffix(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldGeom), v))
+	})
+}
+
+// GeomIsNil applies the IsNil predicate on the "geom" field.
+func GeomIsNil() predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldGeom)))
+	})
+}
+
+// GeomNotNil applies the NotNil predicate on the "geom" field.
+func GeomNotNil() predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldGeom)))
+	})
+}
+
+// GeomEqualFold applies the EqualFold predicate on the "geom" field.
+func GeomEqualFold(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldGeom), v))
+	})
+}
+
+// GeomContainsFold applies the ContainsFold predicate on the "geom" field.
+func GeomContainsFold(v string) predicate.Address {
+	return predicate.Address(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldGeom), v))
 	})
 }
 

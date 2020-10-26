@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/facebook/ent"
+	"github.com/facebook/ent/dialect"
 	"github.com/facebook/ent/schema/field"
 )
 
@@ -16,6 +17,12 @@ func (Address) Fields() []ent.Field {
 		field.Float("latitude"),
 		field.Float("longitude"),
 		field.String("streetLine"),
+		field.String("geom").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{
+				dialect.Postgres: "geometry(POINT)",
+			}),
 	}
 }
 

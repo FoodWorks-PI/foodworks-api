@@ -37,6 +37,20 @@ func (ac *AddressCreate) SetStreetLine(s string) *AddressCreate {
 	return ac
 }
 
+// SetGeom sets the geom field.
+func (ac *AddressCreate) SetGeom(s string) *AddressCreate {
+	ac.mutation.SetGeom(s)
+	return ac
+}
+
+// SetNillableGeom sets the geom field if the given value is not nil.
+func (ac *AddressCreate) SetNillableGeom(s *string) *AddressCreate {
+	if s != nil {
+		ac.SetGeom(*s)
+	}
+	return ac
+}
+
 // Mutation returns the AddressMutation object of the builder.
 func (ac *AddressCreate) Mutation() *AddressMutation {
 	return ac.mutation
@@ -147,6 +161,14 @@ func (ac *AddressCreate) createSpec() (*Address, *sqlgraph.CreateSpec) {
 			Column: address.FieldStreetLine,
 		})
 		_node.StreetLine = value
+	}
+	if value, ok := ac.mutation.Geom(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: address.FieldGeom,
+		})
+		_node.Geom = &value
 	}
 	return _node, _spec
 }
