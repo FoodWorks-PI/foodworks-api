@@ -11,6 +11,7 @@ import (
 
 	"foodworks.ml/m/internal/api"
 	"foodworks.ml/m/internal/platform"
+	"foodworks.ml/m/internal/platform/filehandler"
 	"github.com/go-redis/redis/v8"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/ory/dockertest/v3"
@@ -160,7 +161,10 @@ func SetupAPI(support *TestSupport) {
 
 	rdb := platform.NewRedisClient(*support.Config)
 
+	elasticClient := platform.NewElasticSearchClient(*support.Config)
+
 	api := api.API{}
-	api.SetupRoutes(client, db, rdb, *support.Config)
+	fileHandler := filehandler.NewDiskUploader()
+	api.SetupRoutes(client, db, rdb, *support.Config, elasticClient, &fileHandler)
 	support.Handler = api.Router
 }

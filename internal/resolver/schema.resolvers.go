@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"foodworks.ml/m/internal/auth"
@@ -19,6 +20,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	generated "foodworks.ml/m/internal/generated/graphql"
 	"foodworks.ml/m/internal/generated/graphql/model"
+	gabs "github.com/Jeffail/gabs/v2"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/rs/zerolog/log"
 )
@@ -163,11 +165,14 @@ func (r *mutationResolver) CreateRestaurantOwnerProfile(ctx context.Context, inp
 		return -1, err
 	}
 
+	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Restaurant.Tags, ctx)
+
 	newRestaurant, err := r.EntClient.Restaurant.
 		Create().
 		SetName(input.Restaurant.Name).
 		SetDescription(input.Restaurant.Description).
 		SetAddress(newAddress).
+		AddTags(tagEntities...).
 		Save(ctx)
 
 	if err != nil {
@@ -284,6 +289,7 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Regist
 	if err != nil {
 		return -1, err
 	}
+	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Tags, ctx)
 
 	newProduct, err := r.EntClient.Product.
 		Create().
@@ -292,6 +298,7 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Regist
 		SetCost(input.Cost).
 		SetIsActive(input.Active).
 		AddRestaurant(restaurantRef).
+		AddTags(tagEntities...).
 		Save(ctx)
 
 	if err != nil {
@@ -302,23 +309,21 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Regist
 }
 
 func (r *mutationResolver) UpdateProduct(ctx context.Context, input model.UpdateProductInput) (int, error) {
+	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Tags, ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
 	p, err := r.EntClient.Product.
 		UpdateOneID(input.ProductID).
 		SetName(input.Name).
 		SetDescription(input.Description).
 		SetCost(input.Cost).
 		SetIsActive(input.Active).
+		ClearTags().
+		AddTags(tagEntities...).
 		Save(ctx)
-
-	if err != nil {
-		return -1, err
-	}
-
-	/* TODO Luego
-	updatedTags, err := p.Edges.Tags.
-	Update().ClearTags().
-	AddTags(input.Tags).
-	Save(ctx)*/
 
 	if err != nil {
 		return -1, err
@@ -347,6 +352,14 @@ func (r *mutationResolver) ToggleProductStatus(ctx context.Context, input int) (
 	}
 
 	return updatedProduct.IsActive, nil
+}
+
+func (r *mutationResolver) UploadProductPhoto(ctx context.Context, input model.UploadImageInput) ([]string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) DeleteProductPhoto(ctx context.Context, input []string) (int, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) DeleteProduct(ctx context.Context, input int) (int, error) {
@@ -383,13 +396,17 @@ func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.Reg
 		return -1, err
 	}
 
-	// TODO falta set tags.
-
+	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Tags, ctx)
+	if err != nil {
+		return -1, err
+	}
 	updatedRestaurant, err := currentUser.Edges.Restaurant.
 		Update().
 		SetName(input.Name).
 		SetDescription(input.Description).
 		SetAddress(updatedAddress).
+		ClearTags().
+		AddTags(tagEntities...).
 		Save(ctx)
 
 	if err != nil {
@@ -406,6 +423,14 @@ func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.Reg
 	}
 
 	return currentUser.ID, nil
+}
+
+func (r *mutationResolver) UploadRestaurantPhoto(ctx context.Context, input model.UploadImageInput) ([]string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) DeleteRestuarantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) DeleteRestaurant(ctx context.Context, input int) (int, error) {
@@ -456,6 +481,33 @@ func (r *mutationResolver) DeleteRating(ctx context.Context, input int) (int, er
 	return input, nil
 }
 
+func (r *mutationResolver) UploadPhotoDemo(ctx context.Context, input model.UploadImageInput) ([]string, error) {
+	// TODO: Why do we need to dereference to a variable?
+	fileHandler := *r.FileHandler
+	paths := make([]string, len(input.Files))
+	for i, image := range input.Files {
+		path, err := fileHandler.Upload(image)
+		if err != nil {
+			return nil, err
+		}
+		paths[i] = path
+	}
+
+	return paths, nil
+}
+
+func (r *mutationResolver) DeletePhotoDemo(ctx context.Context, input model.DeleteImageInput) ([]string, error) {
+	fileHandler := *r.FileHandler
+	for _, image := range input.FileNames {
+		err := fileHandler.Delete(image)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return input.FileNames, nil
+}
+
 func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]*ent.Tag, error) {
 	tags, err := r.EntClient.Product.QueryTags(obj).All(ctx)
 	return tags, ent.MaskNotFound(err)
@@ -482,6 +534,7 @@ func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, 
 }
 
 func (r *queryResolver) GetClosestRestaurants(ctx context.Context, input *int) ([]*model.RestaurantSearchResult, error) {
+	// TODO: Add comments
 	kratosUser := auth.ForContext(ctx)
 	currentUser, err := r.EntClient.Customer.
 		Query().
@@ -546,6 +599,18 @@ func (r *queryResolver) GetCurrentRestaurantOwner(ctx context.Context) (*ent.Res
 }
 
 func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) ([]*ent.Product, error) {
+	res, err := r.EntClient.Restaurant.
+		Query().
+		//QueryAddress().
+		WithAddress().
+		Where().
+		Where(OrderByDistanceP()).
+		Where(SelectDistance()).
+		All(ctx)
+	fmt.Println(res)
+	if err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -577,18 +642,6 @@ func (r *queryResolver) GetRestaurantByID(ctx context.Context, input int) (*ent.
 	return restaurant, nil
 }
 
-func (r *queryResolver) GetTags(ctx context.Context, input *string) ([]*ent.Tag, error) {
-	tags, err := r.EntClient.Tag.
-		Query().
-		All(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return tags, nil
-}
-
 func (r *queryResolver) GetRatingsByCustomerID(ctx context.Context, input int) ([]*ent.Rating, error) {
 	ratingsByCustomerID, err := r.EntClient.Rating.
 		Query().
@@ -613,6 +666,35 @@ func (r *queryResolver) GetRatingsByProductID(ctx context.Context, input int) ([
 	}
 
 	return ratingsByProductID, nil
+}
+
+func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*ent.Tag, error) {
+	jsonObj := gabs.New()
+	_, _ = jsonObj.SetP(1, "suggest.suggestion.completion.fuzzy.fuzziness")
+	_, _ = jsonObj.SetP("autocomplete", "suggest.suggestion.completion.field")
+	_, _ = jsonObj.SetP(input, "suggest.suggestion.prefix")
+	body := jsonObj.String()
+	results, err := r.ElasticClient.Search(
+		r.ElasticClient.Search.WithBody(strings.NewReader(body)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer results.Body.Close()
+	parsed, err := gabs.ParseJSONBuffer(results.Body)
+	if err != nil {
+		return nil, err
+	}
+	tags := make([]*ent.Tag, 0)
+	for _, child := range parsed.Path("suggest.suggestion.0.options").Children() {
+		var tag ent.Tag
+		source := child.S("_source")
+		tag.Name = source.S("name").Data().(string)
+		tag.ID, _ = strconv.Atoi(source.S("id").String())
+		tags = append(tags, &tag)
+		// fmt.Printf("key: %v, value: %v\n", key, child.Data().(float64))
+	}
+	return tags, nil
 }
 
 func (r *restaurantResolver) Address(ctx context.Context, obj *ent.Restaurant) (*ent.Address, error) {

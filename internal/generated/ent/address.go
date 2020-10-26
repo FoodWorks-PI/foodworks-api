@@ -21,6 +21,8 @@ type Address struct {
 	Longitude float64 `json:"longitude,omitempty"`
 	// StreetLine holds the value of the "streetLine" field.
 	StreetLine string `json:"streetLine,omitempty"`
+	// Geom holds the value of the "geom" field.
+	Geom *string `json:"geom,omitempty"`
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -30,6 +32,7 @@ func (*Address) scanValues() []interface{} {
 		&sql.NullFloat64{}, // latitude
 		&sql.NullFloat64{}, // longitude
 		&sql.NullString{},  // streetLine
+		&sql.NullString{},  // geom
 	}
 }
 
@@ -59,6 +62,12 @@ func (a *Address) assignValues(values ...interface{}) error {
 		return fmt.Errorf("unexpected type %T for field streetLine", values[2])
 	} else if value.Valid {
 		a.StreetLine = value.String
+	}
+	if value, ok := values[3].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field geom", values[3])
+	} else if value.Valid {
+		a.Geom = new(string)
+		*a.Geom = value.String
 	}
 	return nil
 }
@@ -92,6 +101,10 @@ func (a *Address) String() string {
 	builder.WriteString(fmt.Sprintf("%v", a.Longitude))
 	builder.WriteString(", streetLine=")
 	builder.WriteString(a.StreetLine)
+	if v := a.Geom; v != nil {
+		builder.WriteString(", geom=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

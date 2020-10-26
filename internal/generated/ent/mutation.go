@@ -50,6 +50,7 @@ type AddressMutation struct {
 	longitude     *float64
 	addlongitude  *float64
 	streetLine    *string
+	geom          *string
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*Address, error)
@@ -285,6 +286,56 @@ func (m *AddressMutation) ResetStreetLine() {
 	m.streetLine = nil
 }
 
+// SetGeom sets the geom field.
+func (m *AddressMutation) SetGeom(s string) {
+	m.geom = &s
+}
+
+// Geom returns the geom value in the mutation.
+func (m *AddressMutation) Geom() (r string, exists bool) {
+	v := m.geom
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGeom returns the old geom value of the Address.
+// If the Address object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *AddressMutation) OldGeom(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldGeom is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldGeom requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGeom: %w", err)
+	}
+	return oldValue.Geom, nil
+}
+
+// ClearGeom clears the value of geom.
+func (m *AddressMutation) ClearGeom() {
+	m.geom = nil
+	m.clearedFields[address.FieldGeom] = struct{}{}
+}
+
+// GeomCleared returns if the field geom was cleared in this mutation.
+func (m *AddressMutation) GeomCleared() bool {
+	_, ok := m.clearedFields[address.FieldGeom]
+	return ok
+}
+
+// ResetGeom reset all changes of the "geom" field.
+func (m *AddressMutation) ResetGeom() {
+	m.geom = nil
+	delete(m.clearedFields, address.FieldGeom)
+}
+
 // Op returns the operation name.
 func (m *AddressMutation) Op() Op {
 	return m.op
@@ -299,7 +350,7 @@ func (m *AddressMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *AddressMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
 	if m.latitude != nil {
 		fields = append(fields, address.FieldLatitude)
 	}
@@ -308,6 +359,9 @@ func (m *AddressMutation) Fields() []string {
 	}
 	if m.streetLine != nil {
 		fields = append(fields, address.FieldStreetLine)
+	}
+	if m.geom != nil {
+		fields = append(fields, address.FieldGeom)
 	}
 	return fields
 }
@@ -323,6 +377,8 @@ func (m *AddressMutation) Field(name string) (ent.Value, bool) {
 		return m.Longitude()
 	case address.FieldStreetLine:
 		return m.StreetLine()
+	case address.FieldGeom:
+		return m.Geom()
 	}
 	return nil, false
 }
@@ -338,6 +394,8 @@ func (m *AddressMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldLongitude(ctx)
 	case address.FieldStreetLine:
 		return m.OldStreetLine(ctx)
+	case address.FieldGeom:
+		return m.OldGeom(ctx)
 	}
 	return nil, fmt.Errorf("unknown Address field %s", name)
 }
@@ -367,6 +425,13 @@ func (m *AddressMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStreetLine(v)
+		return nil
+	case address.FieldGeom:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGeom(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Address field %s", name)
@@ -424,7 +489,11 @@ func (m *AddressMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared
 // during this mutation.
 func (m *AddressMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(address.FieldGeom) {
+		fields = append(fields, address.FieldGeom)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicates if this field was
@@ -437,6 +506,11 @@ func (m *AddressMutation) FieldCleared(name string) bool {
 // ClearField clears the value for the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *AddressMutation) ClearField(name string) error {
+	switch name {
+	case address.FieldGeom:
+		m.ClearGeom()
+		return nil
+	}
 	return fmt.Errorf("unknown Address nullable field %s", name)
 }
 
@@ -453,6 +527,9 @@ func (m *AddressMutation) ResetField(name string) error {
 		return nil
 	case address.FieldStreetLine:
 		m.ResetStreetLine()
+		return nil
+	case address.FieldGeom:
+		m.ResetGeom()
 		return nil
 	}
 	return fmt.Errorf("unknown Address field %s", name)

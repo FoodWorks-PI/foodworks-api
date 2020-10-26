@@ -59,7 +59,7 @@ type Customer {
 input RegisterProductInput {
   name: String!
   description: String!
-  tags: [RegisterTagInput!]!
+  tags: [String!]!
   cost: Int! # Manejar como centavos
   active: Boolean!
   restaurantID: ID! # Es necesario?
@@ -69,7 +69,7 @@ input UpdateProductInput {
   productID: ID!
   name: String!
   description: String!
-  tags: [RegisterTagInput!]!
+  tags: [String!]!
   cost: Int! # Manejar como centavos
   active: Boolean!
 }
@@ -128,7 +128,7 @@ input RegisterRestaurantInput {
   name: String!
   address: RegisterAddressInput!
   description: String!
-  tags: [RegisterTagInput!]!
+  tags: [String!]!
 }
 
 type Restaurant {
@@ -141,20 +141,9 @@ type Restaurant {
   restaurantOwner: RestaurantOwner!
 }
 
-input RegisterTagInput {
-  ID: ID
-  name: String
-}
-
-input TagInput {
-  id: ID!
-}
-
 type Tag {
-  ID: ID!
   name: String!
 }
-
 
 input RegisterRestaurantOwnerInput {
   name: String!
@@ -185,6 +174,16 @@ type RestaurantSearchResult {
   distance: Float!
 }
 
+scalar Upload
+
+input UploadImageInput{
+  files: [Upload!]!
+}
+
+input DeleteImageInput {
+  fileNames: [String!]!
+}
+
 type Query {
   getCurrentCustomer: Customer!
   getClosestRestaurants(input: Int): [RestaurantSearchResult!]!
@@ -192,9 +191,9 @@ type Query {
   getProductsByAllFields(input: ProductsByAllFieldsInput!): [Product!]!
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getRestaurantByID(input: ID!): Restaurant!
-  getTags(input: String): [Tag]!
   getRatingsByCustomerID(input: ID!): [Rating!]!
   getRatingsByProductID(input: ID!): [Rating!]!
+  autoCompleteTag(input: String!): [Tag]!
 }
 
 type Mutation {
@@ -211,14 +210,22 @@ type Mutation {
   createProduct(input: RegisterProductInput!): ID!
   updateProduct(input: UpdateProductInput!): ID!
   toggleProductStatus(input: ID!): Boolean!
+  uploadProductPhoto(input: UploadImageInput!): [String!]!
+  deleteProductPhoto(input: [String!]!): ID!
   deleteProduct(input: ID!): ID!
 
   updateRestaurant(input:RegisterRestaurantInput!): ID!
+  uploadRestaurantPhoto(input: UploadImageInput!): [String!]!
+  deleteRestuarantPhoto(input: DeleteImageInput!): ID!
   deleteRestaurant(input: ID!): ID!
 
   createRating(input: RegisterRatingInput!): ID!
   updateRating(input: UpdateRatingInput!): ID!
   deleteRating(input: ID!): ID!
+
+  uploadPhotoDemo(input:UploadImageInput!): [String!]!
+  deletePhotoDemo(input:DeleteImageInput!): [String!]!
+
 
   # createOrder(input: CreateOrderInput): CreateOrderPayload!
   # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!
