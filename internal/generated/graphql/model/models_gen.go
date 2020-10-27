@@ -97,12 +97,6 @@ type UpdateProductInput struct {
 	Active      bool     `json:"active"`
 }
 
-type UpdateRatingInput struct {
-	ProductID int     `json:"productID"`
-	Rating    int     `json:"rating"`
-	Comment   *string `json:"comment"`
-}
-
 type UpdateRestaurantOwnerInput struct {
 	Name     string `json:"name"`
 	LastName string `json:"lastName"`

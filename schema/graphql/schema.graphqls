@@ -115,12 +115,6 @@ input RegisterRatingInput {
   comment: String
 }
 
-input UpdateRatingInput {
-  productID : ID!
-  rating : Int!
-  comment: String
-}
-
 type Rating {
   ID: ID!
   rating: Int!
@@ -191,12 +185,15 @@ input DeleteImageInput {
 
 type Query {
   getCurrentCustomer: Customer!
-  getClosestRestaurants(input: Int): [RestaurantSearchResult!]!
   getCurrentRestaurantOwner: RestaurantOwner!
-  getProductsByAllFields(input: ProductsByAllFieldsInput!): [Product!]!
-  getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
+
   getRestaurantByID(input: ID!): Restaurant!
-  getRatingsByProductID(input: ID!): [Rating!]!
+  getClosestRestaurants(input: Int): [RestaurantSearchResult!]!
+
+  getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
+  getProductById(input: ID!): Product!
+  getProductsByAllFields(input: ProductsByAllFieldsInput!): [Product!]!
+
   autoCompleteTag(input: String!): [Tag]!
 }
 
@@ -224,7 +221,7 @@ type Mutation {
   deleteRestaurant(input: ID!): ID!
 
   createProductRating(input: RegisterRatingInput!): ID!
-  deleteRating(input: RegisterRatingInput!): ID!
+  deleteRating(input: ID!): ID!
 
   uploadPhotoDemo(input:UploadImageInput!): [String!]!
   deletePhotoDemo(input:DeleteImageInput!): [String!]!
