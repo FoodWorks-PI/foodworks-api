@@ -114,6 +114,12 @@ input RegisterRatingInput {
   rating: Int!
   comment: String
 }
+ input UpdateRatingInput {
+   ID : ID!
+   productID : ID!
+   rating: Int!
+   comment: String
+ }
 
 type Rating {
   ID: ID!
@@ -221,6 +227,7 @@ type Mutation {
   deleteRestaurant(input: ID!): ID!
 
   createProductRating(input: RegisterRatingInput!): ID!
+  updateProductRating(input: UpdateRatingInput!): ID!
   deleteRating(input: ID!): ID!
 
   uploadPhotoDemo(input:UploadImageInput!): [String!]!
