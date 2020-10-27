@@ -116,7 +116,6 @@ input RegisterRatingInput {
 }
  input UpdateRatingInput {
    ID : ID!
-   productID : ID!
    rating: Int!
    comment: String
  }

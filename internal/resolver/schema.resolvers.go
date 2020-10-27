@@ -473,7 +473,7 @@ func (r *mutationResolver) CreateProductRating(ctx context.Context, input model.
 }
 
 func (r *mutationResolver) UpdateProductRating(ctx context.Context, input model.UpdateRatingInput) (int, error) {
-	_, err := r.EntClient.Rating.UpdateOneID(input.ProductID).
+	_, err := r.EntClient.Rating.UpdateOneID(input.ID).
 		SetComment(*input.Comment).
 		SetRating(input.Rating).
 		Save(ctx)

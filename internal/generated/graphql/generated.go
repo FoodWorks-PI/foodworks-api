@@ -1045,7 +1045,6 @@ input RegisterRatingInput {
 }
  input UpdateRatingInput {
    ID : ID!
-   productID : ID!
    rating: Int!
    comment: String
  }
@@ -5983,14 +5982,6 @@ func (ec *executionContext) unmarshalInputUpdateRatingInput(ctx context.Context,
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ID"))
 			it.ID, err = ec.unmarshalNID2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "productID":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productID"))
-			it.ProductID, err = ec.unmarshalNID2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
