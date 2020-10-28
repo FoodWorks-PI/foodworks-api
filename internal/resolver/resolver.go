@@ -33,6 +33,10 @@ func GetOrCreateTagId(r *Resolver, tags []string, ctx context.Context) ([]*ent.T
 	if tags == nil {
 		return nil, nil
 	}
+	// Make lowercase
+	for i := 0; i < len(tags); i++ {
+		tags[i] = strings.ToLower(tags[i])
+	}
 	// Build a comma separated string of tags enclosed by single quotes
 	for i := 0; i < len(tags)-1; i++ {
 		sb.WriteString(fmt.Sprintf("dsl.match('name', '%s')", tags[i]))
@@ -95,20 +99,6 @@ func GetColumns(prefix string, columns []string) []string {
 		newColumns[i] = fmt.Sprintf(`"%s"."%s"`, prefix, column)
 	}
 	return newColumns
-}
-func SelectDistanceP(str string) ent.AggregateFunc {
-	return func(s *sql.Selector, _ func(string) bool) string {
-		//columns := make([]string, len(restaurant.Columns))
-		//addressTable := sql.Table(address.Table)
-		//for i, column := range restaurant.Columns {
-		//	columns[i] = s.C(column)
-		//}
-		//s.Join(addressTable).On(addressTable.C(address.FieldID), s.C(restaurant.AddressColumn))
-		//columns = append(columns, `st_distancesphere(st_makepoint(19.37991393,-99.17228876),st_makepoint(19.37748,-99.16799)) as "distance"`)
-		////columns = append(columns, restaurant.Columns...)
-		//s.Select(columns...)
-		return str
-	}
 }
 
 func SelectDistance() func(selector *sql.Selector) {

@@ -98,7 +98,7 @@ type UpdateCustomerInput struct {
 }
 
 type UpdateProductInput struct {
-	ProductID   int      `json:"productID"`
+	ID          int      `json:"ID"`
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	Tags        []string `json:"tags"`

@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"foodworks.ml/m/internal/auth"
@@ -18,6 +17,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
+	"foodworks.ml/m/internal/generated/ent/tag"
 	generated "foodworks.ml/m/internal/generated/graphql"
 	"foodworks.ml/m/internal/generated/graphql/model"
 	gabs "github.com/Jeffail/gabs/v2"
@@ -321,7 +321,7 @@ func (r *mutationResolver) UpdateProduct(ctx context.Context, input model.Update
 	}
 
 	p, err := r.EntClient.Product.
-		UpdateOneID(input.ProductID).
+		UpdateOneID(input.ID).
 		SetName(input.Name).
 		SetDescription(input.Description).
 		SetCost(input.Cost).
@@ -518,8 +518,8 @@ func (r *mutationResolver) DeletePhotoDemo(ctx context.Context, input model.Dele
 	return input.FileNames, nil
 }
 
-func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]*ent.Tag, error) {
-	tags, err := r.EntClient.Product.QueryTags(obj).All(ctx)
+func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]string, error) {
+	tags, err := r.EntClient.Product.QueryTags(obj).Select(tag.FieldName).Strings(ctx)
 	return tags, ent.MaskNotFound(err)
 }
 
@@ -700,7 +700,7 @@ func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*ent.Tag, error) {
+func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]string, error) {
 	jsonObj := gabs.New()
 	_, _ = jsonObj.SetP(1, "suggest.suggestion.completion.fuzzy.fuzziness")
 	_, _ = jsonObj.SetP("autocomplete", "suggest.suggestion.completion.field")
@@ -717,13 +717,11 @@ func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*e
 	if err != nil {
 		return nil, err
 	}
-	tags := make([]*ent.Tag, 0)
+	tags := make([]string, 0)
 	for _, child := range parsed.Path("suggest.suggestion.0.options").Children() {
-		var tag ent.Tag
 		source := child.S("_source")
-		tag.Name = source.S("name").Data().(string)
-		tag.ID, _ = strconv.Atoi(source.S("id").String())
-		tags = append(tags, &tag)
+		name := source.S("name").Data().(string)
+		tags = append(tags, name)
 		// fmt.Printf("key: %v, value: %v\n", key, child.Data().(float64))
 	}
 	return tags, nil
@@ -744,8 +742,8 @@ func (r *restaurantResolver) Address(ctx context.Context, obj *ent.Restaurant) (
 	return address, ent.MaskNotFound(err)
 }
 
-func (r *restaurantResolver) Tags(ctx context.Context, obj *ent.Restaurant) ([]*ent.Tag, error) {
-	tags, err := r.EntClient.Restaurant.QueryTags(obj).All(ctx)
+func (r *restaurantResolver) Tags(ctx context.Context, obj *ent.Restaurant) ([]string, error) {
+	tags, err := r.EntClient.Restaurant.QueryTags(obj).Select(tag.FieldName).Strings(ctx)
 	return tags, ent.MaskNotFound(err)
 }
 
