@@ -480,7 +480,7 @@ func (r *mutationResolver) UpdateProductRating(ctx context.Context, input model.
 	if err != nil {
 		return -1, err
 	}
-	return 0, nil
+	return input.ID, nil
 }
 
 func (r *mutationResolver) DeleteRating(ctx context.Context, input int) (int, error) {
