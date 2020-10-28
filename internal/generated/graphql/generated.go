@@ -1029,7 +1029,7 @@ input RegisterProductInput {
 }
 
 input UpdateProductInput {
-  productID: ID!
+  ID: ID!
   name: String!
   description: String!
   tags: [String!]!
@@ -6121,11 +6121,11 @@ func (ec *executionContext) unmarshalInputUpdateProductInput(ctx context.Context
 
 	for k, v := range asMap {
 		switch k {
-		case "productID":
+		case "ID":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productID"))
-			it.ProductID, err = ec.unmarshalNID2int(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ID"))
+			it.ID, err = ec.unmarshalNID2int(ctx, v)
 			if err != nil {
 				return it, err
 			}

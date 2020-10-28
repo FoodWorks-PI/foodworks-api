@@ -74,7 +74,7 @@ input RegisterProductInput {
 }
 
 input UpdateProductInput {
-  productID: ID!
+  ID: ID!
   name: String!
   description: String!
   tags: [String!]!

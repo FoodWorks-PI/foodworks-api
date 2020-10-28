@@ -321,7 +321,7 @@ func (r *mutationResolver) UpdateProduct(ctx context.Context, input model.Update
 	}
 
 	p, err := r.EntClient.Product.
-		UpdateOneID(input.ProductID).
+		UpdateOneID(input.ID).
 		SetName(input.Name).
 		SetDescription(input.Description).
 		SetCost(input.Cost).
