@@ -8,6 +8,7 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"foodworks.ml/m/internal/generated/ent/product"
+	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/tag"
 	"github.com/facebook/ent/dialect/sql"
@@ -89,6 +90,21 @@ func (pu *ProductUpdate) AddTags(t ...*Tag) *ProductUpdate {
 	return pu.AddTagIDs(ids...)
 }
 
+// AddRatingIDs adds the ratings edge to Rating by ids.
+func (pu *ProductUpdate) AddRatingIDs(ids ...int) *ProductUpdate {
+	pu.mutation.AddRatingIDs(ids...)
+	return pu
+}
+
+// AddRatings adds the ratings edges to Rating.
+func (pu *ProductUpdate) AddRatings(r ...*Rating) *ProductUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return pu.AddRatingIDs(ids...)
+}
+
 // AddRestaurantIDs adds the restaurant edge to Restaurant by ids.
 func (pu *ProductUpdate) AddRestaurantIDs(ids ...int) *ProductUpdate {
 	pu.mutation.AddRestaurantIDs(ids...)
@@ -128,6 +144,27 @@ func (pu *ProductUpdate) RemoveTags(t ...*Tag) *ProductUpdate {
 		ids[i] = t[i].ID
 	}
 	return pu.RemoveTagIDs(ids...)
+}
+
+// ClearRatings clears all "ratings" edges to type Rating.
+func (pu *ProductUpdate) ClearRatings() *ProductUpdate {
+	pu.mutation.ClearRatings()
+	return pu
+}
+
+// RemoveRatingIDs removes the ratings edge to Rating by ids.
+func (pu *ProductUpdate) RemoveRatingIDs(ids ...int) *ProductUpdate {
+	pu.mutation.RemoveRatingIDs(ids...)
+	return pu
+}
+
+// RemoveRatings removes ratings edges to Rating.
+func (pu *ProductUpdate) RemoveRatings(r ...*Rating) *ProductUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return pu.RemoveRatingIDs(ids...)
 }
 
 // ClearRestaurant clears all "restaurant" edges to type Restaurant.
@@ -315,6 +352,60 @@ func (pu *ProductUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.RatingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.RatingsTable,
+			Columns: []string{product.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedRatingsIDs(); len(nodes) > 0 && !pu.mutation.RatingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.RatingsTable,
+			Columns: []string{product.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RatingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.RatingsTable,
+			Columns: []string{product.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if pu.mutation.RestaurantCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -447,6 +538,21 @@ func (puo *ProductUpdateOne) AddTags(t ...*Tag) *ProductUpdateOne {
 	return puo.AddTagIDs(ids...)
 }
 
+// AddRatingIDs adds the ratings edge to Rating by ids.
+func (puo *ProductUpdateOne) AddRatingIDs(ids ...int) *ProductUpdateOne {
+	puo.mutation.AddRatingIDs(ids...)
+	return puo
+}
+
+// AddRatings adds the ratings edges to Rating.
+func (puo *ProductUpdateOne) AddRatings(r ...*Rating) *ProductUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return puo.AddRatingIDs(ids...)
+}
+
 // AddRestaurantIDs adds the restaurant edge to Restaurant by ids.
 func (puo *ProductUpdateOne) AddRestaurantIDs(ids ...int) *ProductUpdateOne {
 	puo.mutation.AddRestaurantIDs(ids...)
@@ -486,6 +592,27 @@ func (puo *ProductUpdateOne) RemoveTags(t ...*Tag) *ProductUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return puo.RemoveTagIDs(ids...)
+}
+
+// ClearRatings clears all "ratings" edges to type Rating.
+func (puo *ProductUpdateOne) ClearRatings() *ProductUpdateOne {
+	puo.mutation.ClearRatings()
+	return puo
+}
+
+// RemoveRatingIDs removes the ratings edge to Rating by ids.
+func (puo *ProductUpdateOne) RemoveRatingIDs(ids ...int) *ProductUpdateOne {
+	puo.mutation.RemoveRatingIDs(ids...)
+	return puo
+}
+
+// RemoveRatings removes ratings edges to Rating.
+func (puo *ProductUpdateOne) RemoveRatings(r ...*Rating) *ProductUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return puo.RemoveRatingIDs(ids...)
 }
 
 // ClearRestaurant clears all "restaurant" edges to type Restaurant.
@@ -663,6 +790,60 @@ func (puo *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: tag.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.RatingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.RatingsTable,
+			Columns: []string{product.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedRatingsIDs(); len(nodes) > 0 && !puo.mutation.RatingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.RatingsTable,
+			Columns: []string{product.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RatingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.RatingsTable,
+			Columns: []string{product.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
 				},
 			},
 		}

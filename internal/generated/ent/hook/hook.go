@@ -61,6 +61,19 @@ func (f ProductFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return f(ctx, mv)
 }
 
+// The RatingFunc type is an adapter to allow the use of ordinary
+// function as Rating mutator.
+type RatingFunc func(context.Context, *ent.RatingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RatingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.RatingMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RatingMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The RestaurantFunc type is an adapter to allow the use of ordinary
 // function as Restaurant mutator.
 type RestaurantFunc func(context.Context, *ent.RestaurantMutation) (ent.Value, error)

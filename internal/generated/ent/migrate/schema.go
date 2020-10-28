@@ -81,6 +81,36 @@ var (
 		PrimaryKey:  []*schema.Column{ProductsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{},
 	}
+	// RatingsColumns holds the columns for the "ratings" table.
+	RatingsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "comment", Type: field.TypeString},
+		{Name: "rating", Type: field.TypeInt},
+		{Name: "customer_ratings", Type: field.TypeInt, Nullable: true},
+		{Name: "product_ratings", Type: field.TypeInt, Nullable: true},
+	}
+	// RatingsTable holds the schema information for the "ratings" table.
+	RatingsTable = &schema.Table{
+		Name:       "ratings",
+		Columns:    RatingsColumns,
+		PrimaryKey: []*schema.Column{RatingsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "ratings_customers_ratings",
+				Columns: []*schema.Column{RatingsColumns[3]},
+
+				RefColumns: []*schema.Column{CustomersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:  "ratings_products_ratings",
+				Columns: []*schema.Column{RatingsColumns[4]},
+
+				RefColumns: []*schema.Column{ProductsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// RestaurantsColumns holds the columns for the "restaurants" table.
 	RestaurantsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -241,6 +271,7 @@ var (
 		BankingDataTable,
 		CustomersTable,
 		ProductsTable,
+		RatingsTable,
 		RestaurantsTable,
 		RestaurantOwnersTable,
 		TagsTable,
@@ -252,6 +283,8 @@ var (
 
 func init() {
 	CustomersTable.ForeignKeys[0].RefTable = AddressesTable
+	RatingsTable.ForeignKeys[0].RefTable = CustomersTable
+	RatingsTable.ForeignKeys[1].RefTable = ProductsTable
 	RestaurantsTable.ForeignKeys[0].RefTable = AddressesTable
 	RestaurantOwnersTable.ForeignKeys[0].RefTable = BankingDataTable
 	RestaurantOwnersTable.ForeignKeys[1].RefTable = RestaurantsTable

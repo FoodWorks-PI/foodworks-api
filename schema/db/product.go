@@ -18,6 +18,7 @@ func (Product) Fields() []ent.Field {
 		field.String("name"),
 		field.String("description").
 			Optional().
+			Nillable().
 			SchemaType(map[string]string{
 				dialect.Postgres: "zdb.fulltext",
 			}),
@@ -30,6 +31,7 @@ func (Product) Fields() []ent.Field {
 func (Product) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("tags", Tag.Type),
+		edge.To("ratings", Rating.Type),
 		edge.From("restaurant", Restaurant.Type).Ref("products"),
 	}
 }

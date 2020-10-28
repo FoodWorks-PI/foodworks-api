@@ -15,6 +15,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/product"
+	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	generated "foodworks.ml/m/internal/generated/graphql"
@@ -27,6 +28,11 @@ import (
 func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (*ent.Address, error) {
 	address, err := r.EntClient.Customer.QueryAddress(obj).First(ctx)
 	return address, ent.MaskNotFound(err)
+}
+
+func (r *customerResolver) RatedProducts(ctx context.Context, obj *ent.Customer) ([]*ent.Rating, error) {
+	ratings, err := r.EntClient.Customer.QueryRatings(obj).All(ctx)
+	return ratings, ent.MaskNotFound(err)
 }
 
 func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input model.RegisterCustomerInput) (int, error) {
@@ -442,6 +448,49 @@ func (r *mutationResolver) DeleteRestaurant(ctx context.Context, input int) (int
 	return input, nil
 }
 
+func (r *mutationResolver) CreateProductRating(ctx context.Context, input model.RegisterRatingInput) (int, error) {
+	kratosUser := auth.ForContext(ctx)
+
+	currentCustomer, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		First(ctx)
+	if err != nil {
+		return -1, nil
+	}
+	rating, err := r.EntClient.Rating.Create().
+		SetProductID(input.ProductID).
+		SetCustomer(currentCustomer).
+		SetRating(input.Rating).
+		SetComment(*input.Comment).
+		Save(ctx)
+
+	if err != nil {
+		return -1, nil
+	}
+
+	return rating.ID, nil
+}
+
+func (r *mutationResolver) UpdateProductRating(ctx context.Context, input model.UpdateRatingInput) (int, error) {
+	_, err := r.EntClient.Rating.UpdateOneID(input.ID).
+		SetComment(*input.Comment).
+		SetRating(input.Rating).
+		Save(ctx)
+	if err != nil {
+		return -1, err
+	}
+	return input.ID, nil
+}
+
+func (r *mutationResolver) DeleteRating(ctx context.Context, input int) (int, error) {
+	err := r.EntClient.Rating.DeleteOneID(input)
+	if err != nil {
+		return -1, nil
+	}
+	return input, nil
+}
+
 func (r *mutationResolver) UploadPhotoDemo(ctx context.Context, input model.UploadImageInput) ([]string, error) {
 	// TODO: Why do we need to dereference to a variable?
 	fileHandler := *r.FileHandler
@@ -474,6 +523,20 @@ func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]*ent.Ta
 	return tags, ent.MaskNotFound(err)
 }
 
+func (r *productResolver) AverageRating(ctx context.Context, obj *ent.Product) (float64, error) {
+	var avg float64
+	err := r.EntClient.Product.QueryRatings(obj).
+		GroupBy(rating.EdgeProduct).
+		Aggregate(ent.Mean(rating.FieldRating)).
+		Scan(ctx, &avg)
+	return avg, ent.MaskNotFound(err)
+}
+
+func (r *productResolver) Ratings(ctx context.Context, obj *ent.Product) ([]*ent.Rating, error) {
+	ratings, err := r.EntClient.Product.QueryRatings(obj).All(ctx)
+	return ratings, ent.MaskNotFound(err)
+}
+
 func (r *productResolver) Restaurant(ctx context.Context, obj *ent.Product) (*ent.Restaurant, error) {
 	restaurant, err := r.EntClient.Product.QueryRestaurant(obj).First(ctx)
 	return restaurant, ent.MaskNotFound(err)
@@ -492,6 +555,34 @@ func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, 
 	}
 
 	return currentCustomer, nil
+}
+
+func (r *queryResolver) GetCurrentRestaurantOwner(ctx context.Context) (*ent.RestaurantOwner, error) {
+	kratosUser := auth.ForContext(ctx)
+
+	currentRestaurantOwner, err := r.EntClient.RestaurantOwner.
+		Query().
+		Where(restaurantowner.KratosID(kratosUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return currentRestaurantOwner, nil
+}
+
+func (r *queryResolver) GetRestaurantByID(ctx context.Context, input int) (*ent.Restaurant, error) {
+	restaurant, err := r.EntClient.Restaurant.
+		Query().
+		Where(restaurant.ID(input)).
+		First(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return restaurant, nil
 }
 
 func (r *queryResolver) GetClosestRestaurants(ctx context.Context, input *int) ([]*model.RestaurantSearchResult, error) {
@@ -544,37 +635,6 @@ func (r *queryResolver) GetClosestRestaurants(ctx context.Context, input *int) (
 	return restaurants, nil
 }
 
-func (r *queryResolver) GetCurrentRestaurantOwner(ctx context.Context) (*ent.RestaurantOwner, error) {
-	kratosUser := auth.ForContext(ctx)
-
-	currentRestaurantOwner, err := r.EntClient.RestaurantOwner.
-		Query().
-		Where(restaurantowner.KratosID(kratosUser.ID)).
-		First(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return currentRestaurantOwner, nil
-}
-
-func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) ([]*ent.Product, error) {
-	res, err := r.EntClient.Restaurant.
-		Query().
-		//QueryAddress().
-		WithAddress().
-		Where().
-		Where(OrderByDistanceP()).
-		Where(SelectDistance()).
-		All(ctx)
-	fmt.Println(res)
-	if err != nil {
-		return nil, err
-	}
-	panic(fmt.Errorf("not implemented"))
-}
-
 func (r *queryResolver) GetProductsByRestaurantID(ctx context.Context, input model.ProductsFilterByRestaurantInput) ([]*ent.Product, error) {
 	//No jala
 	restaurant, err := r.EntClient.Restaurant.
@@ -590,17 +650,54 @@ func (r *queryResolver) GetProductsByRestaurantID(ctx context.Context, input mod
 	return restaurant.Edges.Products, nil
 }
 
-func (r *queryResolver) GetRestaurantByID(ctx context.Context, input int) (*ent.Restaurant, error) {
-	restaurant, err := r.EntClient.Restaurant.
-		Query().
-		Where(restaurant.ID(input)).
-		First(ctx)
-
+func (r *queryResolver) GetProductByID(ctx context.Context, input int) (*ent.Product, error) {
+	res, err := r.EntClient.Product.Get(ctx, input)
 	if err != nil {
 		return nil, err
 	}
+	return res, nil
+}
 
-	return restaurant, nil
+func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) ([]*ent.Product, error) {
+	var products []ent.Product
+	//restaurants, err:= r.EntClient.Restaurant.
+	kratosUser := auth.ForContext(ctx)
+	address, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		QueryAddress().
+		First(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(address.Geom)
+
+	//var restaurants []ent.Restaurant
+	//err = r.EntClient.Restaurant.
+	//	Query().
+	//	//QueryAddress().
+	//	//WithAddress().
+	//	//Where().
+	//	Where(OrderByDistanceP(restaurant.Table, *address.Geom)).
+	//	//GroupBy(restaurant.FieldID).
+	//	//Aggregate(SelectDistanceP("distance")).
+	//	Select(fmt.Sprintf(`st_distancesphere(geom, '%s') as "distance"`, *address.Geom), GetColumns(restaurant.Table, restaurant.Columns)...).
+	//	UnsafeScan(ctx, &restaurants)
+	//fmt.Println(restaurants)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	err = r.EntClient.Product.
+		Query().
+		Where(OrderByDistanceP(product.Table, *address.Geom)).
+		Select(fmt.Sprintf(`st_distancesphere(geom, '%s') as "distance"`, *address.Geom), GetColumns(product.Table, product.Columns)...).
+		UnsafeScan(ctx, &products)
+	fmt.Println(products)
+	if err != nil {
+		return nil, err
+	}
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*ent.Tag, error) {
@@ -630,6 +727,16 @@ func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]*e
 		// fmt.Printf("key: %v, value: %v\n", key, child.Data().(float64))
 	}
 	return tags, nil
+}
+
+func (r *ratingResolver) Product(ctx context.Context, obj *ent.Rating) (*ent.Product, error) {
+	product, err := r.EntClient.Rating.QueryProduct(obj).First(ctx)
+	return product, ent.MaskNotFound(err)
+}
+
+func (r *ratingResolver) Customer(ctx context.Context, obj *ent.Rating) (*ent.Customer, error) {
+	customer, err := r.EntClient.Rating.QueryCustomer(obj).First(ctx)
+	return customer, ent.MaskNotFound(err)
 }
 
 func (r *restaurantResolver) Address(ctx context.Context, obj *ent.Restaurant) (*ent.Address, error) {
@@ -674,6 +781,9 @@ func (r *Resolver) Product() generated.ProductResolver { return &productResolver
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Rating returns generated.RatingResolver implementation.
+func (r *Resolver) Rating() generated.RatingResolver { return &ratingResolver{r} }
+
 // Restaurant returns generated.RestaurantResolver implementation.
 func (r *Resolver) Restaurant() generated.RestaurantResolver { return &restaurantResolver{r} }
 
@@ -686,5 +796,16 @@ type customerResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type productResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type ratingResolver struct{ *Resolver }
 type restaurantResolver struct{ *Resolver }
 type restaurantOwnerResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *productResolver) Distance(ctx context.Context, obj *ent.Product) (float64, error) {
+	panic(fmt.Errorf("not implemented"))
+}

@@ -9,6 +9,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/predicate"
+	"foodworks.ml/m/internal/generated/ent/rating"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -71,6 +72,21 @@ func (cu *CustomerUpdate) SetAddress(a *Address) *CustomerUpdate {
 	return cu.SetAddressID(a.ID)
 }
 
+// AddRatingIDs adds the ratings edge to Rating by ids.
+func (cu *CustomerUpdate) AddRatingIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.AddRatingIDs(ids...)
+	return cu
+}
+
+// AddRatings adds the ratings edges to Rating.
+func (cu *CustomerUpdate) AddRatings(r ...*Rating) *CustomerUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return cu.AddRatingIDs(ids...)
+}
+
 // Mutation returns the CustomerMutation object of the builder.
 func (cu *CustomerUpdate) Mutation() *CustomerMutation {
 	return cu.mutation
@@ -80,6 +96,27 @@ func (cu *CustomerUpdate) Mutation() *CustomerMutation {
 func (cu *CustomerUpdate) ClearAddress() *CustomerUpdate {
 	cu.mutation.ClearAddress()
 	return cu
+}
+
+// ClearRatings clears all "ratings" edges to type Rating.
+func (cu *CustomerUpdate) ClearRatings() *CustomerUpdate {
+	cu.mutation.ClearRatings()
+	return cu
+}
+
+// RemoveRatingIDs removes the ratings edge to Rating by ids.
+func (cu *CustomerUpdate) RemoveRatingIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.RemoveRatingIDs(ids...)
+	return cu
+}
+
+// RemoveRatings removes ratings edges to Rating.
+func (cu *CustomerUpdate) RemoveRatings(r ...*Rating) *CustomerUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return cu.RemoveRatingIDs(ids...)
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -214,6 +251,60 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if cu.mutation.RatingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.RatingsTable,
+			Columns: []string{customer.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.RemovedRatingsIDs(); len(nodes) > 0 && !cu.mutation.RatingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.RatingsTable,
+			Columns: []string{customer.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.RatingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.RatingsTable,
+			Columns: []string{customer.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, cu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{customer.Label}
@@ -275,6 +366,21 @@ func (cuo *CustomerUpdateOne) SetAddress(a *Address) *CustomerUpdateOne {
 	return cuo.SetAddressID(a.ID)
 }
 
+// AddRatingIDs adds the ratings edge to Rating by ids.
+func (cuo *CustomerUpdateOne) AddRatingIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.AddRatingIDs(ids...)
+	return cuo
+}
+
+// AddRatings adds the ratings edges to Rating.
+func (cuo *CustomerUpdateOne) AddRatings(r ...*Rating) *CustomerUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return cuo.AddRatingIDs(ids...)
+}
+
 // Mutation returns the CustomerMutation object of the builder.
 func (cuo *CustomerUpdateOne) Mutation() *CustomerMutation {
 	return cuo.mutation
@@ -284,6 +390,27 @@ func (cuo *CustomerUpdateOne) Mutation() *CustomerMutation {
 func (cuo *CustomerUpdateOne) ClearAddress() *CustomerUpdateOne {
 	cuo.mutation.ClearAddress()
 	return cuo
+}
+
+// ClearRatings clears all "ratings" edges to type Rating.
+func (cuo *CustomerUpdateOne) ClearRatings() *CustomerUpdateOne {
+	cuo.mutation.ClearRatings()
+	return cuo
+}
+
+// RemoveRatingIDs removes the ratings edge to Rating by ids.
+func (cuo *CustomerUpdateOne) RemoveRatingIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.RemoveRatingIDs(ids...)
+	return cuo
+}
+
+// RemoveRatings removes ratings edges to Rating.
+func (cuo *CustomerUpdateOne) RemoveRatings(r ...*Rating) *CustomerUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return cuo.RemoveRatingIDs(ids...)
 }
 
 // Save executes the query and returns the updated entity.
@@ -408,6 +535,60 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: address.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cuo.mutation.RatingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.RatingsTable,
+			Columns: []string{customer.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.RemovedRatingsIDs(); len(nodes) > 0 && !cuo.mutation.RatingsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.RatingsTable,
+			Columns: []string{customer.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.RatingsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.RatingsTable,
+			Columns: []string{customer.RatingsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: rating.FieldID,
 				},
 			},
 		}

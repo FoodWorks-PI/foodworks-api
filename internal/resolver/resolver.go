@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	"foodworks.ml/m/internal/generated/ent"
 	"foodworks.ml/m/internal/generated/ent/address"
+	"foodworks.ml/m/internal/generated/ent/product"
+	"foodworks.ml/m/internal/generated/ent/restaurant"
+
+	"foodworks.ml/m/internal/generated/ent"
 	"foodworks.ml/m/internal/platform/filehandler"
 	"github.com/elastic/go-elasticsearch/v6"
 	"github.com/facebook/ent/dialect/sql"
@@ -64,30 +67,61 @@ func GetOrCreateTagId(r *Resolver, tags []string, ctx context.Context) ([]*ent.T
 	values = append(values, newTags...)
 	return values, nil
 }
-func OrderByDistanceP() func(selector *sql.Selector) {
+func OrderByDistanceP(table string, distance string) func(selector *sql.Selector) {
 	return func(s *sql.Selector) {
-		s.SetDistinct(false)
-		s.Where(P(fmt.Sprint("1=1 ORDER BY geom <-> '010100000017CAF411D9CB58C011B34DE08C5C3340'")))
+		addressTable := sql.Table(address.Table)
+		switch table {
+		case restaurant.Table:
+			fmt.Println("hi")
+			s.Join(addressTable).On(addressTable.C(address.FieldID), s.C(restaurant.AddressColumn))
+		case product.Table:
+			restaurantProductTable := sql.Table(product.RestaurantTable).As("t0")
+			restaurantTable := sql.Table(restaurant.Table).As("t1")
+			addressTable = addressTable.As("t2")
+			s.Join(restaurantProductTable).On(restaurantProductTable.C(restaurant.ProductsPrimaryKey[1]),
+				s.C(product.FieldID))
+			s.Join(restaurantTable).On(restaurantProductTable.C(restaurant.ProductsPrimaryKey[0]),
+				restaurantTable.C(restaurant.FieldID))
+			s.Join(addressTable).On(addressTable.C(address.FieldID), restaurantTable.C(restaurant.AddressColumn))
+		}
+		s.Where(P(fmt.Sprintf("1=1 ORDER BY geom <-> '%s'", distance)))
+	}
+}
+
+func GetColumns(prefix string, columns []string) []string {
+
+	newColumns := make([]string, len(columns))
+	for i, column := range columns {
+		newColumns[i] = fmt.Sprintf(`"%s"."%s"`, prefix, column)
+	}
+	return newColumns
+}
+func SelectDistanceP(str string) ent.AggregateFunc {
+	return func(s *sql.Selector, _ func(string) bool) string {
+		//columns := make([]string, len(restaurant.Columns))
+		//addressTable := sql.Table(address.Table)
+		//for i, column := range restaurant.Columns {
+		//	columns[i] = s.C(column)
+		//}
+		//s.Join(addressTable).On(addressTable.C(address.FieldID), s.C(restaurant.AddressColumn))
+		//columns = append(columns, `st_distancesphere(st_makepoint(19.37991393,-99.17228876),st_makepoint(19.37748,-99.16799)) as "distance"`)
+		////columns = append(columns, restaurant.Columns...)
+		//s.Select(columns...)
+		return str
 	}
 }
 
 func SelectDistance() func(selector *sql.Selector) {
 	return func(s *sql.Selector) {
-		s.Select(address.Columns...)
-		//s.WriteString("12 as distance")
-		//s.Offset()
-		//tmp : s.String()
-		//v:=reflect.ValueOf(s).Elem()
-		//tmp1 ,tmp2 := s.Query()
-		//fmt.Println(tmp1,tmp2)
-		//fmt.Println(s.Columns(address.Columns...))
-		//f := v.FieldByName("columns").Type()
-		//f := v.FieldByName("columns")
-		//fv := reflect.ValueOf(f)
-		//fmt.Println(f.Kind())
-		//fmt.Println(fv)
-		//y := v.FieldByName("columns")
-		//fmt.Println(y.Interface())
+		columns := make([]string, len(restaurant.Columns))
+		addressTable := sql.Table(address.Table)
+		for i, column := range restaurant.Columns {
+			columns[i] = s.C(column)
+		}
+		s.Join(addressTable).On(addressTable.C(address.FieldID), s.C(restaurant.AddressColumn))
+		columns = append(columns, `st_distancesphere(st_makepoint(19.37991393,-99.17228876),st_makepoint(19.37748,-99.16799)) as "distance"`)
+		//columns = append(columns, restaurant.Columns...)
+		s.Select(columns...)
 		//fmt.Println(tmp)
 		//s.Select()
 		//s.Select("st_distancesphere(st_makepoint(19.37991393,-99.17228876),st_makepoint(19.37748,-99.16799))")

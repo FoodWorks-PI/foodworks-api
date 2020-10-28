@@ -18,7 +18,7 @@ type Product struct {
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
-	Description string `json:"description,omitempty"`
+	Description *string `json:"description,omitempty"`
 	// Cost holds the value of the "cost" field.
 	Cost int `json:"cost,omitempty"`
 	// IsActive holds the value of the "is_active" field.
@@ -26,17 +26,22 @@ type Product struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProductQuery when eager-loading is set.
 	Edges ProductEdges `json:"edges"`
+
+	// StaticField defined by templates.
+	Distance float64 `json:"distance,omitempty"`
 }
 
 // ProductEdges holds the relations/edges for other nodes in the graph.
 type ProductEdges struct {
 	// Tags holds the value of the tags edge.
 	Tags []*Tag
+	// Ratings holds the value of the ratings edge.
+	Ratings []*Rating
 	// Restaurant holds the value of the restaurant edge.
 	Restaurant []*Restaurant
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -48,10 +53,19 @@ func (e ProductEdges) TagsOrErr() ([]*Tag, error) {
 	return nil, &NotLoadedError{edge: "tags"}
 }
 
+// RatingsOrErr returns the Ratings value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProductEdges) RatingsOrErr() ([]*Rating, error) {
+	if e.loadedTypes[1] {
+		return e.Ratings, nil
+	}
+	return nil, &NotLoadedError{edge: "ratings"}
+}
+
 // RestaurantOrErr returns the Restaurant value or an error if the edge
 // was not loaded in eager-loading.
 func (e ProductEdges) RestaurantOrErr() ([]*Restaurant, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Restaurant, nil
 	}
 	return nil, &NotLoadedError{edge: "restaurant"}
@@ -88,7 +102,8 @@ func (pr *Product) assignValues(values ...interface{}) error {
 	if value, ok := values[1].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field description", values[1])
 	} else if value.Valid {
-		pr.Description = value.String
+		pr.Description = new(string)
+		*pr.Description = value.String
 	}
 	if value, ok := values[2].(*sql.NullInt64); !ok {
 		return fmt.Errorf("unexpected type %T for field cost", values[2])
@@ -106,6 +121,11 @@ func (pr *Product) assignValues(values ...interface{}) error {
 // QueryTags queries the tags edge of the Product.
 func (pr *Product) QueryTags() *TagQuery {
 	return (&ProductClient{config: pr.config}).QueryTags(pr)
+}
+
+// QueryRatings queries the ratings edge of the Product.
+func (pr *Product) QueryRatings() *RatingQuery {
+	return (&ProductClient{config: pr.config}).QueryRatings(pr)
 }
 
 // QueryRestaurant queries the restaurant edge of the Product.
@@ -138,8 +158,10 @@ func (pr *Product) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", pr.ID))
 	builder.WriteString(", name=")
 	builder.WriteString(pr.Name)
-	builder.WriteString(", description=")
-	builder.WriteString(pr.Description)
+	if v := pr.Description; v != nil {
+		builder.WriteString(", description=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", cost=")
 	builder.WriteString(fmt.Sprintf("%v", pr.Cost))
 	builder.WriteString(", is_active=")

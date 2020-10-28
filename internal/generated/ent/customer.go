@@ -34,9 +34,11 @@ type Customer struct {
 type CustomerEdges struct {
 	// Address holds the value of the address edge.
 	Address *Address
+	// Ratings holds the value of the ratings edge.
+	Ratings []*Rating
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // AddressOrErr returns the Address value or an error if the edge
@@ -51,6 +53,15 @@ func (e CustomerEdges) AddressOrErr() (*Address, error) {
 		return e.Address, nil
 	}
 	return nil, &NotLoadedError{edge: "address"}
+}
+
+// RatingsOrErr returns the Ratings value or an error if the edge
+// was not loaded in eager-loading.
+func (e CustomerEdges) RatingsOrErr() ([]*Rating, error) {
+	if e.loadedTypes[1] {
+		return e.Ratings, nil
+	}
+	return nil, &NotLoadedError{edge: "ratings"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -118,6 +129,11 @@ func (c *Customer) assignValues(values ...interface{}) error {
 // QueryAddress queries the address edge of the Customer.
 func (c *Customer) QueryAddress() *AddressQuery {
 	return (&CustomerClient{config: c.config}).QueryAddress(c)
+}
+
+// QueryRatings queries the ratings edge of the Customer.
+func (c *Customer) QueryRatings() *RatingQuery {
+	return (&CustomerClient{config: c.config}).QueryRatings(c)
 }
 
 // Update returns a builder for updating this Customer.

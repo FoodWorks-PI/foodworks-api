@@ -73,7 +73,7 @@ func (a *API) SetupRoutes(entClient *ent.Client, dbClient *sqlx.DB, redisClient 
 				Resolvers: &resolver.Resolver{EntClient: entClient, Redis: redisClient, DBClient: dbClient,
 					ElasticClient: elasticClient, FileHandler: fileHandler}}))
 			router.Handle("/", srv)
-			router.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
+			router.Handle("/playground", playground.Handler("GraphQL playground", "/api/graphql"))
 		})
 	})
 	a.Router = router

@@ -27,6 +27,7 @@ func (Customer) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("address", Address.Type).
 			Unique(),
+		edge.To("ratings", Rating.Type),
 	}
 }
 

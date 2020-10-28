@@ -18,6 +18,8 @@ const (
 
 	// EdgeAddress holds the string denoting the address edge name in mutations.
 	EdgeAddress = "address"
+	// EdgeRatings holds the string denoting the ratings edge name in mutations.
+	EdgeRatings = "ratings"
 
 	// Table holds the table name of the customer in the database.
 	Table = "customers"
@@ -28,6 +30,13 @@ const (
 	AddressInverseTable = "addresses"
 	// AddressColumn is the table column denoting the address relation/edge.
 	AddressColumn = "customer_address"
+	// RatingsTable is the table the holds the ratings relation/edge.
+	RatingsTable = "ratings"
+	// RatingsInverseTable is the table name for the Rating entity.
+	// It exists in this package in order to avoid circular dependency with the "rating" package.
+	RatingsInverseTable = "ratings"
+	// RatingsColumn is the table column denoting the ratings relation/edge.
+	RatingsColumn = "customer_ratings"
 )
 
 // Columns holds all SQL columns for customer fields.
