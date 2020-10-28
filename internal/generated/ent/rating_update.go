@@ -48,34 +48,42 @@ func (ru *RatingUpdate) AddRating(i int) *RatingUpdate {
 	return ru
 }
 
-// AddCustomerIDs adds the customer edge to Customer by ids.
-func (ru *RatingUpdate) AddCustomerIDs(ids ...int) *RatingUpdate {
-	ru.mutation.AddCustomerIDs(ids...)
+// SetCustomerID sets the customer edge to Customer by id.
+func (ru *RatingUpdate) SetCustomerID(id int) *RatingUpdate {
+	ru.mutation.SetCustomerID(id)
 	return ru
 }
 
-// AddCustomer adds the customer edges to Customer.
-func (ru *RatingUpdate) AddCustomer(c ...*Customer) *RatingUpdate {
-	ids := make([]int, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
+// SetNillableCustomerID sets the customer edge to Customer by id if the given value is not nil.
+func (ru *RatingUpdate) SetNillableCustomerID(id *int) *RatingUpdate {
+	if id != nil {
+		ru = ru.SetCustomerID(*id)
 	}
-	return ru.AddCustomerIDs(ids...)
-}
-
-// AddProductIDs adds the product edge to Product by ids.
-func (ru *RatingUpdate) AddProductIDs(ids ...int) *RatingUpdate {
-	ru.mutation.AddProductIDs(ids...)
 	return ru
 }
 
-// AddProduct adds the product edges to Product.
-func (ru *RatingUpdate) AddProduct(p ...*Product) *RatingUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// SetCustomer sets the customer edge to Customer.
+func (ru *RatingUpdate) SetCustomer(c *Customer) *RatingUpdate {
+	return ru.SetCustomerID(c.ID)
+}
+
+// SetProductID sets the product edge to Product by id.
+func (ru *RatingUpdate) SetProductID(id int) *RatingUpdate {
+	ru.mutation.SetProductID(id)
+	return ru
+}
+
+// SetNillableProductID sets the product edge to Product by id if the given value is not nil.
+func (ru *RatingUpdate) SetNillableProductID(id *int) *RatingUpdate {
+	if id != nil {
+		ru = ru.SetProductID(*id)
 	}
-	return ru.AddProductIDs(ids...)
+	return ru
+}
+
+// SetProduct sets the product edge to Product.
+func (ru *RatingUpdate) SetProduct(p *Product) *RatingUpdate {
+	return ru.SetProductID(p.ID)
 }
 
 // Mutation returns the RatingMutation object of the builder.
@@ -83,46 +91,16 @@ func (ru *RatingUpdate) Mutation() *RatingMutation {
 	return ru.mutation
 }
 
-// ClearCustomer clears all "customer" edges to type Customer.
+// ClearCustomer clears the "customer" edge to type Customer.
 func (ru *RatingUpdate) ClearCustomer() *RatingUpdate {
 	ru.mutation.ClearCustomer()
 	return ru
 }
 
-// RemoveCustomerIDs removes the customer edge to Customer by ids.
-func (ru *RatingUpdate) RemoveCustomerIDs(ids ...int) *RatingUpdate {
-	ru.mutation.RemoveCustomerIDs(ids...)
-	return ru
-}
-
-// RemoveCustomer removes customer edges to Customer.
-func (ru *RatingUpdate) RemoveCustomer(c ...*Customer) *RatingUpdate {
-	ids := make([]int, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return ru.RemoveCustomerIDs(ids...)
-}
-
-// ClearProduct clears all "product" edges to type Product.
+// ClearProduct clears the "product" edge to type Product.
 func (ru *RatingUpdate) ClearProduct() *RatingUpdate {
 	ru.mutation.ClearProduct()
 	return ru
-}
-
-// RemoveProductIDs removes the product edge to Product by ids.
-func (ru *RatingUpdate) RemoveProductIDs(ids ...int) *RatingUpdate {
-	ru.mutation.RemoveProductIDs(ids...)
-	return ru
-}
-
-// RemoveProduct removes product edges to Product.
-func (ru *RatingUpdate) RemoveProduct(p ...*Product) *RatingUpdate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return ru.RemoveProductIDs(ids...)
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -217,10 +195,10 @@ func (ru *RatingUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if ru.mutation.CustomerCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   rating.CustomerTable,
-			Columns: rating.CustomerPrimaryKey,
+			Columns: []string{rating.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -228,34 +206,15 @@ func (ru *RatingUpdate) sqlSave(ctx context.Context) (n int, err error) {
 					Column: customer.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ru.mutation.RemovedCustomerIDs(); len(nodes) > 0 && !ru.mutation.CustomerCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   rating.CustomerTable,
-			Columns: rating.CustomerPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := ru.mutation.CustomerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   rating.CustomerTable,
-			Columns: rating.CustomerPrimaryKey,
+			Columns: []string{rating.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -271,10 +230,10 @@ func (ru *RatingUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if ru.mutation.ProductCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   rating.ProductTable,
-			Columns: rating.ProductPrimaryKey,
+			Columns: []string{rating.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -282,34 +241,15 @@ func (ru *RatingUpdate) sqlSave(ctx context.Context) (n int, err error) {
 					Column: product.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ru.mutation.RemovedProductIDs(); len(nodes) > 0 && !ru.mutation.ProductCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   rating.ProductTable,
-			Columns: rating.ProductPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := ru.mutation.ProductIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   rating.ProductTable,
-			Columns: rating.ProductPrimaryKey,
+			Columns: []string{rating.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -360,34 +300,42 @@ func (ruo *RatingUpdateOne) AddRating(i int) *RatingUpdateOne {
 	return ruo
 }
 
-// AddCustomerIDs adds the customer edge to Customer by ids.
-func (ruo *RatingUpdateOne) AddCustomerIDs(ids ...int) *RatingUpdateOne {
-	ruo.mutation.AddCustomerIDs(ids...)
+// SetCustomerID sets the customer edge to Customer by id.
+func (ruo *RatingUpdateOne) SetCustomerID(id int) *RatingUpdateOne {
+	ruo.mutation.SetCustomerID(id)
 	return ruo
 }
 
-// AddCustomer adds the customer edges to Customer.
-func (ruo *RatingUpdateOne) AddCustomer(c ...*Customer) *RatingUpdateOne {
-	ids := make([]int, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
+// SetNillableCustomerID sets the customer edge to Customer by id if the given value is not nil.
+func (ruo *RatingUpdateOne) SetNillableCustomerID(id *int) *RatingUpdateOne {
+	if id != nil {
+		ruo = ruo.SetCustomerID(*id)
 	}
-	return ruo.AddCustomerIDs(ids...)
-}
-
-// AddProductIDs adds the product edge to Product by ids.
-func (ruo *RatingUpdateOne) AddProductIDs(ids ...int) *RatingUpdateOne {
-	ruo.mutation.AddProductIDs(ids...)
 	return ruo
 }
 
-// AddProduct adds the product edges to Product.
-func (ruo *RatingUpdateOne) AddProduct(p ...*Product) *RatingUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// SetCustomer sets the customer edge to Customer.
+func (ruo *RatingUpdateOne) SetCustomer(c *Customer) *RatingUpdateOne {
+	return ruo.SetCustomerID(c.ID)
+}
+
+// SetProductID sets the product edge to Product by id.
+func (ruo *RatingUpdateOne) SetProductID(id int) *RatingUpdateOne {
+	ruo.mutation.SetProductID(id)
+	return ruo
+}
+
+// SetNillableProductID sets the product edge to Product by id if the given value is not nil.
+func (ruo *RatingUpdateOne) SetNillableProductID(id *int) *RatingUpdateOne {
+	if id != nil {
+		ruo = ruo.SetProductID(*id)
 	}
-	return ruo.AddProductIDs(ids...)
+	return ruo
+}
+
+// SetProduct sets the product edge to Product.
+func (ruo *RatingUpdateOne) SetProduct(p *Product) *RatingUpdateOne {
+	return ruo.SetProductID(p.ID)
 }
 
 // Mutation returns the RatingMutation object of the builder.
@@ -395,46 +343,16 @@ func (ruo *RatingUpdateOne) Mutation() *RatingMutation {
 	return ruo.mutation
 }
 
-// ClearCustomer clears all "customer" edges to type Customer.
+// ClearCustomer clears the "customer" edge to type Customer.
 func (ruo *RatingUpdateOne) ClearCustomer() *RatingUpdateOne {
 	ruo.mutation.ClearCustomer()
 	return ruo
 }
 
-// RemoveCustomerIDs removes the customer edge to Customer by ids.
-func (ruo *RatingUpdateOne) RemoveCustomerIDs(ids ...int) *RatingUpdateOne {
-	ruo.mutation.RemoveCustomerIDs(ids...)
-	return ruo
-}
-
-// RemoveCustomer removes customer edges to Customer.
-func (ruo *RatingUpdateOne) RemoveCustomer(c ...*Customer) *RatingUpdateOne {
-	ids := make([]int, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
-	}
-	return ruo.RemoveCustomerIDs(ids...)
-}
-
-// ClearProduct clears all "product" edges to type Product.
+// ClearProduct clears the "product" edge to type Product.
 func (ruo *RatingUpdateOne) ClearProduct() *RatingUpdateOne {
 	ruo.mutation.ClearProduct()
 	return ruo
-}
-
-// RemoveProductIDs removes the product edge to Product by ids.
-func (ruo *RatingUpdateOne) RemoveProductIDs(ids ...int) *RatingUpdateOne {
-	ruo.mutation.RemoveProductIDs(ids...)
-	return ruo
-}
-
-// RemoveProduct removes product edges to Product.
-func (ruo *RatingUpdateOne) RemoveProduct(p ...*Product) *RatingUpdateOne {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return ruo.RemoveProductIDs(ids...)
 }
 
 // Save executes the query and returns the updated entity.
@@ -527,10 +445,10 @@ func (ruo *RatingUpdateOne) sqlSave(ctx context.Context) (_node *Rating, err err
 	}
 	if ruo.mutation.CustomerCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   rating.CustomerTable,
-			Columns: rating.CustomerPrimaryKey,
+			Columns: []string{rating.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -538,34 +456,15 @@ func (ruo *RatingUpdateOne) sqlSave(ctx context.Context) (_node *Rating, err err
 					Column: customer.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ruo.mutation.RemovedCustomerIDs(); len(nodes) > 0 && !ruo.mutation.CustomerCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   rating.CustomerTable,
-			Columns: rating.CustomerPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: customer.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := ruo.mutation.CustomerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   rating.CustomerTable,
-			Columns: rating.CustomerPrimaryKey,
+			Columns: []string{rating.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -581,10 +480,10 @@ func (ruo *RatingUpdateOne) sqlSave(ctx context.Context) (_node *Rating, err err
 	}
 	if ruo.mutation.ProductCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   rating.ProductTable,
-			Columns: rating.ProductPrimaryKey,
+			Columns: []string{rating.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -592,34 +491,15 @@ func (ruo *RatingUpdateOne) sqlSave(ctx context.Context) (_node *Rating, err err
 					Column: product.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ruo.mutation.RemovedProductIDs(); len(nodes) > 0 && !ruo.mutation.ProductCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   rating.ProductTable,
-			Columns: rating.ProductPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: product.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := ruo.mutation.ProductIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   rating.ProductTable,
-			Columns: rating.ProductPrimaryKey,
+			Columns: []string{rating.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

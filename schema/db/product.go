@@ -18,6 +18,7 @@ func (Product) Fields() []ent.Field {
 		field.String("name"),
 		field.String("description").
 			Optional().
+			Nillable().
 			SchemaType(map[string]string{
 				dialect.Postgres: "zdb.fulltext",
 			}),

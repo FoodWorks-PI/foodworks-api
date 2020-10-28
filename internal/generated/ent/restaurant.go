@@ -24,6 +24,9 @@ type Restaurant struct {
 	// The values are being populated by the RestaurantQuery when eager-loading is set.
 	Edges              RestaurantEdges `json:"edges"`
 	restaurant_address *int
+
+	// StaticField defined by templates.
+	Distance float64 `json:"distance,omitempty"`
 }
 
 // RestaurantEdges holds the relations/edges for other nodes in the graph.

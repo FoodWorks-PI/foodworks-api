@@ -30,11 +30,13 @@ const (
 	// TagsInverseTable is the table name for the Tag entity.
 	// It exists in this package in order to avoid circular dependency with the "tag" package.
 	TagsInverseTable = "tags"
-	// RatingsTable is the table the holds the ratings relation/edge. The primary key declared below.
-	RatingsTable = "product_ratings"
+	// RatingsTable is the table the holds the ratings relation/edge.
+	RatingsTable = "ratings"
 	// RatingsInverseTable is the table name for the Rating entity.
 	// It exists in this package in order to avoid circular dependency with the "rating" package.
 	RatingsInverseTable = "ratings"
+	// RatingsColumn is the table column denoting the ratings relation/edge.
+	RatingsColumn = "product_ratings"
 	// RestaurantTable is the table the holds the restaurant relation/edge. The primary key declared below.
 	RestaurantTable = "restaurant_products"
 	// RestaurantInverseTable is the table name for the Restaurant entity.
@@ -55,9 +57,6 @@ var (
 	// TagsPrimaryKey and TagsColumn2 are the table columns denoting the
 	// primary key for the tags relation (M2M).
 	TagsPrimaryKey = []string{"product_id", "tag_id"}
-	// RatingsPrimaryKey and RatingsColumn2 are the table columns denoting the
-	// primary key for the ratings relation (M2M).
-	RatingsPrimaryKey = []string{"product_id", "rating_id"}
 	// RestaurantPrimaryKey and RestaurantColumn2 are the table columns denoting the
 	// primary key for the restaurant relation (M2M).
 	RestaurantPrimaryKey = []string{"restaurant_id", "product_id"}

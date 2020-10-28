@@ -1649,7 +1649,7 @@ func (m *ProductMutation) Description() (r string, exists bool) {
 // If the Product object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ProductMutation) OldDescription(ctx context.Context) (v string, err error) {
+func (m *ProductMutation) OldDescription(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldDescription is allowed only on UpdateOne operations")
 	}
@@ -2272,11 +2272,9 @@ type RatingMutation struct {
 	rating          *int
 	addrating       *int
 	clearedFields   map[string]struct{}
-	customer        map[int]struct{}
-	removedcustomer map[int]struct{}
+	customer        *int
 	clearedcustomer bool
-	product         map[int]struct{}
-	removedproduct  map[int]struct{}
+	product         *int
 	clearedproduct  bool
 	done            bool
 	oldValue        func(context.Context) (*Rating, error)
@@ -2455,14 +2453,9 @@ func (m *RatingMutation) ResetRating() {
 	m.addrating = nil
 }
 
-// AddCustomerIDs adds the customer edge to Customer by ids.
-func (m *RatingMutation) AddCustomerIDs(ids ...int) {
-	if m.customer == nil {
-		m.customer = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.customer[ids[i]] = struct{}{}
-	}
+// SetCustomerID sets the customer edge to Customer by id.
+func (m *RatingMutation) SetCustomerID(id int) {
+	m.customer = &id
 }
 
 // ClearCustomer clears the customer edge to Customer.
@@ -2475,28 +2468,20 @@ func (m *RatingMutation) CustomerCleared() bool {
 	return m.clearedcustomer
 }
 
-// RemoveCustomerIDs removes the customer edge to Customer by ids.
-func (m *RatingMutation) RemoveCustomerIDs(ids ...int) {
-	if m.removedcustomer == nil {
-		m.removedcustomer = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.removedcustomer[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedCustomer returns the removed ids of customer.
-func (m *RatingMutation) RemovedCustomerIDs() (ids []int) {
-	for id := range m.removedcustomer {
-		ids = append(ids, id)
+// CustomerID returns the customer id in the mutation.
+func (m *RatingMutation) CustomerID() (id int, exists bool) {
+	if m.customer != nil {
+		return *m.customer, true
 	}
 	return
 }
 
 // CustomerIDs returns the customer ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// CustomerID instead. It exists only for internal usage by the builders.
 func (m *RatingMutation) CustomerIDs() (ids []int) {
-	for id := range m.customer {
-		ids = append(ids, id)
+	if id := m.customer; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -2505,17 +2490,11 @@ func (m *RatingMutation) CustomerIDs() (ids []int) {
 func (m *RatingMutation) ResetCustomer() {
 	m.customer = nil
 	m.clearedcustomer = false
-	m.removedcustomer = nil
 }
 
-// AddProductIDs adds the product edge to Product by ids.
-func (m *RatingMutation) AddProductIDs(ids ...int) {
-	if m.product == nil {
-		m.product = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.product[ids[i]] = struct{}{}
-	}
+// SetProductID sets the product edge to Product by id.
+func (m *RatingMutation) SetProductID(id int) {
+	m.product = &id
 }
 
 // ClearProduct clears the product edge to Product.
@@ -2528,28 +2507,20 @@ func (m *RatingMutation) ProductCleared() bool {
 	return m.clearedproduct
 }
 
-// RemoveProductIDs removes the product edge to Product by ids.
-func (m *RatingMutation) RemoveProductIDs(ids ...int) {
-	if m.removedproduct == nil {
-		m.removedproduct = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.removedproduct[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedProduct returns the removed ids of product.
-func (m *RatingMutation) RemovedProductIDs() (ids []int) {
-	for id := range m.removedproduct {
-		ids = append(ids, id)
+// ProductID returns the product id in the mutation.
+func (m *RatingMutation) ProductID() (id int, exists bool) {
+	if m.product != nil {
+		return *m.product, true
 	}
 	return
 }
 
 // ProductIDs returns the product ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// ProductID instead. It exists only for internal usage by the builders.
 func (m *RatingMutation) ProductIDs() (ids []int) {
-	for id := range m.product {
-		ids = append(ids, id)
+	if id := m.product; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -2558,7 +2529,6 @@ func (m *RatingMutation) ProductIDs() (ids []int) {
 func (m *RatingMutation) ResetProduct() {
 	m.product = nil
 	m.clearedproduct = false
-	m.removedproduct = nil
 }
 
 // Op returns the operation name.
@@ -2723,17 +2693,13 @@ func (m *RatingMutation) AddedEdges() []string {
 func (m *RatingMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case rating.EdgeCustomer:
-		ids := make([]ent.Value, 0, len(m.customer))
-		for id := range m.customer {
-			ids = append(ids, id)
+		if id := m.customer; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case rating.EdgeProduct:
-		ids := make([]ent.Value, 0, len(m.product))
-		for id := range m.product {
-			ids = append(ids, id)
+		if id := m.product; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	}
 	return nil
 }
@@ -2742,12 +2708,6 @@ func (m *RatingMutation) AddedIDs(name string) []ent.Value {
 // mutation.
 func (m *RatingMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.removedcustomer != nil {
-		edges = append(edges, rating.EdgeCustomer)
-	}
-	if m.removedproduct != nil {
-		edges = append(edges, rating.EdgeProduct)
-	}
 	return edges
 }
 
@@ -2755,18 +2715,6 @@ func (m *RatingMutation) RemovedEdges() []string {
 // the given edge name.
 func (m *RatingMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case rating.EdgeCustomer:
-		ids := make([]ent.Value, 0, len(m.removedcustomer))
-		for id := range m.removedcustomer {
-			ids = append(ids, id)
-		}
-		return ids
-	case rating.EdgeProduct:
-		ids := make([]ent.Value, 0, len(m.removedproduct))
-		for id := range m.removedproduct {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
@@ -2800,6 +2748,12 @@ func (m *RatingMutation) EdgeCleared(name string) bool {
 // error if the edge name is not defined in the schema.
 func (m *RatingMutation) ClearEdge(name string) error {
 	switch name {
+	case rating.EdgeCustomer:
+		m.ClearCustomer()
+		return nil
+	case rating.EdgeProduct:
+		m.ClearProduct()
+		return nil
 	}
 	return fmt.Errorf("unknown Rating unique edge %s", name)
 }

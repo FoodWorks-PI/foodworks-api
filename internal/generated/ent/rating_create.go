@@ -33,34 +33,42 @@ func (rc *RatingCreate) SetRating(i int) *RatingCreate {
 	return rc
 }
 
-// AddCustomerIDs adds the customer edge to Customer by ids.
-func (rc *RatingCreate) AddCustomerIDs(ids ...int) *RatingCreate {
-	rc.mutation.AddCustomerIDs(ids...)
+// SetCustomerID sets the customer edge to Customer by id.
+func (rc *RatingCreate) SetCustomerID(id int) *RatingCreate {
+	rc.mutation.SetCustomerID(id)
 	return rc
 }
 
-// AddCustomer adds the customer edges to Customer.
-func (rc *RatingCreate) AddCustomer(c ...*Customer) *RatingCreate {
-	ids := make([]int, len(c))
-	for i := range c {
-		ids[i] = c[i].ID
+// SetNillableCustomerID sets the customer edge to Customer by id if the given value is not nil.
+func (rc *RatingCreate) SetNillableCustomerID(id *int) *RatingCreate {
+	if id != nil {
+		rc = rc.SetCustomerID(*id)
 	}
-	return rc.AddCustomerIDs(ids...)
-}
-
-// AddProductIDs adds the product edge to Product by ids.
-func (rc *RatingCreate) AddProductIDs(ids ...int) *RatingCreate {
-	rc.mutation.AddProductIDs(ids...)
 	return rc
 }
 
-// AddProduct adds the product edges to Product.
-func (rc *RatingCreate) AddProduct(p ...*Product) *RatingCreate {
-	ids := make([]int, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// SetCustomer sets the customer edge to Customer.
+func (rc *RatingCreate) SetCustomer(c *Customer) *RatingCreate {
+	return rc.SetCustomerID(c.ID)
+}
+
+// SetProductID sets the product edge to Product by id.
+func (rc *RatingCreate) SetProductID(id int) *RatingCreate {
+	rc.mutation.SetProductID(id)
+	return rc
+}
+
+// SetNillableProductID sets the product edge to Product by id if the given value is not nil.
+func (rc *RatingCreate) SetNillableProductID(id *int) *RatingCreate {
+	if id != nil {
+		rc = rc.SetProductID(*id)
 	}
-	return rc.AddProductIDs(ids...)
+	return rc
+}
+
+// SetProduct sets the product edge to Product.
+func (rc *RatingCreate) SetProduct(p *Product) *RatingCreate {
+	return rc.SetProductID(p.ID)
 }
 
 // Mutation returns the RatingMutation object of the builder.
@@ -165,10 +173,10 @@ func (rc *RatingCreate) createSpec() (*Rating, *sqlgraph.CreateSpec) {
 	}
 	if nodes := rc.mutation.CustomerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   rating.CustomerTable,
-			Columns: rating.CustomerPrimaryKey,
+			Columns: []string{rating.CustomerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -184,10 +192,10 @@ func (rc *RatingCreate) createSpec() (*Rating, *sqlgraph.CreateSpec) {
 	}
 	if nodes := rc.mutation.ProductIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   rating.ProductTable,
-			Columns: rating.ProductPrimaryKey,
+			Columns: []string{rating.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

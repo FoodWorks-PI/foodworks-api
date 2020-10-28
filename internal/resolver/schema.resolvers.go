@@ -459,8 +459,8 @@ func (r *mutationResolver) CreateProductRating(ctx context.Context, input model.
 		return -1, nil
 	}
 	rating, err := r.EntClient.Rating.Create().
-		AddProductIDs(input.ProductID).
-		AddCustomer(currentCustomer).
+		SetProductID(input.ProductID).
+		SetCustomer(currentCustomer).
 		SetRating(input.Rating).
 		SetComment(*input.Comment).
 		Save(ctx)
@@ -659,15 +659,41 @@ func (r *queryResolver) GetProductByID(ctx context.Context, input int) (*ent.Pro
 }
 
 func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) ([]*ent.Product, error) {
-	res, err := r.EntClient.Restaurant.
+	var products []ent.Product
+	//restaurants, err:= r.EntClient.Restaurant.
+	kratosUser := auth.ForContext(ctx)
+	address, err := r.EntClient.Customer.
 		Query().
-		//QueryAddress().
-		WithAddress().
-		Where().
-		Where(OrderByDistanceP()).
-		Where(SelectDistance()).
-		All(ctx)
-	fmt.Println(res)
+		Where(customer.KratosID(kratosUser.ID)).
+		QueryAddress().
+		First(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(address.Geom)
+
+	//var restaurants []ent.Restaurant
+	//err = r.EntClient.Restaurant.
+	//	Query().
+	//	//QueryAddress().
+	//	//WithAddress().
+	//	//Where().
+	//	Where(OrderByDistanceP(restaurant.Table, *address.Geom)).
+	//	//GroupBy(restaurant.FieldID).
+	//	//Aggregate(SelectDistanceP("distance")).
+	//	Select(fmt.Sprintf(`st_distancesphere(geom, '%s') as "distance"`, *address.Geom), GetColumns(restaurant.Table, restaurant.Columns)...).
+	//	UnsafeScan(ctx, &restaurants)
+	//fmt.Println(restaurants)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	err = r.EntClient.Product.
+		Query().
+		Where(OrderByDistanceP(product.Table, *address.Geom)).
+		Select(fmt.Sprintf(`st_distancesphere(geom, '%s') as "distance"`, *address.Geom), GetColumns(product.Table, product.Columns)...).
+		UnsafeScan(ctx, &products)
+	fmt.Println(products)
 	if err != nil {
 		return nil, err
 	}
@@ -773,3 +799,13 @@ type queryResolver struct{ *Resolver }
 type ratingResolver struct{ *Resolver }
 type restaurantResolver struct{ *Resolver }
 type restaurantOwnerResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *productResolver) Distance(ctx context.Context, obj *ent.Product) (float64, error) {
+	panic(fmt.Errorf("not implemented"))
+}

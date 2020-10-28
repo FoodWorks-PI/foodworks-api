@@ -30,11 +30,13 @@ const (
 	AddressInverseTable = "addresses"
 	// AddressColumn is the table column denoting the address relation/edge.
 	AddressColumn = "customer_address"
-	// RatingsTable is the table the holds the ratings relation/edge. The primary key declared below.
-	RatingsTable = "customer_ratings"
+	// RatingsTable is the table the holds the ratings relation/edge.
+	RatingsTable = "ratings"
 	// RatingsInverseTable is the table name for the Rating entity.
 	// It exists in this package in order to avoid circular dependency with the "rating" package.
 	RatingsInverseTable = "ratings"
+	// RatingsColumn is the table column denoting the ratings relation/edge.
+	RatingsColumn = "customer_ratings"
 )
 
 // Columns holds all SQL columns for customer fields.
@@ -50,12 +52,6 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"customer_address",
 }
-
-var (
-	// RatingsPrimaryKey and RatingsColumn2 are the table columns denoting the
-	// primary key for the ratings relation (M2M).
-	RatingsPrimaryKey = []string{"customer_id", "rating_id"}
-)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

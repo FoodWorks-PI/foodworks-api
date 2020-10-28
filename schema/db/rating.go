@@ -22,7 +22,7 @@ func (Rating) Fields() []ent.Field {
 // Edges of the Rating.
 func (Rating) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("customer", Customer.Type).Ref("ratings"),
-		edge.From("product", Product.Type).Ref("ratings"),
+		edge.From("customer", Customer.Type).Ref("ratings").Unique(),
+		edge.From("product", Product.Type).Ref("ratings").Unique(),
 	}
 }

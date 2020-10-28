@@ -597,7 +597,7 @@ func HasRatings() predicate.Customer {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(RatingsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, RatingsTable, RatingsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, RatingsTable, RatingsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -609,7 +609,7 @@ func HasRatingsWith(preds ...predicate.Rating) predicate.Customer {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(RatingsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, RatingsTable, RatingsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, RatingsTable, RatingsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

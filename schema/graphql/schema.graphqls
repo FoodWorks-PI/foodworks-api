@@ -10,6 +10,13 @@
 #   Email: String!
 # }
 
+ directive @hasRole(role: Role!) on FIELD_DEFINITION
+
+ enum Role {
+   OWNER
+   CUSTOMER
+ }
+
 #TODO: Image Upload/Download in: Product, Restaurant, Tag
 input RegisterAddressInput {
   latitude: Float!
@@ -105,6 +112,7 @@ type Product {
   averageRating: Float!
   ratings: [Rating!]!
   restaurant: Restaurant! # Es necesario?
+  distance: Float! @hasRole(role: CUSTOMER)
   # quantity: Int!
   # recurrence: Recurrence
 }
@@ -143,6 +151,7 @@ type Restaurant {
   tags: [Tag!]!
   products: [Product!]!
   restaurantOwner: RestaurantOwner!
+  distance: Float! @hasRole(role: CUSTOMER)
 }
 
 type Tag {
@@ -176,6 +185,11 @@ type RestaurantOwner {
 type RestaurantSearchResult {
   restaurant: Restaurant!
   distance: Float!
+}
+
+type ProductSearchResult {
+ product: Product!
+ distance: Float!
 }
 
 scalar Upload

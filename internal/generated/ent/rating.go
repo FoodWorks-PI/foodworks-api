@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/rating"
 	"github.com/facebook/ent/dialect/sql"
 )
@@ -21,33 +23,45 @@ type Rating struct {
 	Rating int `json:"rating,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RatingQuery when eager-loading is set.
-	Edges RatingEdges `json:"edges"`
+	Edges            RatingEdges `json:"edges"`
+	customer_ratings *int
+	product_ratings  *int
 }
 
 // RatingEdges holds the relations/edges for other nodes in the graph.
 type RatingEdges struct {
 	// Customer holds the value of the customer edge.
-	Customer []*Customer
+	Customer *Customer
 	// Product holds the value of the product edge.
-	Product []*Product
+	Product *Product
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
 }
 
 // CustomerOrErr returns the Customer value or an error if the edge
-// was not loaded in eager-loading.
-func (e RatingEdges) CustomerOrErr() ([]*Customer, error) {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RatingEdges) CustomerOrErr() (*Customer, error) {
 	if e.loadedTypes[0] {
+		if e.Customer == nil {
+			// The edge customer was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: customer.Label}
+		}
 		return e.Customer, nil
 	}
 	return nil, &NotLoadedError{edge: "customer"}
 }
 
 // ProductOrErr returns the Product value or an error if the edge
-// was not loaded in eager-loading.
-func (e RatingEdges) ProductOrErr() ([]*Product, error) {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RatingEdges) ProductOrErr() (*Product, error) {
 	if e.loadedTypes[1] {
+		if e.Product == nil {
+			// The edge product was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: product.Label}
+		}
 		return e.Product, nil
 	}
 	return nil, &NotLoadedError{edge: "product"}
@@ -59,6 +73,14 @@ func (*Rating) scanValues() []interface{} {
 		&sql.NullInt64{},  // id
 		&sql.NullString{}, // comment
 		&sql.NullInt64{},  // rating
+	}
+}
+
+// fkValues returns the types for scanning foreign-keys values from sql.Rows.
+func (*Rating) fkValues() []interface{} {
+	return []interface{}{
+		&sql.NullInt64{}, // customer_ratings
+		&sql.NullInt64{}, // product_ratings
 	}
 }
 
@@ -83,6 +105,21 @@ func (r *Rating) assignValues(values ...interface{}) error {
 		return fmt.Errorf("unexpected type %T for field rating", values[1])
 	} else if value.Valid {
 		r.Rating = int(value.Int64)
+	}
+	values = values[2:]
+	if len(values) == len(rating.ForeignKeys) {
+		if value, ok := values[0].(*sql.NullInt64); !ok {
+			return fmt.Errorf("unexpected type %T for edge-field customer_ratings", value)
+		} else if value.Valid {
+			r.customer_ratings = new(int)
+			*r.customer_ratings = int(value.Int64)
+		}
+		if value, ok := values[1].(*sql.NullInt64); !ok {
+			return fmt.Errorf("unexpected type %T for edge-field product_ratings", value)
+		} else if value.Valid {
+			r.product_ratings = new(int)
+			*r.product_ratings = int(value.Int64)
+		}
 	}
 	return nil
 }

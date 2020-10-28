@@ -1,11 +1,40 @@
 {{ define "model/fields/additional" }}
     {{- /* Add static fields to the "Card" entity. */}}
-    {{- if eq $.Name "Restaurant" }}
-        // StaticField defined by templates.
-        Distance float64 `json:"distance,omitempty"`
-    {{- end }}
-    {{- if eq $.Name "Address" }}
+    {{- if eq $.Name "Restaurant" "Product" }}
         // StaticField defined by templates.
         Distance float64 `json:"distance,omitempty"`
     {{- end }}
 {{ end }}
+
+{{define "external"}}
+{{ $pkg := base $.Config.Package }}
+{{ template "header" $ }}
+{{ range $n := $.Nodes }}
+    {{- if eq $n.Name "Address" "Restaurant" "Product"}}
+        {{ $receiver := $n.Receiver }}
+        func ({{ $receiver }} *{{ $n.Name }}Select) UnsafeSqlScan(ctx context.Context, v interface{}) error {
+            rows := &sql.Rows{}
+            query, args := {{ $receiver }}.UnsafeSqlQuery().Query()
+            if err := {{ $receiver }}.driver.Query(ctx, query, args, rows); err != nil {
+                return err
+            }
+            defer rows.Close()
+            return sql.ScanSlice(rows, v)
+        }
+        func ({{ $receiver }} *{{ $n.Name}}Select) UnsafeSqlQuery() sql.Querier {
+        	selector := {{ $receiver }}.sql
+        	selector.Select({{ $receiver }}.fields...)
+        	return selector
+        }
+        func ({{ $receiver }} *{{ $n.Name}}Select) UnsafeScan(ctx context.Context, v interface{}) error {
+        	query, err := {{ $receiver }}.path(ctx)
+        	if err != nil {
+        		return err
+        	}
+        	{{ $receiver }}.sql = query
+        	return {{ $receiver }}.UnsafeSqlScan(ctx, v)
+        }
+    {{- end }}
+{{ end }}
+
+{{end}}

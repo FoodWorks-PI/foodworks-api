@@ -19,16 +19,20 @@ const (
 
 	// Table holds the table name of the rating in the database.
 	Table = "ratings"
-	// CustomerTable is the table the holds the customer relation/edge. The primary key declared below.
-	CustomerTable = "customer_ratings"
+	// CustomerTable is the table the holds the customer relation/edge.
+	CustomerTable = "ratings"
 	// CustomerInverseTable is the table name for the Customer entity.
 	// It exists in this package in order to avoid circular dependency with the "customer" package.
 	CustomerInverseTable = "customers"
-	// ProductTable is the table the holds the product relation/edge. The primary key declared below.
-	ProductTable = "product_ratings"
+	// CustomerColumn is the table column denoting the customer relation/edge.
+	CustomerColumn = "customer_ratings"
+	// ProductTable is the table the holds the product relation/edge.
+	ProductTable = "ratings"
 	// ProductInverseTable is the table name for the Product entity.
 	// It exists in this package in order to avoid circular dependency with the "product" package.
 	ProductInverseTable = "products"
+	// ProductColumn is the table column denoting the product relation/edge.
+	ProductColumn = "product_ratings"
 )
 
 // Columns holds all SQL columns for rating fields.
@@ -38,19 +42,21 @@ var Columns = []string{
 	FieldRating,
 }
 
-var (
-	// CustomerPrimaryKey and CustomerColumn2 are the table columns denoting the
-	// primary key for the customer relation (M2M).
-	CustomerPrimaryKey = []string{"customer_id", "rating_id"}
-	// ProductPrimaryKey and ProductColumn2 are the table columns denoting the
-	// primary key for the product relation (M2M).
-	ProductPrimaryKey = []string{"product_id", "rating_id"}
-)
+// ForeignKeys holds the SQL foreign-keys that are owned by the Rating type.
+var ForeignKeys = []string{
+	"customer_ratings",
+	"product_ratings",
+}
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}

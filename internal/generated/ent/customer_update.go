@@ -253,10 +253,10 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if cu.mutation.RatingsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   customer.RatingsTable,
-			Columns: customer.RatingsPrimaryKey,
+			Columns: []string{customer.RatingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -269,10 +269,10 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := cu.mutation.RemovedRatingsIDs(); len(nodes) > 0 && !cu.mutation.RatingsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   customer.RatingsTable,
-			Columns: customer.RatingsPrimaryKey,
+			Columns: []string{customer.RatingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -288,10 +288,10 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := cu.mutation.RatingsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   customer.RatingsTable,
-			Columns: customer.RatingsPrimaryKey,
+			Columns: []string{customer.RatingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -545,10 +545,10 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 	}
 	if cuo.mutation.RatingsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   customer.RatingsTable,
-			Columns: customer.RatingsPrimaryKey,
+			Columns: []string{customer.RatingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -561,10 +561,10 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 	}
 	if nodes := cuo.mutation.RemovedRatingsIDs(); len(nodes) > 0 && !cuo.mutation.RatingsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   customer.RatingsTable,
-			Columns: customer.RatingsPrimaryKey,
+			Columns: []string{customer.RatingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -580,10 +580,10 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 	}
 	if nodes := cuo.mutation.RatingsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   customer.RatingsTable,
-			Columns: customer.RatingsPrimaryKey,
+			Columns: []string{customer.RatingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

@@ -3,12 +3,21 @@
 package model
 
 import (
+	"fmt"
+	"io"
+	"strconv"
+
 	"foodworks.ml/m/internal/generated/ent"
 	"github.com/99designs/gqlgen/graphql"
 )
 
 type DeleteImageInput struct {
 	FileNames []string `json:"fileNames"`
+}
+
+type ProductSearchResult struct {
+	Product  *ent.Product `json:"product"`
+	Distance float64      `json:"distance"`
 }
 
 type ProductsByAllFieldsInput struct {
@@ -111,4 +120,45 @@ type UpdateRestaurantOwnerInput struct {
 
 type UploadImageInput struct {
 	Files []*graphql.Upload `json:"files"`
+}
+
+type Role string
+
+const (
+	RoleOwner    Role = "OWNER"
+	RoleCustomer Role = "CUSTOMER"
+)
+
+var AllRole = []Role{
+	RoleOwner,
+	RoleCustomer,
+}
+
+func (e Role) IsValid() bool {
+	switch e {
+	case RoleOwner, RoleCustomer:
+		return true
+	}
+	return false
+}
+
+func (e Role) String() string {
+	return string(e)
+}
+
+func (e *Role) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Role(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Role", str)
+	}
+	return nil
+}
+
+func (e Role) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

@@ -200,7 +200,7 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: product.FieldDescription,
 		})
-		_node.Description = value
+		_node.Description = &value
 	}
 	if value, ok := pc.mutation.Cost(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -239,10 +239,10 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	}
 	if nodes := pc.mutation.RatingsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   product.RatingsTable,
-			Columns: product.RatingsPrimaryKey,
+			Columns: []string{product.RatingsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

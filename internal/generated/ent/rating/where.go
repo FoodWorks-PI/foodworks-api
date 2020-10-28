@@ -298,7 +298,7 @@ func HasCustomer() predicate.Rating {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(CustomerTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, CustomerTable, CustomerPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, CustomerTable, CustomerColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -310,7 +310,7 @@ func HasCustomerWith(preds ...predicate.Customer) predicate.Rating {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(CustomerInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, CustomerTable, CustomerPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, CustomerTable, CustomerColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
@@ -326,7 +326,7 @@ func HasProduct() predicate.Rating {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ProductTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, ProductTable, ProductPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, ProductTable, ProductColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -338,7 +338,7 @@ func HasProductWith(preds ...predicate.Product) predicate.Rating {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ProductInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, ProductTable, ProductPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, ProductTable, ProductColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

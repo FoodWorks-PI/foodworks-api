@@ -449,7 +449,7 @@ func (c *CustomerClient) QueryRatings(cu *Customer) *RatingQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(customer.Table, customer.FieldID, id),
 			sqlgraph.To(rating.Table, rating.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, customer.RatingsTable, customer.RatingsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, customer.RatingsTable, customer.RatingsColumn),
 		)
 		fromV = sqlgraph.Neighbors(cu.driver.Dialect(), step)
 		return fromV, nil
@@ -569,7 +569,7 @@ func (c *ProductClient) QueryRatings(pr *Product) *RatingQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(product.Table, product.FieldID, id),
 			sqlgraph.To(rating.Table, rating.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, product.RatingsTable, product.RatingsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, product.RatingsTable, product.RatingsColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -689,7 +689,7 @@ func (c *RatingClient) QueryCustomer(r *Rating) *CustomerQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(rating.Table, rating.FieldID, id),
 			sqlgraph.To(customer.Table, customer.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, rating.CustomerTable, rating.CustomerPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, rating.CustomerTable, rating.CustomerColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil
@@ -705,7 +705,7 @@ func (c *RatingClient) QueryProduct(r *Rating) *ProductQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(rating.Table, rating.FieldID, id),
 			sqlgraph.To(product.Table, product.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, rating.ProductTable, rating.ProductPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, rating.ProductTable, rating.ProductColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil

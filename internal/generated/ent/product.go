@@ -18,7 +18,7 @@ type Product struct {
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
-	Description string `json:"description,omitempty"`
+	Description *string `json:"description,omitempty"`
 	// Cost holds the value of the "cost" field.
 	Cost int `json:"cost,omitempty"`
 	// IsActive holds the value of the "is_active" field.
@@ -26,6 +26,9 @@ type Product struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProductQuery when eager-loading is set.
 	Edges ProductEdges `json:"edges"`
+
+	// StaticField defined by templates.
+	Distance float64 `json:"distance,omitempty"`
 }
 
 // ProductEdges holds the relations/edges for other nodes in the graph.
@@ -99,7 +102,8 @@ func (pr *Product) assignValues(values ...interface{}) error {
 	if value, ok := values[1].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field description", values[1])
 	} else if value.Valid {
-		pr.Description = value.String
+		pr.Description = new(string)
+		*pr.Description = value.String
 	}
 	if value, ok := values[2].(*sql.NullInt64); !ok {
 		return fmt.Errorf("unexpected type %T for field cost", values[2])
@@ -154,8 +158,10 @@ func (pr *Product) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", pr.ID))
 	builder.WriteString(", name=")
 	builder.WriteString(pr.Name)
-	builder.WriteString(", description=")
-	builder.WriteString(pr.Description)
+	if v := pr.Description; v != nil {
+		builder.WriteString(", description=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", cost=")
 	builder.WriteString(fmt.Sprintf("%v", pr.Cost))
 	builder.WriteString(", is_active=")
