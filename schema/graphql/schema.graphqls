@@ -106,7 +106,7 @@ type Product {
   ID: ID!
   name: String!
   description: String!
-  tags: [Tag!]!
+  tags: [String!]!
   cost: Int! # Manejar como centavos
   isActive: Boolean!
   averageRating: Float!
@@ -148,14 +148,10 @@ type Restaurant {
   name: String!
   description: String!
   address: Address!
-  tags: [Tag!]!
+  tags: [String!]!
   products: [Product!]!
   restaurantOwner: RestaurantOwner!
   distance: Float! @hasRole(role: CUSTOMER)
-}
-
-type Tag {
-  name: String!
 }
 
 input RegisterRestaurantOwnerInput {
@@ -213,7 +209,7 @@ type Query {
   getProductById(input: ID!): Product!
   getProductsByAllFields(input: ProductsByAllFieldsInput!): [Product!]!
 
-  autoCompleteTag(input: String!): [Tag]!
+  autoCompleteTag(input: String!): [String!]!
 }
 
 type Mutation {
