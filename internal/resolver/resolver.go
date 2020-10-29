@@ -86,12 +86,12 @@ func HasRole(entClient *ent.Client) func(ctx context.Context, obj interface{}, n
 		case model.RoleOwner:
 			exists, err := entClient.RestaurantOwner.Query().Where(restaurantowner.KratosID(kratosUser.ID)).Exist(ctx)
 			if err != nil || !exists {
-				return nil, fmt.Errorf("Access denied")
+				return nil, fmt.Errorf("access denied")
 			}
 		case model.RoleCustomer:
 			exists, err := entClient.Customer.Query().Where(customer.KratosID(kratosUser.ID)).Exist(ctx)
 			if err != nil || !exists {
-				return nil, fmt.Errorf("Access denied")
+				return nil, fmt.Errorf("access denied")
 			}
 		}
 		return next(ctx)
@@ -105,11 +105,11 @@ func HasRole(entClient *ent.Client) func(ctx context.Context, obj interface{}, n
 }
 
 func RemoveDuplicateRestaurant(restaurants []*ent.Restaurant) []*ent.Restaurant {
-	occured := map[int]bool{}
+	occurred := map[int]bool{}
 	result := make([]*ent.Restaurant, 0, len(restaurants))
 	for _, restaurant := range restaurants {
-		if !occured[restaurant.ID] {
-			occured[restaurant.ID] = true
+		if !occurred[restaurant.ID] {
+			occurred[restaurant.ID] = true
 			result = append(result, restaurant)
 		}
 	}

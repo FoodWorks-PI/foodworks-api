@@ -590,6 +590,10 @@ func (r *queryResolver) GetClosestRestaurants(ctx context.Context) ([]*ent.Resta
 		QueryAddress().
 		First(ctx)
 
+	if err != nil {
+		return nil, err
+	}
+
 	var restaurants []*ent.Restaurant
 	err = r.EntClient.Restaurant.
 		Query().
