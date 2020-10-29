@@ -72,7 +72,7 @@ func (a *API) SetupRoutes(entClient *ent.Client, dbClient *sqlx.DB, redisClient 
 			config := generated.Config{
 				Resolvers: &resolver.Resolver{EntClient: entClient, Redis: redisClient, DBClient: dbClient,
 					ElasticClient: elasticClient, FileHandler: fileHandler}}
-			config.Directives.HasRole = resolver.HasRole
+			config.Directives.HasRole = resolver.HasRole(entClient)
 			srv := newGraphQLServer(generated.NewExecutableSchema(config))
 			router.Handle("/", srv)
 			router.Handle("/playground", playground.Handler("GraphQL playground", "/api/graphql"))

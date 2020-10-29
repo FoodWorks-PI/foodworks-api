@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"foodworks.ml/m/internal/auth"
+	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/restaurantowner"
+
 	"foodworks.ml/m/internal/generated/graphql/model"
 	"github.com/99designs/gqlgen/graphql"
 
@@ -75,15 +79,29 @@ func GetOrCreateTagId(r *Resolver, tags []string, ctx context.Context) ([]*ent.T
 	values = append(values, newTags...)
 	return values, nil
 }
-func HasRole(ctx context.Context, obj interface{}, next graphql.Resolver, role model.Role) (interface{}, error) {
-	//kratosUser := auth.ForContext(ctx)
+func HasRole(entClient *ent.Client) func(ctx context.Context, obj interface{}, next graphql.Resolver, role model.Role) (interface{}, error) {
+	return func(ctx context.Context, obj interface{}, next graphql.Resolver, role model.Role) (interface{}, error) {
+		kratosUser := auth.ForContext(ctx)
+		switch role {
+		case model.RoleOwner:
+			exists, err := entClient.RestaurantOwner.Query().Where(restaurantowner.KratosID(kratosUser.ID)).Exist(ctx)
+			if err != nil || !exists {
+				return nil, fmt.Errorf("Access denied")
+			}
+		case model.RoleCustomer:
+			exists, err := entClient.Customer.Query().Where(customer.KratosID(kratosUser.ID)).Exist(ctx)
+			if err != nil || !exists {
+				return nil, fmt.Errorf("Access denied")
+			}
+		}
+		return next(ctx)
+	}
 	//switch role {
 	//case model.RoleOwner:
 	//	break;
 	//case model.RoleOwner:
 	//	break;
 	//}
-	return next(ctx)
 }
 
 func RemoveDuplicateRestaurant(restaurants []*ent.Restaurant) []*ent.Restaurant {
