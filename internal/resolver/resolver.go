@@ -117,11 +117,11 @@ func RemoveDuplicateRestaurant(restaurants []*ent.Restaurant) []*ent.Restaurant 
 }
 
 func RemoveDuplicateProducts(products []*ent.Product) []*ent.Product {
-	occured := map[int]bool{}
+	occurred := map[int]bool{}
 	result := make([]*ent.Product, 0, len(products))
 	for _, product := range products {
-		if !occured[product.ID] {
-			occured[product.ID] = true
+		if !occurred[product.ID] {
+			occurred[product.ID] = true
 			result = append(result, product)
 		}
 	}
