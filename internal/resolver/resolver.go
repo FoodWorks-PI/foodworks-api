@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	"foodworks.ml/m/internal/generated/graphql/model"
+	"github.com/99designs/gqlgen/graphql"
+
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
+	"foodworks.ml/m/internal/generated/ent/tag"
 
 	"foodworks.ml/m/internal/generated/ent"
 	"foodworks.ml/m/internal/platform/filehandler"
@@ -71,12 +75,43 @@ func GetOrCreateTagId(r *Resolver, tags []string, ctx context.Context) ([]*ent.T
 	values = append(values, newTags...)
 	return values, nil
 }
+func HasRole(ctx context.Context, obj interface{}, next graphql.Resolver, role model.Role) (interface{}, error) {
+	//kratosUser := auth.ForContext(ctx)
+	//switch role {
+	//case model.RoleOwner:
+	//	break;
+	//case model.RoleOwner:
+	//	break;
+	//}
+	return next(ctx)
+}
+
+func WhereTextMatch(table string, query string) func(selector *sql.Selector) {
+	return func(s *sql.Selector) {
+		// _ := fmt.Sprintf("%s => %s")
+		tagsTable := sql.Table(tag.Table).As("tags")
+		var sb strings.Builder
+		switch table {
+		case restaurant.Table:
+			restaurantTagTable := sql.Table(restaurant.TagsTable).As("t0")
+			s.Join(restaurantTagTable).On(s.C(restaurant.FieldID), restaurantTagTable.C(restaurant.TagsPrimaryKey[0]))
+			s.Join(tagsTable).On(tagsTable.C(tag.FieldID), restaurantTagTable.C(restaurant.TagsPrimaryKey[1]))
+		case product.Table:
+			productTagTable := sql.Table(product.TagsTable).As("t0")
+			s.Join(productTagTable).On(s.C(product.FieldID), productTagTable.C(product.TagsPrimaryKey[0]))
+			s.Join(tagsTable).On(tagsTable.C(tag.FieldID), productTagTable.C(product.TagsPrimaryKey[1]))
+		}
+		sb.WriteString(fmt.Sprintf("%s ==> %s", table, query))
+		sb.WriteString("OR")
+		sb.WriteString(fmt.Sprintf("%s ==> %s", tagsTable, query))
+	}
+}
+
 func OrderByDistanceP(table string, distance string) func(selector *sql.Selector) {
 	return func(s *sql.Selector) {
 		addressTable := sql.Table(address.Table)
 		switch table {
 		case restaurant.Table:
-			fmt.Println("hi")
 			s.Join(addressTable).On(addressTable.C(address.FieldID), s.C(restaurant.AddressColumn))
 		case product.Table:
 			restaurantProductTable := sql.Table(product.RestaurantTable).As("t0")
@@ -93,33 +128,11 @@ func OrderByDistanceP(table string, distance string) func(selector *sql.Selector
 }
 
 func GetColumns(prefix string, columns []string) []string {
-
 	newColumns := make([]string, len(columns))
 	for i, column := range columns {
 		newColumns[i] = fmt.Sprintf(`"%s"."%s"`, prefix, column)
 	}
 	return newColumns
-}
-
-func SelectDistance() func(selector *sql.Selector) {
-	return func(s *sql.Selector) {
-		columns := make([]string, len(restaurant.Columns))
-		addressTable := sql.Table(address.Table)
-		for i, column := range restaurant.Columns {
-			columns[i] = s.C(column)
-		}
-		s.Join(addressTable).On(addressTable.C(address.FieldID), s.C(restaurant.AddressColumn))
-		columns = append(columns, `st_distancesphere(st_makepoint(19.37991393,-99.17228876),st_makepoint(19.37748,-99.16799)) as "distance"`)
-		//columns = append(columns, restaurant.Columns...)
-		s.Select(columns...)
-		//fmt.Println(tmp)
-		//s.Select()
-		//s.Select("st_distancesphere(st_makepoint(19.37991393,-99.17228876),st_makepoint(19.37748,-99.16799))")
-		//s.Select("12 as distance")
-		//s.WriteString("ORDER BY geom")
-		//s.OrderBy()
-		//s.WriteString("geom")
-	}
 }
 
 func P(c2 string) *sql.Predicate {

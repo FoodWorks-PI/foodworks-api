@@ -15,6 +15,11 @@ type DeleteImageInput struct {
 	FileNames []string `json:"fileNames"`
 }
 
+type GlobalSearchResult struct {
+	Restaurants []*ent.Restaurant `json:"restaurants"`
+	Products    []*ent.Product    `json:"products"`
+}
+
 type ProductSearchResult struct {
 	Product  *ent.Product `json:"product"`
 	Distance float64      `json:"distance"`
@@ -84,11 +89,6 @@ type RegisterRestaurantOwnerInput struct {
 	Phone      string                   `json:"phone"`
 	Banking    *RegisterBankingInput    `json:"banking"`
 	Restaurant *RegisterRestaurantInput `json:"restaurant"`
-}
-
-type RestaurantSearchResult struct {
-	Restaurant *ent.Restaurant `json:"restaurant"`
-	Distance   float64         `json:"distance"`
 }
 
 type UpdateCustomerInput struct {
