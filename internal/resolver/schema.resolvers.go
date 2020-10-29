@@ -6,12 +6,10 @@ package resolver
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent"
-	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/rating"
@@ -21,8 +19,6 @@ import (
 	generated "foodworks.ml/m/internal/generated/graphql"
 	"foodworks.ml/m/internal/generated/graphql/model"
 	gabs "github.com/Jeffail/gabs/v2"
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/rs/zerolog/log"
 )
 
 func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (*ent.Address, error) {
@@ -585,50 +581,25 @@ func (r *queryResolver) GetRestaurantByID(ctx context.Context, input int) (*ent.
 	return restaurant, nil
 }
 
-func (r *queryResolver) GetClosestRestaurants(ctx context.Context, input *int) ([]*model.RestaurantSearchResult, error) {
+func (r *queryResolver) GetClosestRestaurants(ctx context.Context) ([]*ent.Restaurant, error) {
 	// TODO: Add comments
 	kratosUser := auth.ForContext(ctx)
-	currentUser, err := r.EntClient.Customer.
+	address, err := r.EntClient.Customer.
 		Query().
 		Where(customer.KratosID(kratosUser.ID)).
-		WithAddress().
+		QueryAddress().
 		First(ctx)
 
-	log.Info().Msg(currentUser.Name)
 	if err != nil {
 		return nil, err
 	}
-	columnsTmp := sql.Table(restaurant.Table).Columns(restaurant.Columns...)
-	var myRegex = "s`\\."
-	var re = regexp.MustCompile(myRegex)
-	for i, v := range columnsTmp {
-		vNew := re.ReplaceAllString(v, "`.")
-		columnsTmp[i] = fmt.Sprintf(`%s AS "%s" `, v, vNew)
-	}
-	columns := fmt.Sprintf(strings.Join(columnsTmp, ","))
-	query := `select geom from customers join addresses a on a.id = customers.customer_address where kratos_id = $1`
-	var geom string
-	err = r.DBClient.Get(&geom, query, kratosUser.ID)
-	if err != nil {
-		return nil, err
-	}
-	distance := "distance"
-	limit := 20
-	query = fmt.Sprintf(
-		`SELECT %s,
-		round((ST_DISTANCESPHERE(A.geom,'%s')/1000)::numeric,2) as %s FROM %s JOIN %s A on A.%s = %s ORDER BY A.geom <-> '%s' LIMIT %d`,
-		columns, geom, distance, restaurant.Table,
-		address.Table, address.FieldID,
-		sql.Table(restaurant.Table).C(restaurant.AddressColumn), geom, limit,
-	)
-	query = strings.ReplaceAll(query, "`", "")
-	log.Info().Msg(query)
-	//var restaurants []struct{
-	//	ent.Restaurant
-	//	Distance string
-	//}
-	var restaurants []*model.RestaurantSearchResult
-	err = r.DBClient.Select(&restaurants, query)
+
+	var restaurants []*ent.Restaurant
+	err = r.EntClient.Restaurant.
+		Query().
+		Where(OrderByDistanceP(restaurant.Table, *address.Geom)).
+		Select(fmt.Sprintf(`round((st_distancesphere(geom, '%s')/1000)::numeric,2) as "distance"`, *address.Geom), GetColumns(restaurant.Table, restaurant.Columns)...).
+		UnsafeScan(ctx, &restaurants)
 	if err != nil {
 		return nil, err
 	}
@@ -658,10 +629,10 @@ func (r *queryResolver) GetProductByID(ctx context.Context, input int) (*ent.Pro
 	return res, nil
 }
 
-func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) ([]*ent.Product, error) {
-	var products []ent.Product
-	//restaurants, err:= r.EntClient.Restaurant.
+func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error) {
+	var result model.GlobalSearchResult
 	kratosUser := auth.ForContext(ctx)
+
 	address, err := r.EntClient.Customer.
 		Query().
 		Where(customer.KratosID(kratosUser.ID)).
@@ -672,32 +643,30 @@ func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.
 	}
 	fmt.Println(address.Geom)
 
-	//var restaurants []ent.Restaurant
-	//err = r.EntClient.Restaurant.
-	//	Query().
-	//	//QueryAddress().
-	//	//WithAddress().
-	//	//Where().
-	//	Where(OrderByDistanceP(restaurant.Table, *address.Geom)).
-	//	//GroupBy(restaurant.FieldID).
-	//	//Aggregate(SelectDistanceP("distance")).
-	//	Select(fmt.Sprintf(`st_distancesphere(geom, '%s') as "distance"`, *address.Geom), GetColumns(restaurant.Table, restaurant.Columns)...).
-	//	UnsafeScan(ctx, &restaurants)
-	//fmt.Println(restaurants)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	err = r.EntClient.Product.
+	var restaurants []*ent.Restaurant
+	err = r.EntClient.Restaurant.
 		Query().
-		Where(OrderByDistanceP(product.Table, *address.Geom)).
-		Select(fmt.Sprintf(`st_distancesphere(geom, '%s') as "distance"`, *address.Geom), GetColumns(product.Table, product.Columns)...).
-		UnsafeScan(ctx, &products)
-	fmt.Println(products)
+		Where(WhereTextMatch(restaurant.Table, input.SearchString)).
+		Where(OrderByDistanceP(restaurant.Table, *address.Geom)).
+		Select(fmt.Sprintf(`round((st_distancesphere(geom, '%s')/1000)::numeric,2) as "distance"`, *address.Geom), GetColumns(restaurant.Table, restaurant.Columns)...).
+		UnsafeScan(ctx, &restaurants)
 	if err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented"))
+
+	var products []*ent.Product
+	err = r.EntClient.Product.
+		Query().
+		Where(WhereTextMatch(product.Table, input.SearchString)).
+		Where(OrderByDistanceP(product.Table, *address.Geom)).
+		Select(fmt.Sprintf(`round((st_distancesphere(geom, '%s')/1000)::numeric,2) as "distance"`, *address.Geom), GetColumns(product.Table, product.Columns)...).
+		UnsafeScan(ctx, &products)
+	if err != nil {
+		return nil, err
+	}
+	result.Products = RemoveDuplicateProducts(products)
+	result.Restaurants = RemoveDuplicateRestaurant(restaurants)
+	return &result, nil
 }
 
 func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]string, error) {

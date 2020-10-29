@@ -178,9 +178,9 @@ type RestaurantOwner {
 }
 
 
-type RestaurantSearchResult {
-  restaurant: Restaurant!
-  distance: Float!
+type GlobalSearchResult{
+  restaurants: [Restaurant!]!
+  products: [Product!]!
 }
 
 type ProductSearchResult {
@@ -203,11 +203,11 @@ type Query {
   getCurrentRestaurantOwner: RestaurantOwner!
 
   getRestaurantByID(input: ID!): Restaurant!
-  getClosestRestaurants(input: Int): [RestaurantSearchResult!]!
+  getClosestRestaurants: [Restaurant!]!
 
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getProductById(input: ID!): Product!
-  getProductsByAllFields(input: ProductsByAllFieldsInput!): [Product!]!
+  getProductsByAllFields(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
 
   autoCompleteTag(input: String!): [String!]!
 }

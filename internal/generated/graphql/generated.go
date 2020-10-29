@@ -70,6 +70,11 @@ type ComplexityRoot struct {
 		RatedProducts func(childComplexity int) int
 	}
 
+	GlobalSearchResult struct {
+		Products    func(childComplexity int) int
+		Restaurants func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateCustomerProfile            func(childComplexity int, input model.RegisterCustomerInput) int
 		CreateProduct                    func(childComplexity int, input model.RegisterProductInput) int
@@ -116,7 +121,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		AutoCompleteTag           func(childComplexity int, input string) int
-		GetClosestRestaurants     func(childComplexity int, input *int) int
+		GetClosestRestaurants     func(childComplexity int) int
 		GetCurrentCustomer        func(childComplexity int) int
 		GetCurrentRestaurantOwner func(childComplexity int) int
 		GetProductByID            func(childComplexity int, input int) int
@@ -150,11 +155,6 @@ type ComplexityRoot struct {
 		ID         func(childComplexity int) int
 		Name       func(childComplexity int) int
 		Phone      func(childComplexity int) int
-		Restaurant func(childComplexity int) int
-	}
-
-	RestaurantSearchResult struct {
-		Distance   func(childComplexity int) int
 		Restaurant func(childComplexity int) int
 	}
 }
@@ -200,10 +200,10 @@ type QueryResolver interface {
 	GetCurrentCustomer(ctx context.Context) (*ent.Customer, error)
 	GetCurrentRestaurantOwner(ctx context.Context) (*ent.RestaurantOwner, error)
 	GetRestaurantByID(ctx context.Context, input int) (*ent.Restaurant, error)
-	GetClosestRestaurants(ctx context.Context, input *int) ([]*model.RestaurantSearchResult, error)
+	GetClosestRestaurants(ctx context.Context) ([]*ent.Restaurant, error)
 	GetProductsByRestaurantID(ctx context.Context, input model.ProductsFilterByRestaurantInput) ([]*ent.Product, error)
 	GetProductByID(ctx context.Context, input int) (*ent.Product, error)
-	GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) ([]*ent.Product, error)
+	GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error)
 	AutoCompleteTag(ctx context.Context, input string) ([]string, error)
 }
 type RatingResolver interface {
@@ -305,6 +305,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Customer.RatedProducts(childComplexity), true
+
+	case "GlobalSearchResult.products":
+		if e.complexity.GlobalSearchResult.Products == nil {
+			break
+		}
+
+		return e.complexity.GlobalSearchResult.Products(childComplexity), true
+
+	case "GlobalSearchResult.restaurants":
+		if e.complexity.GlobalSearchResult.Restaurants == nil {
+			break
+		}
+
+		return e.complexity.GlobalSearchResult.Restaurants(childComplexity), true
 
 	case "Mutation.createCustomerProfile":
 		if e.complexity.Mutation.CreateCustomerProfile == nil {
@@ -673,12 +687,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_getClosestRestaurants_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetClosestRestaurants(childComplexity, args["input"].(*int)), true
+		return e.complexity.Query.GetClosestRestaurants(childComplexity), true
 
 	case "Query.getCurrentCustomer":
 		if e.complexity.Query.GetCurrentCustomer == nil {
@@ -874,20 +883,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RestaurantOwner.Restaurant(childComplexity), true
-
-	case "RestaurantSearchResult.distance":
-		if e.complexity.RestaurantSearchResult.Distance == nil {
-			break
-		}
-
-		return e.complexity.RestaurantSearchResult.Distance(childComplexity), true
-
-	case "RestaurantSearchResult.restaurant":
-		if e.complexity.RestaurantSearchResult.Restaurant == nil {
-			break
-		}
-
-		return e.complexity.RestaurantSearchResult.Restaurant(childComplexity), true
 
 	}
 	return 0, false
@@ -1133,9 +1128,9 @@ type RestaurantOwner {
 }
 
 
-type RestaurantSearchResult {
-  restaurant: Restaurant!
-  distance: Float!
+type GlobalSearchResult{
+  restaurants: [Restaurant!]!
+  products: [Product!]!
 }
 
 type ProductSearchResult {
@@ -1158,11 +1153,11 @@ type Query {
   getCurrentRestaurantOwner: RestaurantOwner!
 
   getRestaurantByID(input: ID!): Restaurant!
-  getClosestRestaurants(input: Int): [RestaurantSearchResult!]!
+  getClosestRestaurants: [Restaurant!]!
 
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getProductById(input: ID!): Product!
-  getProductsByAllFields(input: ProductsByAllFieldsInput!): [Product!]!
+  getProductsByAllFields(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
 
   autoCompleteTag(input: String!): [String!]!
 }
@@ -1560,21 +1555,6 @@ func (ec *executionContext) field_Query_autoCompleteTag_args(ctx context.Context
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getClosestRestaurants_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2029,6 +2009,76 @@ func (ec *executionContext) _Customer_ratedProducts(ctx context.Context, field g
 	res := resTmp.([]*ent.Rating)
 	fc.Result = res
 	return ec.marshalNRating2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRatingᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GlobalSearchResult_restaurants(ctx context.Context, field graphql.CollectedField, obj *model.GlobalSearchResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "GlobalSearchResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Restaurants, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Restaurant)
+	fc.Result = res
+	return ec.marshalNRestaurant2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurantᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _GlobalSearchResult_products(ctx context.Context, field graphql.CollectedField, obj *model.GlobalSearchResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "GlobalSearchResult",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Products, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Product)
+	fc.Result = res
+	return ec.marshalNProduct2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐProductᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createCustomerProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3555,16 +3605,9 @@ func (ec *executionContext) _Query_getClosestRestaurants(ctx context.Context, fi
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_getClosestRestaurants_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetClosestRestaurants(rctx, args["input"].(*int))
+		return ec.resolvers.Query().GetClosestRestaurants(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3576,9 +3619,9 @@ func (ec *executionContext) _Query_getClosestRestaurants(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.RestaurantSearchResult)
+	res := resTmp.([]*ent.Restaurant)
 	fc.Result = res
-	return ec.marshalNRestaurantSearchResult2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRestaurantSearchResultᚄ(ctx, field.Selections, res)
+	return ec.marshalNRestaurant2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurantᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getProductsByRestaurantID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3689,8 +3732,32 @@ func (ec *executionContext) _Query_getProductsByAllFields(ctx context.Context, f
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetProductsByAllFields(rctx, args["input"].(model.ProductsByAllFieldsInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().GetProductsByAllFields(rctx, args["input"].(model.ProductsByAllFieldsInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRole(ctx, "CUSTOMER")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.GlobalSearchResult); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *foodworks.ml/m/internal/generated/graphql/model.GlobalSearchResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3702,9 +3769,9 @@ func (ec *executionContext) _Query_getProductsByAllFields(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.Product)
+	res := resTmp.(*model.GlobalSearchResult)
 	fc.Result = res
-	return ec.marshalNProduct2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐProductᚄ(ctx, field.Selections, res)
+	return ec.marshalNGlobalSearchResult2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐGlobalSearchResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_autoCompleteTag(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4504,76 +4571,6 @@ func (ec *executionContext) _RestaurantOwner_restaurant(ctx context.Context, fie
 	res := resTmp.(*ent.Restaurant)
 	fc.Result = res
 	return ec.marshalNRestaurant2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurant(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RestaurantSearchResult_restaurant(ctx context.Context, field graphql.CollectedField, obj *model.RestaurantSearchResult) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "RestaurantSearchResult",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Restaurant, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Restaurant)
-	fc.Result = res
-	return ec.marshalNRestaurant2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurant(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _RestaurantSearchResult_distance(ctx context.Context, field graphql.CollectedField, obj *model.RestaurantSearchResult) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "RestaurantSearchResult",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Distance, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -6409,6 +6406,38 @@ func (ec *executionContext) _Customer(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var globalSearchResultImplementors = []string{"GlobalSearchResult"}
+
+func (ec *executionContext) _GlobalSearchResult(ctx context.Context, sel ast.SelectionSet, obj *model.GlobalSearchResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, globalSearchResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GlobalSearchResult")
+		case "restaurants":
+			out.Values[i] = ec._GlobalSearchResult_restaurants(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "products":
+			out.Values[i] = ec._GlobalSearchResult_products(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -7062,38 +7091,6 @@ func (ec *executionContext) _RestaurantOwner(ctx context.Context, sel ast.Select
 	return out
 }
 
-var restaurantSearchResultImplementors = []string{"RestaurantSearchResult"}
-
-func (ec *executionContext) _RestaurantSearchResult(ctx context.Context, sel ast.SelectionSet, obj *model.RestaurantSearchResult) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, restaurantSearchResultImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("RestaurantSearchResult")
-		case "restaurant":
-			out.Values[i] = ec._RestaurantSearchResult_restaurant(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "distance":
-			out.Values[i] = ec._RestaurantSearchResult_distance(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
@@ -7416,6 +7413,20 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) marshalNGlobalSearchResult2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐGlobalSearchResult(ctx context.Context, sel ast.SelectionSet, v model.GlobalSearchResult) graphql.Marshaler {
+	return ec._GlobalSearchResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNGlobalSearchResult2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐGlobalSearchResult(ctx context.Context, sel ast.SelectionSet, v *model.GlobalSearchResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._GlobalSearchResult(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -7608,31 +7619,7 @@ func (ec *executionContext) marshalNRestaurant2foodworksᚗmlᚋmᚋinternalᚋg
 	return ec._Restaurant(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRestaurant2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurant(ctx context.Context, sel ast.SelectionSet, v *ent.Restaurant) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Restaurant(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNRestaurantOwner2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurantOwner(ctx context.Context, sel ast.SelectionSet, v ent.RestaurantOwner) graphql.Marshaler {
-	return ec._RestaurantOwner(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNRestaurantOwner2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurantOwner(ctx context.Context, sel ast.SelectionSet, v *ent.RestaurantOwner) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._RestaurantOwner(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNRestaurantSearchResult2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRestaurantSearchResultᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RestaurantSearchResult) graphql.Marshaler {
+func (ec *executionContext) marshalNRestaurant2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurantᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Restaurant) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -7656,7 +7643,7 @@ func (ec *executionContext) marshalNRestaurantSearchResult2ᚕᚖfoodworksᚗml�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNRestaurantSearchResult2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRestaurantSearchResult(ctx, sel, v[i])
+			ret[i] = ec.marshalNRestaurant2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurant(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -7669,14 +7656,28 @@ func (ec *executionContext) marshalNRestaurantSearchResult2ᚕᚖfoodworksᚗml�
 	return ret
 }
 
-func (ec *executionContext) marshalNRestaurantSearchResult2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRestaurantSearchResult(ctx context.Context, sel ast.SelectionSet, v *model.RestaurantSearchResult) graphql.Marshaler {
+func (ec *executionContext) marshalNRestaurant2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurant(ctx context.Context, sel ast.SelectionSet, v *ent.Restaurant) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._RestaurantSearchResult(ctx, sel, v)
+	return ec._Restaurant(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRestaurantOwner2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurantOwner(ctx context.Context, sel ast.SelectionSet, v ent.RestaurantOwner) graphql.Marshaler {
+	return ec._RestaurantOwner(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRestaurantOwner2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurantOwner(ctx context.Context, sel ast.SelectionSet, v *ent.RestaurantOwner) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._RestaurantOwner(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNRole2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRole(ctx context.Context, v interface{}) (model.Role, error) {
@@ -8082,21 +8083,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
-}
-
-func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalInt(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalInt(*v)
 }
 
 func (ec *executionContext) unmarshalOProductsFilterConfigInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐProductsFilterConfigInput(ctx context.Context, v interface{}) (*model.ProductsFilterConfigInput, error) {
