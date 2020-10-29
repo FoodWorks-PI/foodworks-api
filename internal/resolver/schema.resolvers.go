@@ -626,7 +626,7 @@ func (r *queryResolver) GetProductByID(ctx context.Context, input int) (*ent.Pro
 }
 
 func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error) {
-	var result *model.GlobalSearchResult
+	var result model.GlobalSearchResult
 	kratosUser := auth.ForContext(ctx)
 
 	address, err := r.EntClient.Customer.
@@ -644,7 +644,7 @@ func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.
 		Query().
 		Where(WhereTextMatch(restaurant.Table, input.SearchString)).
 		Where(OrderByDistanceP(restaurant.Table, *address.Geom)).
-		Select(fmt.Sprintf(`st_distancesphere(geom, '%s') as "distance"`, *address.Geom), GetColumns(restaurant.Table, restaurant.Columns)...).
+		Select(fmt.Sprintf(`round((st_distancesphere(geom, '%s')/1000)::numeric,2) as "distance"`, *address.Geom), GetColumns(restaurant.Table, restaurant.Columns)...).
 		UnsafeScan(ctx, &restaurants)
 	if err != nil {
 		return nil, err
@@ -653,15 +653,16 @@ func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.
 	var products []*ent.Product
 	err = r.EntClient.Product.
 		Query().
+		Where(WhereTextMatch(product.Table, input.SearchString)).
 		Where(OrderByDistanceP(product.Table, *address.Geom)).
-		Select(fmt.Sprintf(`st_distancesphere(geom, '%s') as "distance"`, *address.Geom), GetColumns(product.Table, product.Columns)...).
+		Select(fmt.Sprintf(`round((st_distancesphere(geom, '%s')/1000)::numeric,2) as "distance"`, *address.Geom), GetColumns(product.Table, product.Columns)...).
 		UnsafeScan(ctx, &products)
 	if err != nil {
 		return nil, err
 	}
-	result.Products = products
-	result.Restaurants = restaurants
-	return result, nil
+	result.Products = RemoveDuplicateProducts(products)
+	result.Restaurants = RemoveDuplicateRestaurant(restaurants)
+	return &result, nil
 }
 
 func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]string, error) {

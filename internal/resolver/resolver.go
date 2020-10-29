@@ -86,6 +86,30 @@ func HasRole(ctx context.Context, obj interface{}, next graphql.Resolver, role m
 	return next(ctx)
 }
 
+func RemoveDuplicateRestaurant(restaurants []*ent.Restaurant) []*ent.Restaurant {
+	occured := map[int]bool{}
+	result := make([]*ent.Restaurant, 0, len(restaurants))
+	for _, restaurant := range restaurants {
+		if !occured[restaurant.ID] {
+			occured[restaurant.ID] = true
+			result = append(result, restaurant)
+		}
+	}
+	return result
+}
+
+func RemoveDuplicateProducts(products []*ent.Product) []*ent.Product {
+	occured := map[int]bool{}
+	result := make([]*ent.Product, 0, len(products))
+	for _, product := range products {
+		if !occured[product.ID] {
+			occured[product.ID] = true
+			result = append(result, product)
+		}
+	}
+	return result
+}
+
 func WhereTextMatch(table string, query string) func(selector *sql.Selector) {
 	return func(s *sql.Selector) {
 		// _ := fmt.Sprintf("%s => %s")
@@ -93,17 +117,18 @@ func WhereTextMatch(table string, query string) func(selector *sql.Selector) {
 		var sb strings.Builder
 		switch table {
 		case restaurant.Table:
-			restaurantTagTable := sql.Table(restaurant.TagsTable).As("t0")
+			restaurantTagTable := sql.Table(restaurant.TagsTable).As("q0")
 			s.Join(restaurantTagTable).On(s.C(restaurant.FieldID), restaurantTagTable.C(restaurant.TagsPrimaryKey[0]))
 			s.Join(tagsTable).On(tagsTable.C(tag.FieldID), restaurantTagTable.C(restaurant.TagsPrimaryKey[1]))
 		case product.Table:
-			productTagTable := sql.Table(product.TagsTable).As("t0")
+			productTagTable := sql.Table(product.TagsTable).As("q0")
 			s.Join(productTagTable).On(s.C(product.FieldID), productTagTable.C(product.TagsPrimaryKey[0]))
 			s.Join(tagsTable).On(tagsTable.C(tag.FieldID), productTagTable.C(product.TagsPrimaryKey[1]))
 		}
-		sb.WriteString(fmt.Sprintf("%s ==> %s", table, query))
-		sb.WriteString("OR")
-		sb.WriteString(fmt.Sprintf("%s ==> %s", tagsTable, query))
+		sb.WriteString(fmt.Sprintf(`"%s" ==> '%s'`, table, query))
+		sb.WriteString("OR ")
+		sb.WriteString(fmt.Sprintf(`"%s" ==> '%s'`, "tags", query))
+		s.Where(P(sb.String()))
 	}
 }
 
