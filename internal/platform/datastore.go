@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 
+	"foodworks.ml/m/internal/generated/ent/rating"
+
 	"foodworks.ml/m/internal/generated/ent"
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/bankingdata"
@@ -120,7 +122,7 @@ func seed(db *sqlx.DB) error {
 	}
 	tables := []string{tag.Table, address.Table, product.Table, restaurant.Table,
 		restaurant.TagsTable, product.TagsTable, restaurant.ProductsTable,
-		customer.Table, bankingdata.Table, restaurantowner.Table,
+		customer.Table, bankingdata.Table, restaurantowner.Table, rating.Table,
 	}
 	var stmt string
 	for _, table := range tables {
