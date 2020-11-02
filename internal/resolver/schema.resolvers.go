@@ -376,17 +376,18 @@ func (r *mutationResolver) DeleteProduct(ctx context.Context, input int) (int, e
 func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.RegisterRestaurantInput) (int, error) {
 	kratosSessionUser := auth.ForContext(ctx)
 
-	currentUser, err := r.EntClient.RestaurantOwner.
+	currentUserRestaurant, err := r.EntClient.RestaurantOwner.
 		Query().
 		Where(restaurantowner.KratosID(kratosSessionUser.ID)).
-		WithBankingData().
+		QueryRestaurant().
+		WithAddress().
 		First(ctx)
 
 	if err != nil {
 		return -1, err
 	}
 
-	updatedAddress, err := currentUser.Edges.Restaurant.Edges.Address.
+	_, err = currentUserRestaurant.Edges.Address.
 		Update().
 		SetLatitude(input.Address.Latitude).
 		SetLongitude(input.Address.Longitude).
@@ -401,11 +402,11 @@ func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.Reg
 	if err != nil {
 		return -1, err
 	}
-	updatedRestaurant, err := currentUser.Edges.Restaurant.
+
+	_, err = currentUserRestaurant.
 		Update().
 		SetName(input.Name).
 		SetDescription(input.Description).
-		SetAddress(updatedAddress).
 		ClearTags().
 		AddTags(tagEntities...).
 		Save(ctx)
@@ -414,16 +415,7 @@ func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.Reg
 		return -1, err
 	}
 
-	_, err = currentUser.
-		Update().
-		SetRestaurant(updatedRestaurant).
-		Save(ctx)
-
-	if err != nil {
-		return -1, err
-	}
-
-	return currentUser.ID, nil
+	return currentUserRestaurant.ID, nil
 }
 
 func (r *mutationResolver) UploadRestaurantPhoto(ctx context.Context, input model.UploadImageInput) ([]string, error) {
