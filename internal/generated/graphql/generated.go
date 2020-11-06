@@ -65,6 +65,7 @@ type ComplexityRoot struct {
 		Address       func(childComplexity int) int
 		Email         func(childComplexity int) int
 		ID            func(childComplexity int) int
+		LastName      func(childComplexity int) int
 		Name          func(childComplexity int) int
 		Phone         func(childComplexity int) int
 		RatedProducts func(childComplexity int) int
@@ -102,12 +103,12 @@ type ComplexityRoot struct {
 	}
 
 	Product struct {
+		Active        func(childComplexity int) int
 		AverageRating func(childComplexity int) int
 		Cost          func(childComplexity int) int
 		Description   func(childComplexity int) int
 		Distance      func(childComplexity int) int
 		ID            func(childComplexity int) int
-		IsActive      func(childComplexity int) int
 		Name          func(childComplexity int) int
 		Ratings       func(childComplexity int) int
 		Restaurant    func(childComplexity int) int
@@ -120,14 +121,14 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AutoCompleteTag           func(childComplexity int, input string) int
-		GetClosestRestaurants     func(childComplexity int) int
-		GetCurrentCustomer        func(childComplexity int) int
-		GetCurrentRestaurantOwner func(childComplexity int) int
-		GetProductByID            func(childComplexity int, input int) int
-		GetProductsByAllFields    func(childComplexity int, input model.ProductsByAllFieldsInput) int
-		GetProductsByRestaurantID func(childComplexity int, input model.ProductsFilterByRestaurantInput) int
-		GetRestaurantByID         func(childComplexity int, input int) int
+		AutoCompleteTag              func(childComplexity int, input string) int
+		GetClosestRestaurants        func(childComplexity int) int
+		GetCurrentCustomer           func(childComplexity int) int
+		GetCurrentRestaurantOwner    func(childComplexity int) int
+		GetProductByID               func(childComplexity int, input int) int
+		GetProductsByRestaurantID    func(childComplexity int, input model.ProductsFilterByRestaurantInput) int
+		GetRestaurantByID            func(childComplexity int, input int) int
+		SearchProductsAndRestaurants func(childComplexity int, input model.ProductsByAllFieldsInput) int
 	}
 
 	Rating struct {
@@ -153,6 +154,7 @@ type ComplexityRoot struct {
 		Banking    func(childComplexity int) int
 		Email      func(childComplexity int) int
 		ID         func(childComplexity int) int
+		LastName   func(childComplexity int) int
 		Name       func(childComplexity int) int
 		Phone      func(childComplexity int) int
 		Restaurant func(childComplexity int) int
@@ -192,6 +194,7 @@ type MutationResolver interface {
 type ProductResolver interface {
 	Tags(ctx context.Context, obj *ent.Product) ([]string, error)
 
+	Active(ctx context.Context, obj *ent.Product) (bool, error)
 	AverageRating(ctx context.Context, obj *ent.Product) (float64, error)
 	Ratings(ctx context.Context, obj *ent.Product) ([]*ent.Rating, error)
 	Restaurant(ctx context.Context, obj *ent.Product) (*ent.Restaurant, error)
@@ -203,7 +206,7 @@ type QueryResolver interface {
 	GetClosestRestaurants(ctx context.Context) ([]*ent.Restaurant, error)
 	GetProductsByRestaurantID(ctx context.Context, input model.ProductsFilterByRestaurantInput) ([]*ent.Product, error)
 	GetProductByID(ctx context.Context, input int) (*ent.Product, error)
-	GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error)
+	SearchProductsAndRestaurants(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error)
 	AutoCompleteTag(ctx context.Context, input string) ([]string, error)
 }
 type RatingResolver interface {
@@ -284,6 +287,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Customer.ID(childComplexity), true
+
+	case "Customer.lastName":
+		if e.complexity.Customer.LastName == nil {
+			break
+		}
+
+		return e.complexity.Customer.LastName(childComplexity), true
 
 	case "Customer.name":
 		if e.complexity.Customer.Name == nil {
@@ -586,6 +596,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UploadRestaurantPhoto(childComplexity, args["input"].(model.UploadImageInput)), true
 
+	case "Product.active":
+		if e.complexity.Product.Active == nil {
+			break
+		}
+
+		return e.complexity.Product.Active(childComplexity), true
+
 	case "Product.averageRating":
 		if e.complexity.Product.AverageRating == nil {
 			break
@@ -620,13 +637,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Product.ID(childComplexity), true
-
-	case "Product.isActive":
-		if e.complexity.Product.IsActive == nil {
-			break
-		}
-
-		return e.complexity.Product.IsActive(childComplexity), true
 
 	case "Product.name":
 		if e.complexity.Product.Name == nil {
@@ -715,18 +725,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetProductByID(childComplexity, args["input"].(int)), true
 
-	case "Query.getProductsByAllFields":
-		if e.complexity.Query.GetProductsByAllFields == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getProductsByAllFields_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetProductsByAllFields(childComplexity, args["input"].(model.ProductsByAllFieldsInput)), true
-
 	case "Query.getProductsByRestaurantID":
 		if e.complexity.Query.GetProductsByRestaurantID == nil {
 			break
@@ -750,6 +748,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetRestaurantByID(childComplexity, args["input"].(int)), true
+
+	case "Query.searchProductsAndRestaurants":
+		if e.complexity.Query.SearchProductsAndRestaurants == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchProductsAndRestaurants_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SearchProductsAndRestaurants(childComplexity, args["input"].(model.ProductsByAllFieldsInput)), true
 
 	case "Rating.comment":
 		if e.complexity.Rating.Comment == nil {
@@ -862,6 +872,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RestaurantOwner.ID(childComplexity), true
+
+	case "RestaurantOwner.lastName":
+		if e.complexity.RestaurantOwner.LastName == nil {
+			break
+		}
+
+		return e.complexity.RestaurantOwner.LastName(childComplexity), true
 
 	case "RestaurantOwner.name":
 		if e.complexity.RestaurantOwner.Name == nil {
@@ -1006,6 +1023,7 @@ input UpdateCustomerInput {
 type Customer {
   ID: ID!
   name: String!
+  lastName: String!
   email: String!
   address: Address!
   phone: String!
@@ -1058,7 +1076,7 @@ type Product {
   description: String!
   tags: [String!]!
   cost: Int! # Manejar como centavos
-  isActive: Boolean!
+  active: Boolean!
   averageRating: Float!
   ratings: [Rating!]!
   restaurant: Restaurant! # Es necesario?
@@ -1121,6 +1139,7 @@ input UpdateRestaurantOwnerInput {
 type RestaurantOwner {
   ID: ID!
   name: String!
+  lastName: String!
   email: String!
   phone: String!
   banking : BankingData!
@@ -1157,7 +1176,7 @@ type Query {
 
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getProductById(input: ID!): Product!
-  getProductsByAllFields(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
+  searchProductsAndRestaurants(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
 
   autoCompleteTag(input: String!): [String!]!
 }
@@ -1578,21 +1597,6 @@ func (ec *executionContext) field_Query_getProductById_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_getProductsByAllFields_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.ProductsByAllFieldsInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNProductsByAllFieldsInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐProductsByAllFieldsInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_getProductsByRestaurantID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1615,6 +1619,21 @@ func (ec *executionContext) field_Query_getRestaurantByID_args(ctx context.Conte
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_searchProductsAndRestaurants_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.ProductsByAllFieldsInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNProductsByAllFieldsInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐProductsByAllFieldsInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1855,6 +1874,41 @@ func (ec *executionContext) _Customer_name(ctx context.Context, field graphql.Co
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Customer_lastName(ctx context.Context, field graphql.CollectedField, obj *ent.Customer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Customer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3208,7 +3262,7 @@ func (ec *executionContext) _Product_cost(ctx context.Context, field graphql.Col
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Product_isActive(ctx context.Context, field graphql.CollectedField, obj *ent.Product) (ret graphql.Marshaler) {
+func (ec *executionContext) _Product_active(ctx context.Context, field graphql.CollectedField, obj *ent.Product) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3219,14 +3273,14 @@ func (ec *executionContext) _Product_isActive(ctx context.Context, field graphql
 		Object:     "Product",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.IsActive, nil
+		return ec.resolvers.Product().Active(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3708,7 +3762,7 @@ func (ec *executionContext) _Query_getProductById(ctx context.Context, field gra
 	return ec.marshalNProduct2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐProduct(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_getProductsByAllFields(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_searchProductsAndRestaurants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3725,7 +3779,7 @@ func (ec *executionContext) _Query_getProductsByAllFields(ctx context.Context, f
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_getProductsByAllFields_args(ctx, rawArgs)
+	args, err := ec.field_Query_searchProductsAndRestaurants_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -3734,7 +3788,7 @@ func (ec *executionContext) _Query_getProductsByAllFields(ctx context.Context, f
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().GetProductsByAllFields(rctx, args["input"].(model.ProductsByAllFieldsInput))
+			return ec.resolvers.Query().SearchProductsAndRestaurants(rctx, args["input"].(model.ProductsByAllFieldsInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRole(ctx, "CUSTOMER")
@@ -4417,6 +4471,41 @@ func (ec *executionContext) _RestaurantOwner_name(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RestaurantOwner_lastName(ctx context.Context, field graphql.CollectedField, obj *ent.RestaurantOwner) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RestaurantOwner",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6357,6 +6446,11 @@ func (ec *executionContext) _Customer(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "lastName":
+			out.Values[i] = ec._Customer_lastName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "email":
 			out.Values[i] = ec._Customer_email(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6624,11 +6718,20 @@ func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "isActive":
-			out.Values[i] = ec._Product_isActive(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+		case "active":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Product_active(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "averageRating":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -6818,7 +6921,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "getProductsByAllFields":
+		case "searchProductsAndRestaurants":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -6826,7 +6929,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getProductsByAllFields(ctx, field)
+				res = ec._Query_searchProductsAndRestaurants(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -7039,6 +7142,11 @@ func (ec *executionContext) _RestaurantOwner(ctx context.Context, sel ast.Select
 			}
 		case "name":
 			out.Values[i] = ec._RestaurantOwner_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "lastName":
+			out.Values[i] = ec._RestaurantOwner_lastName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

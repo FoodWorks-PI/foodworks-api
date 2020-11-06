@@ -889,6 +889,7 @@ type CustomerMutation struct {
 	id             *int
 	kratos_id      *string
 	name           *string
+	last_name      *string
 	email          *string
 	phone          *string
 	clearedFields  map[string]struct{}
@@ -1052,6 +1053,43 @@ func (m *CustomerMutation) OldName(ctx context.Context) (v string, err error) {
 // ResetName reset all changes of the "name" field.
 func (m *CustomerMutation) ResetName() {
 	m.name = nil
+}
+
+// SetLastName sets the last_name field.
+func (m *CustomerMutation) SetLastName(s string) {
+	m.last_name = &s
+}
+
+// LastName returns the last_name value in the mutation.
+func (m *CustomerMutation) LastName() (r string, exists bool) {
+	v := m.last_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastName returns the old last_name value of the Customer.
+// If the Customer object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *CustomerMutation) OldLastName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldLastName is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldLastName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastName: %w", err)
+	}
+	return oldValue.LastName, nil
+}
+
+// ResetLastName reset all changes of the "last_name" field.
+func (m *CustomerMutation) ResetLastName() {
+	m.last_name = nil
 }
 
 // SetEmail sets the email field.
@@ -1234,12 +1272,15 @@ func (m *CustomerMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *CustomerMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.kratos_id != nil {
 		fields = append(fields, customer.FieldKratosID)
 	}
 	if m.name != nil {
 		fields = append(fields, customer.FieldName)
+	}
+	if m.last_name != nil {
+		fields = append(fields, customer.FieldLastName)
 	}
 	if m.email != nil {
 		fields = append(fields, customer.FieldEmail)
@@ -1259,6 +1300,8 @@ func (m *CustomerMutation) Field(name string) (ent.Value, bool) {
 		return m.KratosID()
 	case customer.FieldName:
 		return m.Name()
+	case customer.FieldLastName:
+		return m.LastName()
 	case customer.FieldEmail:
 		return m.Email()
 	case customer.FieldPhone:
@@ -1276,6 +1319,8 @@ func (m *CustomerMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldKratosID(ctx)
 	case customer.FieldName:
 		return m.OldName(ctx)
+	case customer.FieldLastName:
+		return m.OldLastName(ctx)
 	case customer.FieldEmail:
 		return m.OldEmail(ctx)
 	case customer.FieldPhone:
@@ -1302,6 +1347,13 @@ func (m *CustomerMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case customer.FieldLastName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastName(v)
 		return nil
 	case customer.FieldEmail:
 		v, ok := value.(string)
@@ -1372,6 +1424,9 @@ func (m *CustomerMutation) ResetField(name string) error {
 		return nil
 	case customer.FieldName:
 		m.ResetName()
+		return nil
+	case customer.FieldLastName:
+		m.ResetLastName()
 		return nil
 	case customer.FieldEmail:
 		m.ResetEmail()
@@ -3467,6 +3522,7 @@ type RestaurantOwnerMutation struct {
 	id                  *int
 	kratos_id           *string
 	name                *string
+	last_name           *string
 	email               *string
 	phone               *string
 	clearedFields       map[string]struct{}
@@ -3629,6 +3685,43 @@ func (m *RestaurantOwnerMutation) OldName(ctx context.Context) (v string, err er
 // ResetName reset all changes of the "name" field.
 func (m *RestaurantOwnerMutation) ResetName() {
 	m.name = nil
+}
+
+// SetLastName sets the last_name field.
+func (m *RestaurantOwnerMutation) SetLastName(s string) {
+	m.last_name = &s
+}
+
+// LastName returns the last_name value in the mutation.
+func (m *RestaurantOwnerMutation) LastName() (r string, exists bool) {
+	v := m.last_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastName returns the old last_name value of the RestaurantOwner.
+// If the RestaurantOwner object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *RestaurantOwnerMutation) OldLastName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldLastName is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldLastName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastName: %w", err)
+	}
+	return oldValue.LastName, nil
+}
+
+// ResetLastName reset all changes of the "last_name" field.
+func (m *RestaurantOwnerMutation) ResetLastName() {
+	m.last_name = nil
 }
 
 // SetEmail sets the email field.
@@ -3797,12 +3890,15 @@ func (m *RestaurantOwnerMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *RestaurantOwnerMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.kratos_id != nil {
 		fields = append(fields, restaurantowner.FieldKratosID)
 	}
 	if m.name != nil {
 		fields = append(fields, restaurantowner.FieldName)
+	}
+	if m.last_name != nil {
+		fields = append(fields, restaurantowner.FieldLastName)
 	}
 	if m.email != nil {
 		fields = append(fields, restaurantowner.FieldEmail)
@@ -3822,6 +3918,8 @@ func (m *RestaurantOwnerMutation) Field(name string) (ent.Value, bool) {
 		return m.KratosID()
 	case restaurantowner.FieldName:
 		return m.Name()
+	case restaurantowner.FieldLastName:
+		return m.LastName()
 	case restaurantowner.FieldEmail:
 		return m.Email()
 	case restaurantowner.FieldPhone:
@@ -3839,6 +3937,8 @@ func (m *RestaurantOwnerMutation) OldField(ctx context.Context, name string) (en
 		return m.OldKratosID(ctx)
 	case restaurantowner.FieldName:
 		return m.OldName(ctx)
+	case restaurantowner.FieldLastName:
+		return m.OldLastName(ctx)
 	case restaurantowner.FieldEmail:
 		return m.OldEmail(ctx)
 	case restaurantowner.FieldPhone:
@@ -3865,6 +3965,13 @@ func (m *RestaurantOwnerMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case restaurantowner.FieldLastName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastName(v)
 		return nil
 	case restaurantowner.FieldEmail:
 		v, ok := value.(string)
@@ -3935,6 +4042,9 @@ func (m *RestaurantOwnerMutation) ResetField(name string) error {
 		return nil
 	case restaurantowner.FieldName:
 		m.ResetName()
+		return nil
+	case restaurantowner.FieldLastName:
+		m.ResetLastName()
 		return nil
 	case restaurantowner.FieldEmail:
 		m.ResetEmail()

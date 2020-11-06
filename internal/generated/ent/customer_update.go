@@ -41,6 +41,12 @@ func (cu *CustomerUpdate) SetName(s string) *CustomerUpdate {
 	return cu
 }
 
+// SetLastName sets the last_name field.
+func (cu *CustomerUpdate) SetLastName(s string) *CustomerUpdate {
+	cu.mutation.SetLastName(s)
+	return cu
+}
+
 // SetEmail sets the email field.
 func (cu *CustomerUpdate) SetEmail(s string) *CustomerUpdate {
 	cu.mutation.SetEmail(s)
@@ -202,6 +208,13 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: customer.FieldName,
 		})
 	}
+	if value, ok := cu.mutation.LastName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: customer.FieldLastName,
+		})
+	}
 	if value, ok := cu.mutation.Email(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -332,6 +345,12 @@ func (cuo *CustomerUpdateOne) SetKratosID(s string) *CustomerUpdateOne {
 // SetName sets the name field.
 func (cuo *CustomerUpdateOne) SetName(s string) *CustomerUpdateOne {
 	cuo.mutation.SetName(s)
+	return cuo
+}
+
+// SetLastName sets the last_name field.
+func (cuo *CustomerUpdateOne) SetLastName(s string) *CustomerUpdateOne {
+	cuo.mutation.SetLastName(s)
 	return cuo
 }
 
@@ -492,6 +511,13 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 			Type:   field.TypeString,
 			Value:  value,
 			Column: customer.FieldName,
+		})
+	}
+	if value, ok := cuo.mutation.LastName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: customer.FieldLastName,
 		})
 	}
 	if value, ok := cuo.mutation.Email(); ok {

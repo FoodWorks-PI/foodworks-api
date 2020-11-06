@@ -56,6 +56,7 @@ input UpdateCustomerInput {
 type Customer {
   ID: ID!
   name: String!
+  lastName: String!
   email: String!
   address: Address!
   phone: String!
@@ -108,7 +109,7 @@ type Product {
   description: String!
   tags: [String!]!
   cost: Int! # Manejar como centavos
-  isActive: Boolean!
+  active: Boolean!
   averageRating: Float!
   ratings: [Rating!]!
   restaurant: Restaurant! # Es necesario?
@@ -171,6 +172,7 @@ input UpdateRestaurantOwnerInput {
 type RestaurantOwner {
   ID: ID!
   name: String!
+  lastName: String!
   email: String!
   phone: String!
   banking : BankingData!
@@ -207,7 +209,7 @@ type Query {
 
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getProductById(input: ID!): Product!
-  getProductsByAllFields(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
+  searchProductsAndRestaurants(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
 
   autoCompleteTag(input: String!): [String!]!
 }

@@ -40,6 +40,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "kratos_id", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
+		{Name: "last_name", Type: field.TypeString},
 		{Name: "email", Type: field.TypeString},
 		{Name: "phone", Type: field.TypeString},
 		{Name: "customer_address", Type: field.TypeInt, Nullable: true},
@@ -52,7 +53,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "customers_addresses_address",
-				Columns: []*schema.Column{CustomersColumns[5]},
+				Columns: []*schema.Column{CustomersColumns[6]},
 
 				RefColumns: []*schema.Column{AddressesColumns[0]},
 				OnDelete:   schema.SetNull,
@@ -62,7 +63,7 @@ var (
 			{
 				Name:    "customer_kratos_id_email",
 				Unique:  true,
-				Columns: []*schema.Column{CustomersColumns[1], CustomersColumns[3]},
+				Columns: []*schema.Column{CustomersColumns[1], CustomersColumns[4]},
 			},
 		},
 	}
@@ -138,6 +139,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "kratos_id", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
+		{Name: "last_name", Type: field.TypeString},
 		{Name: "email", Type: field.TypeString},
 		{Name: "phone", Type: field.TypeString},
 		{Name: "restaurant_owner_banking_data", Type: field.TypeInt, Nullable: true},
@@ -151,14 +153,14 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "restaurant_owners_banking_data_banking_data",
-				Columns: []*schema.Column{RestaurantOwnersColumns[5]},
+				Columns: []*schema.Column{RestaurantOwnersColumns[6]},
 
 				RefColumns: []*schema.Column{BankingDataColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:  "restaurant_owners_restaurants_restaurant",
-				Columns: []*schema.Column{RestaurantOwnersColumns[6]},
+				Columns: []*schema.Column{RestaurantOwnersColumns[7]},
 
 				RefColumns: []*schema.Column{RestaurantsColumns[0]},
 				OnDelete:   schema.SetNull,
@@ -168,7 +170,7 @@ var (
 			{
 				Name:    "restaurantowner_kratos_id_email",
 				Unique:  true,
-				Columns: []*schema.Column{RestaurantOwnersColumns[1], RestaurantOwnersColumns[3]},
+				Columns: []*schema.Column{RestaurantOwnersColumns[1], RestaurantOwnersColumns[4]},
 			},
 		},
 	}

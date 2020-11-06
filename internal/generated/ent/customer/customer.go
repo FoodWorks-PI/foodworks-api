@@ -11,6 +11,8 @@ const (
 	FieldKratosID = "kratos_id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldLastName holds the string denoting the last_name field in the database.
+	FieldLastName = "last_name"
 	// FieldEmail holds the string denoting the email field in the database.
 	FieldEmail = "email"
 	// FieldPhone holds the string denoting the phone field in the database.
@@ -44,6 +46,7 @@ var Columns = []string{
 	FieldID,
 	FieldKratosID,
 	FieldName,
+	FieldLastName,
 	FieldEmail,
 	FieldPhone,
 }

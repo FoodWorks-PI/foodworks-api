@@ -21,6 +21,8 @@ type RestaurantOwner struct {
 	KratosID string `json:"kratos_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// LastName holds the value of the "last_name" field.
+	LastName string `json:"last_name,omitempty"`
 	// Email holds the value of the "email" field.
 	Email string `json:"email,omitempty"`
 	// Phone holds the value of the "phone" field.
@@ -77,6 +79,7 @@ func (*RestaurantOwner) scanValues() []interface{} {
 		&sql.NullInt64{},  // id
 		&sql.NullString{}, // kratos_id
 		&sql.NullString{}, // name
+		&sql.NullString{}, // last_name
 		&sql.NullString{}, // email
 		&sql.NullString{}, // phone
 	}
@@ -113,16 +116,21 @@ func (ro *RestaurantOwner) assignValues(values ...interface{}) error {
 		ro.Name = value.String
 	}
 	if value, ok := values[2].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field email", values[2])
+		return fmt.Errorf("unexpected type %T for field last_name", values[2])
+	} else if value.Valid {
+		ro.LastName = value.String
+	}
+	if value, ok := values[3].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field email", values[3])
 	} else if value.Valid {
 		ro.Email = value.String
 	}
-	if value, ok := values[3].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field phone", values[3])
+	if value, ok := values[4].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field phone", values[4])
 	} else if value.Valid {
 		ro.Phone = value.String
 	}
-	values = values[4:]
+	values = values[5:]
 	if len(values) == len(restaurantowner.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullInt64); !ok {
 			return fmt.Errorf("unexpected type %T for edge-field restaurant_owner_banking_data", value)
@@ -177,6 +185,8 @@ func (ro *RestaurantOwner) String() string {
 	builder.WriteString(ro.KratosID)
 	builder.WriteString(", name=")
 	builder.WriteString(ro.Name)
+	builder.WriteString(", last_name=")
+	builder.WriteString(ro.LastName)
 	builder.WriteString(", email=")
 	builder.WriteString(ro.Email)
 	builder.WriteString(", phone=")

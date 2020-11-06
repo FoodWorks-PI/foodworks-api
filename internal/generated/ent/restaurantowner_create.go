@@ -33,6 +33,12 @@ func (roc *RestaurantOwnerCreate) SetName(s string) *RestaurantOwnerCreate {
 	return roc
 }
 
+// SetLastName sets the last_name field.
+func (roc *RestaurantOwnerCreate) SetLastName(s string) *RestaurantOwnerCreate {
+	roc.mutation.SetLastName(s)
+	return roc
+}
+
 // SetEmail sets the email field.
 func (roc *RestaurantOwnerCreate) SetEmail(s string) *RestaurantOwnerCreate {
 	roc.mutation.SetEmail(s)
@@ -140,6 +146,9 @@ func (roc *RestaurantOwnerCreate) check() error {
 	if _, ok := roc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
 	}
+	if _, ok := roc.mutation.LastName(); !ok {
+		return &ValidationError{Name: "last_name", err: errors.New("ent: missing required field \"last_name\"")}
+	}
 	if _, ok := roc.mutation.Email(); !ok {
 		return &ValidationError{Name: "email", err: errors.New("ent: missing required field \"email\"")}
 	}
@@ -188,6 +197,14 @@ func (roc *RestaurantOwnerCreate) createSpec() (*RestaurantOwner, *sqlgraph.Crea
 			Column: restaurantowner.FieldName,
 		})
 		_node.Name = value
+	}
+	if value, ok := roc.mutation.LastName(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: restaurantowner.FieldLastName,
+		})
+		_node.LastName = value
 	}
 	if value, ok := roc.mutation.Email(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
