@@ -11,6 +11,10 @@ type Reccomender struct {
 	url string
 }
 
+func NewRecommender(url string) Reccomender {
+	return Reccomender{url}
+}
+
 func (r Reccomender) GetUserRecommendations(userId int) ([]int, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/%d", r.url, userId))
 	if err != nil {

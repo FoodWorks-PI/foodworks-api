@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"testing"
 
+	"foodworks.ml/m/internal/recommendations"
+
 	elasticsearch6 "github.com/elastic/go-elasticsearch/v6"
 
 	"foodworks.ml/m/internal/api"
@@ -141,6 +143,8 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
 
+	config.RecommenderURL = ""
+
 	// Setup API
 	SetupAPI(&testSupport)
 }
@@ -195,6 +199,7 @@ func SetupAPI(support *TestSupport) {
 
 	api := api.API{}
 	fileHandler := filehandler.NewDiskUploader()
-	api.SetupRoutes(client, db, rdb, *support.Config, elasticClient, &fileHandler)
+	recommender := recommendations.NewRecommender(support.Config.RecommenderURL)
+	api.SetupRoutes(client, db, rdb, *support.Config, elasticClient, &fileHandler, recommender)
 	support.Handler = api.Router
 }
