@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"testing"
 
+	elasticsearch6 "github.com/elastic/go-elasticsearch/v6"
+
 	"foodworks.ml/m/internal/api"
 	"foodworks.ml/m/internal/platform"
 	"foodworks.ml/m/internal/platform/filehandler"
@@ -29,6 +31,7 @@ type DockerSupport struct {
 	Pool             *dockertest.Pool
 	PostgresResource *dockertest.Resource
 	RedisResource    *dockertest.Resource
+	ElasticResource  *dockertest.Resource
 }
 
 func (suite *IntegrationTestSuite) TearDownSuite() {
@@ -37,6 +40,9 @@ func (suite *IntegrationTestSuite) TearDownSuite() {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
 	if err := suite.DockerSupport.Pool.Purge(suite.DockerSupport.RedisResource); err != nil {
+		log.Fatalf("Could not purge resource: %s", err)
+	}
+	if err := suite.DockerSupport.Pool.Purge(suite.DockerSupport.ElasticResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
 }
@@ -70,12 +76,12 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	// Setup Postgres
 	var db *sql.DB
 	database := "foodworks-test"
-	postgresResource, err := pool.Run("postgres", "latest", []string{"POSTGRES_PASSWORD=foodworks", "POSTGRES_DB=" + database})
+	postgresResource, err := pool.Run("ghcr.io/foodworks-pi/postgres", "alpha", []string{"POSTGRES_PASSWORD=foodworks", "POSTGRES_DB=" + database})
 	dockerSupport.PostgresResource = postgresResource
 	if err != nil {
 		log.Fatalf("Could not start resource: %s", err)
 	}
-	_ = postgresResource.Expire(60)
+	_ = postgresResource.Expire(300)
 
 	if err = pool.Retry(func() error {
 		var err error
@@ -95,7 +101,7 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	if err != nil {
 		log.Fatalf("Could not start resource: %s", err)
 	}
-	_ = redisResource.Expire(60)
+	_ = redisResource.Expire(300)
 
 	config.RedisPass = ""
 	var ctx = context.Background()
@@ -106,6 +112,31 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 		})
 
 		return rdb.Ping(ctx).Err()
+	}); err != nil {
+		log.Fatalf("Could not connect to docker: %s", err)
+	}
+	// Setup elastic
+	elasticResource, err := pool.Run("docker.elastic.co/elasticsearch/elasticsearch", "6.8.12", []string{"discovery.type=single-node"})
+	dockerSupport.ElasticResource = elasticResource
+	if err != nil {
+		log.Fatalf("Could not start resource: %s", err)
+	}
+	_ = elasticResource.Expire(600)
+	if err = pool.Retry(func() error {
+		var err error
+		config.ElasticsearchDBURL = fmt.Sprintf("http://localhost:%s", elasticResource.GetPort("9200/tcp"))
+		config.ElasticsearchURL = fmt.Sprintf("http://localhost:%s", elasticResource.GetPort("9200/tcp"))
+		cfg := elasticsearch6.Config{
+			Addresses: []string{
+				config.ElasticsearchURL,
+			},
+		}
+		client, err := elasticsearch6.NewClient(cfg)
+		if err != nil {
+			return err
+		}
+		_, err = client.Ping()
+		return err
 	}); err != nil {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
@@ -157,11 +188,10 @@ func (suite *IntegrationTestSuite) Test_Auth_Disabled() {
 // TODO: Abstract
 func SetupAPI(support *TestSupport) {
 
+	elasticClient := platform.NewElasticSearchClient(*support.Config)
 	db, client := platform.NewEntClient(*support.Config)
 
 	rdb := platform.NewRedisClient(*support.Config)
-
-	elasticClient := platform.NewElasticSearchClient(*support.Config)
 
 	api := api.API{}
 	fileHandler := filehandler.NewDiskUploader()

@@ -3,6 +3,8 @@ package platform
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"flag"
 	"fmt"
 	"log"
 
@@ -16,6 +18,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	"foodworks.ml/m/internal/generated/ent/tag"
+	"github.com/cenkalti/backoff/v4"
 	elasticsearch6 "github.com/elastic/go-elasticsearch/v6"
 	"github.com/facebook/ent/dialect"
 	entsql "github.com/facebook/ent/dialect/sql"
@@ -42,6 +45,26 @@ func NewElasticSearchClient(config DataStoreConfig) *elasticsearch6.Client {
 	client, err := elasticsearch6.NewClient(cfg)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if flag.Lookup("test.v") == nil {
+		operation := func() error {
+			tmp, err := client.Ping()
+			if err != nil {
+				log.Println("Waiting")
+				return err
+			}
+			if tmp.IsError() || tmp.HasWarnings() {
+				log.Println("Waiting")
+				return errors.New("an error occurred")
+			}
+			return nil
+		}
+
+		err = backoff.Retry(operation, backoff.NewExponentialBackOff())
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	/*
 		jsonObj := gabs.New()
