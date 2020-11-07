@@ -121,7 +121,7 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	if err != nil {
 		log.Fatalf("Could not start resource: %s", err)
 	}
-	_ = elasticResource.Expire(60)
+	_ = elasticResource.Expire(300)
 	if err = pool.Retry(func() error {
 		var err error
 		config.ElasticsearchDBURL = fmt.Sprintf("http://localhost:%s", elasticResource.GetPort("9200/tcp"))
