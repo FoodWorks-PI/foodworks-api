@@ -33,6 +33,12 @@ func (cc *CustomerCreate) SetName(s string) *CustomerCreate {
 	return cc
 }
 
+// SetLastName sets the last_name field.
+func (cc *CustomerCreate) SetLastName(s string) *CustomerCreate {
+	cc.mutation.SetLastName(s)
+	return cc
+}
+
 // SetEmail sets the email field.
 func (cc *CustomerCreate) SetEmail(s string) *CustomerCreate {
 	cc.mutation.SetEmail(s)
@@ -136,6 +142,9 @@ func (cc *CustomerCreate) check() error {
 	if _, ok := cc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
 	}
+	if _, ok := cc.mutation.LastName(); !ok {
+		return &ValidationError{Name: "last_name", err: errors.New("ent: missing required field \"last_name\"")}
+	}
 	if _, ok := cc.mutation.Email(); !ok {
 		return &ValidationError{Name: "email", err: errors.New("ent: missing required field \"email\"")}
 	}
@@ -184,6 +193,14 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 			Column: customer.FieldName,
 		})
 		_node.Name = value
+	}
+	if value, ok := cc.mutation.LastName(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: customer.FieldLastName,
+		})
+		_node.LastName = value
 	}
 	if value, ok := cc.mutation.Email(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

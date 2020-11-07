@@ -17,6 +17,7 @@ func (Customer) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("kratos_id"),
 		field.String("name"),
+		field.String("last_name"),
 		field.String("email"),
 		field.String("phone"),
 	}

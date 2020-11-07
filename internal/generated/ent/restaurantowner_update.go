@@ -41,6 +41,12 @@ func (rou *RestaurantOwnerUpdate) SetName(s string) *RestaurantOwnerUpdate {
 	return rou
 }
 
+// SetLastName sets the last_name field.
+func (rou *RestaurantOwnerUpdate) SetLastName(s string) *RestaurantOwnerUpdate {
+	rou.mutation.SetLastName(s)
+	return rou
+}
+
 // SetEmail sets the email field.
 func (rou *RestaurantOwnerUpdate) SetEmail(s string) *RestaurantOwnerUpdate {
 	rou.mutation.SetEmail(s)
@@ -191,6 +197,13 @@ func (rou *RestaurantOwnerUpdate) sqlSave(ctx context.Context) (n int, err error
 			Column: restaurantowner.FieldName,
 		})
 	}
+	if value, ok := rou.mutation.LastName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: restaurantowner.FieldLastName,
+		})
+	}
 	if value, ok := rou.mutation.Email(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -302,6 +315,12 @@ func (rouo *RestaurantOwnerUpdateOne) SetKratosID(s string) *RestaurantOwnerUpda
 // SetName sets the name field.
 func (rouo *RestaurantOwnerUpdateOne) SetName(s string) *RestaurantOwnerUpdateOne {
 	rouo.mutation.SetName(s)
+	return rouo
+}
+
+// SetLastName sets the last_name field.
+func (rouo *RestaurantOwnerUpdateOne) SetLastName(s string) *RestaurantOwnerUpdateOne {
+	rouo.mutation.SetLastName(s)
 	return rouo
 }
 
@@ -451,6 +470,13 @@ func (rouo *RestaurantOwnerUpdateOne) sqlSave(ctx context.Context) (_node *Resta
 			Type:   field.TypeString,
 			Value:  value,
 			Column: restaurantowner.FieldName,
+		})
+	}
+	if value, ok := rouo.mutation.LastName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: restaurantowner.FieldLastName,
 		})
 	}
 	if value, ok := rouo.mutation.Email(); ok {

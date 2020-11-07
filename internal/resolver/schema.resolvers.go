@@ -48,6 +48,7 @@ func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input mode
 	newCustomer, err := r.EntClient.Customer.
 		Create().
 		SetName(input.Name).
+		SetLastName(input.LastName).
 		SetEmail(currentUser.Email).
 		SetKratosID(currentUser.ID).
 		SetPhone(input.Phone).
@@ -76,6 +77,7 @@ func (r *mutationResolver) UpdateCustomerProfile(ctx context.Context, input mode
 	_, err = currentUser.
 		Update().
 		SetName(input.Name).
+		SetLastName(input.LastName).
 		SetPhone(input.Phone).
 		Save(ctx)
 
@@ -183,6 +185,7 @@ func (r *mutationResolver) CreateRestaurantOwnerProfile(ctx context.Context, inp
 	newRestaurantOwner, err := r.EntClient.RestaurantOwner.
 		Create().
 		SetName(input.Name).
+		SetLastName(input.LastName).
 		SetEmail(currentUser.Email).
 		SetKratosID(currentUser.ID).
 		SetPhone(input.Phone).
@@ -212,6 +215,7 @@ func (r *mutationResolver) UpdateRestaurantOwnerProfile(ctx context.Context, inp
 	_, err = currentUser.
 		Update().
 		SetName(input.Name).
+		SetLastName(input.LastName).
 		SetPhone(input.Phone).
 		Save(ctx)
 
@@ -511,6 +515,10 @@ func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]string,
 	return tags, ent.MaskNotFound(err)
 }
 
+func (r *productResolver) Active(ctx context.Context, obj *ent.Product) (bool, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *productResolver) AverageRating(ctx context.Context, obj *ent.Product) (float64, error) {
 	var avg float64
 	err := r.EntClient.Product.QueryRatings(obj).
@@ -621,7 +629,7 @@ func (r *queryResolver) GetProductByID(ctx context.Context, input int) (*ent.Pro
 	return res, nil
 }
 
-func (r *queryResolver) GetProductsByAllFields(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error) {
+func (r *queryResolver) SearchProductsAndRestaurants(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error) {
 	var result model.GlobalSearchResult
 	kratosUser := auth.ForContext(ctx)
 
@@ -758,13 +766,3 @@ type queryResolver struct{ *Resolver }
 type ratingResolver struct{ *Resolver }
 type restaurantResolver struct{ *Resolver }
 type restaurantOwnerResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *productResolver) Distance(ctx context.Context, obj *ent.Product) (float64, error) {
-	panic(fmt.Errorf("not implemented"))
-}

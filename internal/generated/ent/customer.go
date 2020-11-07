@@ -20,6 +20,8 @@ type Customer struct {
 	KratosID string `json:"kratos_id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// LastName holds the value of the "last_name" field.
+	LastName string `json:"last_name,omitempty"`
 	// Email holds the value of the "email" field.
 	Email string `json:"email,omitempty"`
 	// Phone holds the value of the "phone" field.
@@ -70,6 +72,7 @@ func (*Customer) scanValues() []interface{} {
 		&sql.NullInt64{},  // id
 		&sql.NullString{}, // kratos_id
 		&sql.NullString{}, // name
+		&sql.NullString{}, // last_name
 		&sql.NullString{}, // email
 		&sql.NullString{}, // phone
 	}
@@ -105,16 +108,21 @@ func (c *Customer) assignValues(values ...interface{}) error {
 		c.Name = value.String
 	}
 	if value, ok := values[2].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field email", values[2])
+		return fmt.Errorf("unexpected type %T for field last_name", values[2])
+	} else if value.Valid {
+		c.LastName = value.String
+	}
+	if value, ok := values[3].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field email", values[3])
 	} else if value.Valid {
 		c.Email = value.String
 	}
-	if value, ok := values[3].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field phone", values[3])
+	if value, ok := values[4].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field phone", values[4])
 	} else if value.Valid {
 		c.Phone = value.String
 	}
-	values = values[4:]
+	values = values[5:]
 	if len(values) == len(customer.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullInt64); !ok {
 			return fmt.Errorf("unexpected type %T for edge-field customer_address", value)
@@ -163,6 +171,8 @@ func (c *Customer) String() string {
 	builder.WriteString(c.KratosID)
 	builder.WriteString(", name=")
 	builder.WriteString(c.Name)
+	builder.WriteString(", last_name=")
+	builder.WriteString(c.LastName)
 	builder.WriteString(", email=")
 	builder.WriteString(c.Email)
 	builder.WriteString(", phone=")
