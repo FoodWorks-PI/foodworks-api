@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 
@@ -45,25 +46,26 @@ func NewElasticSearchClient(config DataStoreConfig) *elasticsearch6.Client {
 	if err != nil {
 		log.Fatal(err)
 	}
-	operation := func() error {
-		tmp, err := client.Ping()
+
+	if flag.Lookup("test.v") == nil {
+		operation := func() error {
+			tmp, err := client.Ping()
+			if err != nil {
+				log.Println("Waiting")
+				return err
+			}
+			if tmp.IsError() || tmp.HasWarnings() {
+				log.Println("Waiting")
+				return errors.New("an error occurred")
+			}
+			return nil
+		}
+
+		err = backoff.Retry(operation, backoff.NewExponentialBackOff())
 		if err != nil {
-			log.Println("Waiting")
-			return err
+			log.Fatal(err)
 		}
-		if tmp.IsError() || tmp.HasWarnings() {
-			log.Println("Waiting")
-			return errors.New("an error occurred")
-		}
-		return nil
 	}
-
-	err = backoff.Retry(operation, backoff.NewExponentialBackOff())
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	/*
 		jsonObj := gabs.New()
 		jsonObj.SetP(1, "suggest.suggestion.completion.fuzzy.fuzziness")
