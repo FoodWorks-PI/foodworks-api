@@ -76,12 +76,12 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	// Setup Postgres
 	var db *sql.DB
 	database := "foodworks-test"
-	postgresResource, err := pool.Run("postgres", "latest", []string{"POSTGRES_PASSWORD=foodworks", "POSTGRES_DB=" + database})
+	postgresResource, err := pool.Run("ghcr.io/foodworks-pi/postgres", "alpha", []string{"POSTGRES_PASSWORD=foodworks", "POSTGRES_DB=" + database})
 	dockerSupport.PostgresResource = postgresResource
 	if err != nil {
 		log.Fatalf("Could not start resource: %s", err)
 	}
-	_ = postgresResource.Expire(60)
+	_ = postgresResource.Expire(300)
 
 	if err = pool.Retry(func() error {
 		var err error
@@ -101,7 +101,7 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	if err != nil {
 		log.Fatalf("Could not start resource: %s", err)
 	}
-	_ = redisResource.Expire(60)
+	_ = redisResource.Expire(300)
 
 	config.RedisPass = ""
 	var ctx = context.Background()

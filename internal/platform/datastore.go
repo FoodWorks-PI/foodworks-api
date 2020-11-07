@@ -48,9 +48,11 @@ func NewElasticSearchClient(config DataStoreConfig) *elasticsearch6.Client {
 	operation := func() error {
 		tmp, err := client.Ping()
 		if err != nil {
+			log.Println("Waiting")
 			return err
 		}
 		if tmp.IsError() || tmp.HasWarnings() {
+			log.Println("Waiting")
 			return errors.New("an error occurred")
 		}
 		return nil
