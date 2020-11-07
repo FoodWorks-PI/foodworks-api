@@ -7,6 +7,7 @@ require (
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
+	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/containerd/continuity v0.0.0-20200928162600-f2cc35102c2a // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dgryski/trifles v0.0.0-20200830180326-aaf60a07f6a3 // indirect

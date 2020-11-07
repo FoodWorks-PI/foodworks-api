@@ -3,6 +3,7 @@ package platform
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 
@@ -16,6 +17,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 	"foodworks.ml/m/internal/generated/ent/tag"
+	"github.com/cenkalti/backoff/v4"
 	elasticsearch6 "github.com/elastic/go-elasticsearch/v6"
 	"github.com/facebook/ent/dialect"
 	entsql "github.com/facebook/ent/dialect/sql"
@@ -43,6 +45,23 @@ func NewElasticSearchClient(config DataStoreConfig) *elasticsearch6.Client {
 	if err != nil {
 		log.Fatal(err)
 	}
+	operation := func() error {
+		tmp, err := client.Ping()
+		if err != nil {
+			return err
+		}
+		if tmp.IsError() || tmp.HasWarnings() {
+			return errors.New("an error occurred")
+		}
+		return nil
+	}
+
+	err = backoff.Retry(operation, backoff.NewExponentialBackOff())
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	/*
 		jsonObj := gabs.New()
 		jsonObj.SetP(1, "suggest.suggestion.completion.fuzzy.fuzziness")

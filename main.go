@@ -22,8 +22,8 @@ func main() {
 		ElasticsearchURL:   os.Getenv("ELASTICSEARCH_URL"),
 	}
 
-	db, client := platform.NewEntClient(dataStoreConfig)
 	elasticClient := platform.NewElasticSearchClient(dataStoreConfig)
+	db, client := platform.NewEntClient(dataStoreConfig)
 
 	rdb := platform.NewRedisClient(dataStoreConfig)
 
