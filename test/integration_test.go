@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"testing"
 
+	elasticsearch6 "github.com/elastic/go-elasticsearch/v6"
+
 	"foodworks.ml/m/internal/api"
 	"foodworks.ml/m/internal/platform"
 	"foodworks.ml/m/internal/platform/filehandler"
@@ -29,6 +31,7 @@ type DockerSupport struct {
 	Pool             *dockertest.Pool
 	PostgresResource *dockertest.Resource
 	RedisResource    *dockertest.Resource
+	ElasticResource  *dockertest.Resource
 }
 
 func (suite *IntegrationTestSuite) TearDownSuite() {
@@ -37,6 +40,9 @@ func (suite *IntegrationTestSuite) TearDownSuite() {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
 	if err := suite.DockerSupport.Pool.Purge(suite.DockerSupport.RedisResource); err != nil {
+		log.Fatalf("Could not purge resource: %s", err)
+	}
+	if err := suite.DockerSupport.Pool.Purge(suite.DockerSupport.ElasticResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
 }
@@ -109,6 +115,31 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	}); err != nil {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
+	// Setup elastic
+	elasticResource, err := pool.Run("docker.elastic.co/elasticsearch/elasticsearch", "6.8.12", []string{"discovery.type=single-node"})
+	dockerSupport.ElasticResource = elasticResource
+	if err != nil {
+		log.Fatalf("Could not start resource: %s", err)
+	}
+	_ = elasticResource.Expire(60)
+	if err = pool.Retry(func() error {
+		var err error
+		config.ElasticsearchDBURL = fmt.Sprintf("http://localhost:%s", elasticResource.GetPort("9200/tcp"))
+		config.ElasticsearchURL = fmt.Sprintf("http://localhost:%s", elasticResource.GetPort("9200/tcp"))
+		cfg := elasticsearch6.Config{
+			Addresses: []string{
+				config.ElasticsearchURL,
+			},
+		}
+		client, err := elasticsearch6.NewClient(cfg)
+		if err != nil {
+			return err
+		}
+		_, err = client.Ping()
+		return err
+	}); err != nil {
+		log.Fatalf("Could not connect to docker: %s", err)
+	}
 
 	// Setup API
 	SetupAPI(&testSupport)
@@ -157,11 +188,10 @@ func (suite *IntegrationTestSuite) Test_Auth_Disabled() {
 // TODO: Abstract
 func SetupAPI(support *TestSupport) {
 
+	elasticClient := platform.NewElasticSearchClient(*support.Config)
 	db, client := platform.NewEntClient(*support.Config)
 
 	rdb := platform.NewRedisClient(*support.Config)
-
-	elasticClient := platform.NewElasticSearchClient(*support.Config)
 
 	api := api.API{}
 	fileHandler := filehandler.NewDiskUploader()
