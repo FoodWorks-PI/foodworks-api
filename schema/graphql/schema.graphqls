@@ -118,16 +118,48 @@ type Product {
   # recurrence: Recurrence
 }
 
+enum OrderState {​​​​
+  PENDING_PAYMENT
+  PAID
+  COMPLETED
+  CANCELLED
+  ERROR
+}
+
+​​​​input RegisterOrder {
+  productID: ID!
+  customerID: ID!
+  quantity: Int!
+}
+
+input UpdateOrder {
+  orderID: ID!
+  orderState: OrderState!
+}
+
+input CancelOrder {
+  orderID: ID!
+}
+type Order {
+  ID: ID!
+  product: Product!
+  customer: Customer!
+  orderState: OrderState!
+  quantity: Int!
+  updatedAt: Int!
+}
+
 input RegisterRatingInput {
   productID : ID!
   rating: Int!
   comment: String
 }
- input UpdateRatingInput {
-   ID : ID!
-   rating: Int!
-   comment: String
- }
+
+input UpdateRatingInput {
+  ID : ID!
+  rating: Int!
+  comment: String
+}
 
 type Rating {
   ID: ID!
@@ -210,6 +242,8 @@ type Query {
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getProductById(input: ID!): Product!
   searchProductsAndRestaurants(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
+
+  getOrdersByCustomerID(input: ID!): [Order]!
 
   autoCompleteTag(input: String!): [String!]!
 }
