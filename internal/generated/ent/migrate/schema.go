@@ -67,6 +67,41 @@ var (
 			},
 		},
 	}
+	// OrdersColumns holds the columns for the "orders" table.
+	OrdersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "order_state", Type: field.TypeString},
+		{Name: "quantity", Type: field.TypeInt},
+		{Name: "updated_at", Type: field.TypeInt, SchemaType: map[string]string{"postgres": "timestampz"}},
+	}
+	// OrdersTable holds the schema information for the "orders" table.
+	OrdersTable = &schema.Table{
+		Name:        "orders",
+		Columns:     OrdersColumns,
+		PrimaryKey:  []*schema.Column{OrdersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{},
+	}
+	// PaymentMethodsColumns holds the columns for the "payment_methods" table.
+	PaymentMethodsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "data", Type: field.TypeString},
+		{Name: "customer_payment_method", Type: field.TypeInt, Nullable: true},
+	}
+	// PaymentMethodsTable holds the schema information for the "payment_methods" table.
+	PaymentMethodsTable = &schema.Table{
+		Name:       "payment_methods",
+		Columns:    PaymentMethodsColumns,
+		PrimaryKey: []*schema.Column{PaymentMethodsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "payment_methods_customers_payment_method",
+				Columns: []*schema.Column{PaymentMethodsColumns[2]},
+
+				RefColumns: []*schema.Column{CustomersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// ProductsColumns holds the columns for the "products" table.
 	ProductsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -186,6 +221,33 @@ var (
 		PrimaryKey:  []*schema.Column{TagsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{},
 	}
+	// CustomerOrdersColumns holds the columns for the "customer_orders" table.
+	CustomerOrdersColumns = []*schema.Column{
+		{Name: "customer_id", Type: field.TypeInt},
+		{Name: "order_id", Type: field.TypeInt},
+	}
+	// CustomerOrdersTable holds the schema information for the "customer_orders" table.
+	CustomerOrdersTable = &schema.Table{
+		Name:       "customer_orders",
+		Columns:    CustomerOrdersColumns,
+		PrimaryKey: []*schema.Column{CustomerOrdersColumns[0], CustomerOrdersColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "customer_orders_customer_id",
+				Columns: []*schema.Column{CustomerOrdersColumns[0]},
+
+				RefColumns: []*schema.Column{CustomersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "customer_orders_order_id",
+				Columns: []*schema.Column{CustomerOrdersColumns[1]},
+
+				RefColumns: []*schema.Column{OrdersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// ProductTagsColumns holds the columns for the "product_tags" table.
 	ProductTagsColumns = []*schema.Column{
 		{Name: "product_id", Type: field.TypeInt},
@@ -209,6 +271,33 @@ var (
 				Columns: []*schema.Column{ProductTagsColumns[1]},
 
 				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// ProductOrdersColumns holds the columns for the "product_orders" table.
+	ProductOrdersColumns = []*schema.Column{
+		{Name: "product_id", Type: field.TypeInt},
+		{Name: "order_id", Type: field.TypeInt},
+	}
+	// ProductOrdersTable holds the schema information for the "product_orders" table.
+	ProductOrdersTable = &schema.Table{
+		Name:       "product_orders",
+		Columns:    ProductOrdersColumns,
+		PrimaryKey: []*schema.Column{ProductOrdersColumns[0], ProductOrdersColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "product_orders_product_id",
+				Columns: []*schema.Column{ProductOrdersColumns[0]},
+
+				RefColumns: []*schema.Column{ProductsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "product_orders_order_id",
+				Columns: []*schema.Column{ProductOrdersColumns[1]},
+
+				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
@@ -272,12 +361,16 @@ var (
 		AddressesTable,
 		BankingDataTable,
 		CustomersTable,
+		OrdersTable,
+		PaymentMethodsTable,
 		ProductsTable,
 		RatingsTable,
 		RestaurantsTable,
 		RestaurantOwnersTable,
 		TagsTable,
+		CustomerOrdersTable,
 		ProductTagsTable,
+		ProductOrdersTable,
 		RestaurantTagsTable,
 		RestaurantProductsTable,
 	}
@@ -285,13 +378,18 @@ var (
 
 func init() {
 	CustomersTable.ForeignKeys[0].RefTable = AddressesTable
+	PaymentMethodsTable.ForeignKeys[0].RefTable = CustomersTable
 	RatingsTable.ForeignKeys[0].RefTable = CustomersTable
 	RatingsTable.ForeignKeys[1].RefTable = ProductsTable
 	RestaurantsTable.ForeignKeys[0].RefTable = AddressesTable
 	RestaurantOwnersTable.ForeignKeys[0].RefTable = BankingDataTable
 	RestaurantOwnersTable.ForeignKeys[1].RefTable = RestaurantsTable
+	CustomerOrdersTable.ForeignKeys[0].RefTable = CustomersTable
+	CustomerOrdersTable.ForeignKeys[1].RefTable = OrdersTable
 	ProductTagsTable.ForeignKeys[0].RefTable = ProductsTable
 	ProductTagsTable.ForeignKeys[1].RefTable = TagsTable
+	ProductOrdersTable.ForeignKeys[0].RefTable = ProductsTable
+	ProductOrdersTable.ForeignKeys[1].RefTable = OrdersTable
 	RestaurantTagsTable.ForeignKeys[0].RefTable = RestaurantsTable
 	RestaurantTagsTable.ForeignKeys[1].RefTable = TagsTable
 	RestaurantProductsTable.ForeignKeys[0].RefTable = RestaurantsTable

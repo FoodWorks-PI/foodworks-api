@@ -737,6 +737,62 @@ func HasRatingsWith(preds ...predicate.Rating) predicate.Customer {
 	})
 }
 
+// HasOrders applies the HasEdge predicate on the "orders" edge.
+func HasOrders() predicate.Customer {
+	return predicate.Customer(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OrdersTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, OrdersTable, OrdersPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrdersWith applies the HasEdge predicate on the "orders" edge with a given conditions (other predicates).
+func HasOrdersWith(preds ...predicate.Order) predicate.Customer {
+	return predicate.Customer(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(OrdersInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, OrdersTable, OrdersPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasPaymentMethod applies the HasEdge predicate on the "payment_method" edge.
+func HasPaymentMethod() predicate.Customer {
+	return predicate.Customer(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(PaymentMethodTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PaymentMethodTable, PaymentMethodColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPaymentMethodWith applies the HasEdge predicate on the "payment_method" edge with a given conditions (other predicates).
+func HasPaymentMethodWith(preds ...predicate.PaymentMethod) predicate.Customer {
+	return predicate.Customer(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(PaymentMethodInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PaymentMethodTable, PaymentMethodColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups list of predicates with the AND operator between them.
 func And(predicates ...predicate.Customer) predicate.Customer {
 	return predicate.Customer(func(s *sql.Selector) {

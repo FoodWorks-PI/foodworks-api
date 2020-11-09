@@ -282,6 +282,54 @@ func (f CustomerMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutati
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.CustomerMutation", m)
 }
 
+// The OrderQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type OrderQueryRuleFunc func(context.Context, *ent.OrderQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f OrderQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.OrderQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.OrderQuery", q)
+}
+
+// The OrderMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type OrderMutationRuleFunc func(context.Context, *ent.OrderMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f OrderMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.OrderMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.OrderMutation", m)
+}
+
+// The PaymentMethodQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type PaymentMethodQueryRuleFunc func(context.Context, *ent.PaymentMethodQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f PaymentMethodQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.PaymentMethodQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.PaymentMethodQuery", q)
+}
+
+// The PaymentMethodMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type PaymentMethodMutationRuleFunc func(context.Context, *ent.PaymentMethodMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f PaymentMethodMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.PaymentMethodMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.PaymentMethodMutation", m)
+}
+
 // The ProductQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type ProductQueryRuleFunc func(context.Context, *ent.ProductQuery) error

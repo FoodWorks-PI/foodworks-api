@@ -11,6 +11,10 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+type CancelOrder struct {
+	OrderID int `json:"orderID"`
+}
+
 type DeleteImageInput struct {
 	FileNames []string `json:"fileNames"`
 }
@@ -18,6 +22,10 @@ type DeleteImageInput struct {
 type GlobalSearchResult struct {
 	Restaurants []*ent.Restaurant `json:"restaurants"`
 	Products    []*ent.Product    `json:"products"`
+}
+
+type PaymentMethodInput struct {
+	Data string `json:"data"`
 }
 
 type ProductSearchResult struct {
@@ -61,6 +69,12 @@ type RegisterCustomerInput struct {
 	Address  *RegisterAddressInput `json:"address"`
 }
 
+type RegisterOrderInput struct {
+	ProductID  int `json:"productID"`
+	CustomerID int `json:"customerID"`
+	Quantity   int `json:"quantity"`
+}
+
 type RegisterProductInput struct {
 	Name         string   `json:"name"`
 	Description  string   `json:"description"`
@@ -97,6 +111,11 @@ type UpdateCustomerInput struct {
 	Phone    string `json:"phone"`
 }
 
+type UpdateOrderInput struct {
+	OrderID    int        `json:"orderID"`
+	OrderState OrderState `json:"orderState"`
+}
+
 type UpdateProductInput struct {
 	ID          int      `json:"ID"`
 	Name        string   `json:"name"`
@@ -120,6 +139,53 @@ type UpdateRestaurantOwnerInput struct {
 
 type UploadImageInput struct {
 	Files []*graphql.Upload `json:"files"`
+}
+
+type OrderState string
+
+const (
+	OrderStatePendingPayment OrderState = "PENDING_PAYMENT"
+	OrderStatePaid           OrderState = "PAID"
+	OrderStateCompleted      OrderState = "COMPLETED"
+	OrderStateCancelled      OrderState = "CANCELLED"
+	OrderStateError          OrderState = "ERROR"
+)
+
+var AllOrderState = []OrderState{
+	OrderStatePendingPayment,
+	OrderStatePaid,
+	OrderStateCompleted,
+	OrderStateCancelled,
+	OrderStateError,
+}
+
+func (e OrderState) IsValid() bool {
+	switch e {
+	case OrderStatePendingPayment, OrderStatePaid, OrderStateCompleted, OrderStateCancelled, OrderStateError:
+		return true
+	}
+	return false
+}
+
+func (e OrderState) String() string {
+	return string(e)
+}
+
+func (e *OrderState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OrderState", str)
+	}
+	return nil
+}
+
+func (e OrderState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type Role string

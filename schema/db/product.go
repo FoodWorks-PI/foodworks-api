@@ -33,5 +33,6 @@ func (Product) Edges() []ent.Edge {
 		edge.To("tags", Tag.Type),
 		edge.To("ratings", Rating.Type),
 		edge.From("restaurant", Restaurant.Type).Ref("products"),
+		edge.To("orders", Order.Type),
 	}
 }

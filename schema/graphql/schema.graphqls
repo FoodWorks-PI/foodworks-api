@@ -17,6 +17,14 @@
    CUSTOMER
  }
 
+ enum OrderState {
+   PENDING_PAYMENT
+   PAID
+   COMPLETED
+   CANCELLED
+   ERROR
+ }
+
 #TODO: Image Upload/Download in: Product, Restaurant, Tag
 input RegisterAddressInput {
   latitude: Float!
@@ -35,10 +43,17 @@ input RegisterBankingInput {
   bankAccount: String!
 }
 
+input PaymentMethodInput {
+  data: String!
+}
+
 type BankingData {
   bankAccount: String!
 }
 
+type PaymentMethod {
+  data: String!
+}
 
 input RegisterCustomerInput {
   name: String!
@@ -61,6 +76,8 @@ type Customer {
   address: Address!
   phone: String!
   ratedProducts: [Rating!]!
+  orders: [Order!]!
+  paymentMethod: PaymentMethod!
   # favoriteProducts: [Product]
 }
 
@@ -118,21 +135,13 @@ type Product {
   # recurrence: Recurrence
 }
 
-enum OrderState {​​​​
-  PENDING_PAYMENT
-  PAID
-  COMPLETED
-  CANCELLED
-  ERROR
-}
-
-​​​​input RegisterOrder {
+input RegisterOrderInput {
   productID: ID!
   customerID: ID!
   quantity: Int!
 }
 
-input UpdateOrder {
+input UpdateOrderInput {
   orderID: ID!
   orderState: OrderState!
 }
@@ -183,6 +192,7 @@ type Restaurant {
   address: Address!
   tags: [String!]!
   products: [Product!]!
+  orders: [Order!]!
   restaurantOwner: RestaurantOwner!
   distance: Float! @hasRole(role: CUSTOMER)
 }
@@ -243,7 +253,8 @@ type Query {
   getProductById(input: ID!): Product!
   searchProductsAndRestaurants(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
 
-  getOrdersByCustomerID(input: ID!): [Order]!
+  getCustomerOrders: [Order!]!
+  getRestaurantOrders: [Order!]!
 
   autoCompleteTag(input: String!): [String!]!
 }
@@ -252,6 +263,7 @@ type Mutation {
   createCustomerProfile(input: RegisterCustomerInput!): ID!
   updateCustomerProfile(input: UpdateCustomerInput!): ID!
   updateCustomerAddress(input: RegisterAddressInput!): ID!
+  updateCustomerPaymentMethod(input: PaymentMethodInput): ID!
   deleteCustomerProfile: ID!
 
   createRestaurantOwnerProfile(input: RegisterRestaurantOwnerInput!): ID!
@@ -268,7 +280,7 @@ type Mutation {
 
   updateRestaurant(input:RegisterRestaurantInput!): ID!
   uploadRestaurantPhoto(input: UploadImageInput!): [String!]!
-  deleteRestuarantPhoto(input: DeleteImageInput!): ID!
+  deleteRestaurantPhoto(input: DeleteImageInput!): ID!
   deleteRestaurant(input: ID!): ID!
 
   createProductRating(input: RegisterRatingInput!): ID!
@@ -278,6 +290,6 @@ type Mutation {
   uploadPhotoDemo(input:UploadImageInput!): [String!]!
   deletePhotoDemo(input:DeleteImageInput!): [String!]!
 
-  # createOrder(input: CreateOrderInput): CreateOrderPayload!
-  # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!
+  createOrder(input: RegisterOrderInput): ID!
+  updateOrder(input: UpdateOrderInput): ID!
 }

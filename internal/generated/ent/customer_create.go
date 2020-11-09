@@ -9,6 +9,8 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/order"
+	"foodworks.ml/m/internal/generated/ent/paymentmethod"
 	"foodworks.ml/m/internal/generated/ent/rating"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -83,6 +85,36 @@ func (cc *CustomerCreate) AddRatings(r ...*Rating) *CustomerCreate {
 		ids[i] = r[i].ID
 	}
 	return cc.AddRatingIDs(ids...)
+}
+
+// AddOrderIDs adds the orders edge to Order by ids.
+func (cc *CustomerCreate) AddOrderIDs(ids ...int) *CustomerCreate {
+	cc.mutation.AddOrderIDs(ids...)
+	return cc
+}
+
+// AddOrders adds the orders edges to Order.
+func (cc *CustomerCreate) AddOrders(o ...*Order) *CustomerCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return cc.AddOrderIDs(ids...)
+}
+
+// AddPaymentMethodIDs adds the payment_method edge to PaymentMethod by ids.
+func (cc *CustomerCreate) AddPaymentMethodIDs(ids ...int) *CustomerCreate {
+	cc.mutation.AddPaymentMethodIDs(ids...)
+	return cc
+}
+
+// AddPaymentMethod adds the payment_method edges to PaymentMethod.
+func (cc *CustomerCreate) AddPaymentMethod(p ...*PaymentMethod) *CustomerCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cc.AddPaymentMethodIDs(ids...)
 }
 
 // Mutation returns the CustomerMutation object of the builder.
@@ -248,6 +280,44 @@ func (cc *CustomerCreate) createSpec() (*Customer, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: rating.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.OrdersTable,
+			Columns: customer.OrdersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.PaymentMethodIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PaymentMethodTable,
+			Columns: []string{customer.PaymentMethodColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: paymentmethod.FieldID,
 				},
 			},
 		}
