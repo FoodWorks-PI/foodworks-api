@@ -34,7 +34,7 @@ func (oc *OrderCreate) SetQuantity(i int) *OrderCreate {
 }
 
 // SetUpdatedAt sets the updated_at field.
-func (oc *OrderCreate) SetUpdatedAt(i int) *OrderCreate {
+func (oc *OrderCreate) SetUpdatedAt(i int64) *OrderCreate {
 	oc.mutation.SetUpdatedAt(i)
 	return oc
 }
@@ -174,7 +174,7 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := oc.mutation.UpdatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
+			Type:   field.TypeInt64,
 			Value:  value,
 			Column: order.FieldUpdatedAt,
 		})

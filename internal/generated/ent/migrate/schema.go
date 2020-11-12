@@ -72,7 +72,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "order_state", Type: field.TypeString},
 		{Name: "quantity", Type: field.TypeInt},
-		{Name: "updated_at", Type: field.TypeInt, SchemaType: map[string]string{"postgres": "timestampz"}},
+		{Name: "updated_at", Type: field.TypeInt64, SchemaType: map[string]string{"postgres": "timestampz"}},
 	}
 	// OrdersTable holds the schema information for the "orders" table.
 	OrdersTable = &schema.Table{

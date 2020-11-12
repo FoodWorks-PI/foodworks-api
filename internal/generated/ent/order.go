@@ -20,7 +20,7 @@ type Order struct {
 	// Quantity holds the value of the "quantity" field.
 	Quantity int `json:"quantity,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
-	UpdatedAt int `json:"updated_at,omitempty"`
+	UpdatedAt int64 `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OrderQuery when eager-loading is set.
 	Edges OrderEdges `json:"edges"`
@@ -90,7 +90,7 @@ func (o *Order) assignValues(values ...interface{}) error {
 	if value, ok := values[2].(*sql.NullInt64); !ok {
 		return fmt.Errorf("unexpected type %T for field updated_at", values[2])
 	} else if value.Valid {
-		o.UpdatedAt = int(value.Int64)
+		o.UpdatedAt = value.Int64
 	}
 	return nil
 }

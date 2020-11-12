@@ -7,10 +7,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/order"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
@@ -32,11 +34,23 @@ func (r *customerResolver) RatedProducts(ctx context.Context, obj *ent.Customer)
 }
 
 func (r *customerResolver) Orders(ctx context.Context, obj *ent.Customer) ([]*ent.Order, error) {
-	panic(fmt.Errorf("not implemented"))
+	kratosUser := auth.ForContext(ctx)
+
+	orders, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		QueryOrders().
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
 }
 
 func (r *customerResolver) PaymentMethod(ctx context.Context, obj *ent.Customer) (*ent.PaymentMethod, error) {
-	panic(fmt.Errorf("not implemented"))
+	product, err := obj.QueryPaymentMethod().First(ctx)
+	return product, ent.MaskNotFound(err)
 }
 
 func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input model.RegisterCustomerInput) (int, error) {
@@ -133,7 +147,24 @@ func (r *mutationResolver) UpdateCustomerAddress(ctx context.Context, input mode
 }
 
 func (r *mutationResolver) UpdateCustomerPaymentMethod(ctx context.Context, input *model.PaymentMethodInput) (int, error) {
-	panic(fmt.Errorf("not implemented"))
+	kratosSessionUser := auth.ForContext(ctx)
+
+	currentUserPaymentMethod, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosSessionUser.ID)).
+		QueryPaymentMethod().
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+	_, err = currentUserPaymentMethod.Update().
+		SetData(input.Data).
+		Save(ctx)
+	if err != nil {
+		return -1, err
+	}
+	return currentUserPaymentMethod.ID, nil
 }
 
 func (r *mutationResolver) DeleteCustomerProfile(ctx context.Context) (int, error) {
@@ -523,23 +554,72 @@ func (r *mutationResolver) DeletePhotoDemo(ctx context.Context, input model.Dele
 }
 
 func (r *mutationResolver) CreateOrder(ctx context.Context, input *model.RegisterOrderInput) (int, error) {
-	panic(fmt.Errorf("not implemented"))
+	kratosUser := auth.ForContext(ctx)
+
+	currentCustomer, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return -1, nil
+	}
+
+	order, err := r.EntClient.Order.Create().
+		SetQuantity(input.Quantity).
+		SetOrderState(model.OrderStatePendingPayment.String()).
+		SetUpdatedAt(time.Now().UTC().Unix()).
+		AddCustomer(currentCustomer).
+		AddProductIDs(input.ProductID).
+		Save(ctx)
+
+	if err != nil {
+		return -1, nil
+	}
+
+	return order.ID, nil
 }
 
 func (r *mutationResolver) UpdateOrder(ctx context.Context, input *model.UpdateOrderInput) (int, error) {
-	panic(fmt.Errorf("not implemented"))
+	kratosUser := auth.ForContext(ctx)
+
+	currentCustomer, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return -1, nil
+	}
+
+	_, err = r.EntClient.Order.Update().
+		Where(
+			order.HasCustomerWith(customer.ID(currentCustomer.ID)),
+			order.IDEQ(input.OrderID),
+		).
+		SetOrderState(input.OrderState.String()).
+		Save(ctx)
+
+	if err != nil {
+		return -1, nil
+	}
+	return input.OrderID, nil
 }
 
 func (r *orderResolver) Product(ctx context.Context, obj *ent.Order) (*ent.Product, error) {
-	panic(fmt.Errorf("not implemented"))
+	product, err := obj.QueryProduct().First(ctx)
+	return product, ent.MaskNotFound(err)
 }
 
 func (r *orderResolver) Customer(ctx context.Context, obj *ent.Order) (*ent.Customer, error) {
-	panic(fmt.Errorf("not implemented"))
+	customer, err := obj.QueryCustomer().First(ctx)
+	return customer, ent.MaskNotFound(err)
 }
 
 func (r *orderResolver) OrderState(ctx context.Context, obj *ent.Order) (model.OrderState, error) {
-	panic(fmt.Errorf("not implemented"))
+	var model model.OrderState
+	err := model.UnmarshalGQL(obj.OrderState)
+	return model, err
 }
 
 func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]string, error) {
@@ -548,7 +628,7 @@ func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]string,
 }
 
 func (r *productResolver) Active(ctx context.Context, obj *ent.Product) (bool, error) {
-	panic(fmt.Errorf("not implemented"))
+	return obj.IsActive, nil
 }
 
 func (r *productResolver) AverageRating(ctx context.Context, obj *ent.Product) (float64, error) {
@@ -702,11 +782,35 @@ func (r *queryResolver) SearchProductsAndRestaurants(ctx context.Context, input 
 }
 
 func (r *queryResolver) GetCustomerOrders(ctx context.Context) ([]*ent.Order, error) {
-	panic(fmt.Errorf("not implemented"))
+	kratosUser := auth.ForContext(ctx)
+
+	orders, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		QueryOrders().
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
 }
 
 func (r *queryResolver) GetRestaurantOrders(ctx context.Context) ([]*ent.Order, error) {
-	panic(fmt.Errorf("not implemented"))
+	kratosUser := auth.ForContext(ctx)
+
+	orders, err := r.EntClient.RestaurantOwner.
+		Query().
+		Where(restaurantowner.KratosID(kratosUser.ID)).
+		QueryRestaurant().
+		QueryProducts().
+		QueryOrders().
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
 }
 
 func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]string, error) {
@@ -762,7 +866,20 @@ func (r *restaurantResolver) Products(ctx context.Context, obj *ent.Restaurant) 
 }
 
 func (r *restaurantResolver) Orders(ctx context.Context, obj *ent.Restaurant) ([]*ent.Order, error) {
-	panic(fmt.Errorf("not implemented"))
+	kratosUser := auth.ForContext(ctx)
+
+	orders, err := r.EntClient.RestaurantOwner.
+		Query().
+		Where(restaurantowner.KratosID(kratosUser.ID)).
+		QueryRestaurant().
+		QueryProducts().
+		QueryOrders().
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
 }
 
 func (r *restaurantResolver) RestaurantOwner(ctx context.Context, obj *ent.Restaurant) (*ent.RestaurantOwner, error) {
