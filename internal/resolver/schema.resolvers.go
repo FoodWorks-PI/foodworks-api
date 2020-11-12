@@ -213,6 +213,10 @@ func (r *mutationResolver) CreateRestaurantOwnerProfile(ctx context.Context, inp
 
 	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Restaurant.Tags, ctx)
 
+	if err != nil {
+		return -1, err
+	}
+
 	newRestaurant, err := r.EntClient.Restaurant.
 		Create().
 		SetName(input.Restaurant.Name).
@@ -338,6 +342,10 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Regist
 		return -1, err
 	}
 	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Tags, ctx)
+
+	if err != nil {
+		return -1, err
+	}
 
 	newProduct, err := r.EntClient.Product.
 		Create().
