@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/order"
@@ -49,15 +50,8 @@ func (ou *OrderUpdate) AddQuantity(i int) *OrderUpdate {
 }
 
 // SetUpdatedAt sets the updated_at field.
-func (ou *OrderUpdate) SetUpdatedAt(i int64) *OrderUpdate {
-	ou.mutation.ResetUpdatedAt()
-	ou.mutation.SetUpdatedAt(i)
-	return ou
-}
-
-// AddUpdatedAt adds i to updated_at.
-func (ou *OrderUpdate) AddUpdatedAt(i int64) *OrderUpdate {
-	ou.mutation.AddUpdatedAt(i)
+func (ou *OrderUpdate) SetUpdatedAt(t time.Time) *OrderUpdate {
+	ou.mutation.SetUpdatedAt(t)
 	return ou
 }
 
@@ -230,14 +224,7 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := ou.mutation.UpdatedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
-			Value:  value,
-			Column: order.FieldUpdatedAt,
-		})
-	}
-	if value, ok := ou.mutation.AddedUpdatedAt(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
+			Type:   field.TypeTime,
 			Value:  value,
 			Column: order.FieldUpdatedAt,
 		})
@@ -388,15 +375,8 @@ func (ouo *OrderUpdateOne) AddQuantity(i int) *OrderUpdateOne {
 }
 
 // SetUpdatedAt sets the updated_at field.
-func (ouo *OrderUpdateOne) SetUpdatedAt(i int64) *OrderUpdateOne {
-	ouo.mutation.ResetUpdatedAt()
-	ouo.mutation.SetUpdatedAt(i)
-	return ouo
-}
-
-// AddUpdatedAt adds i to updated_at.
-func (ouo *OrderUpdateOne) AddUpdatedAt(i int64) *OrderUpdateOne {
-	ouo.mutation.AddUpdatedAt(i)
+func (ouo *OrderUpdateOne) SetUpdatedAt(t time.Time) *OrderUpdateOne {
+	ouo.mutation.SetUpdatedAt(t)
 	return ouo
 }
 
@@ -567,14 +547,7 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 	}
 	if value, ok := ouo.mutation.UpdatedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
-			Value:  value,
-			Column: order.FieldUpdatedAt,
-		})
-	}
-	if value, ok := ouo.mutation.AddedUpdatedAt(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
+			Type:   field.TypeTime,
 			Value:  value,
 			Column: order.FieldUpdatedAt,
 		})

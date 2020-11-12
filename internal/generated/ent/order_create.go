@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/order"
@@ -34,8 +35,8 @@ func (oc *OrderCreate) SetQuantity(i int) *OrderCreate {
 }
 
 // SetUpdatedAt sets the updated_at field.
-func (oc *OrderCreate) SetUpdatedAt(i int64) *OrderCreate {
-	oc.mutation.SetUpdatedAt(i)
+func (oc *OrderCreate) SetUpdatedAt(t time.Time) *OrderCreate {
+	oc.mutation.SetUpdatedAt(t)
 	return oc
 }
 
@@ -174,7 +175,7 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := oc.mutation.UpdatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
+			Type:   field.TypeTime,
 			Value:  value,
 			Column: order.FieldUpdatedAt,
 		})

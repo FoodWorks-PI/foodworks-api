@@ -70,9 +70,8 @@ type RegisterCustomerInput struct {
 }
 
 type RegisterOrderInput struct {
-	ProductID  int `json:"productID"`
-	CustomerID int `json:"customerID"`
-	Quantity   int `json:"quantity"`
+	ProductID int `json:"productID"`
+	Quantity  int `json:"quantity"`
 }
 
 type RegisterProductInput struct {

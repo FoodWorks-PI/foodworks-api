@@ -137,7 +137,6 @@ type Product {
 
 input RegisterOrderInput {
   productID: ID!
-  customerID: ID!
   quantity: Int!
 }
 
@@ -149,13 +148,14 @@ input UpdateOrderInput {
 input CancelOrder {
   orderID: ID!
 }
+scalar Int64
 type Order {
   ID: ID!
   product: Product!
   customer: Customer!
   orderState: OrderState!
   quantity: Int!
-  updatedAt: Int!
+  updatedAt: Int64!
 }
 
 input RegisterRatingInput {

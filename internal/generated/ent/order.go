@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"foodworks.ml/m/internal/generated/ent/order"
 	"github.com/facebook/ent/dialect/sql"
@@ -20,7 +21,7 @@ type Order struct {
 	// Quantity holds the value of the "quantity" field.
 	Quantity int `json:"quantity,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
-	UpdatedAt int64 `json:"updated_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OrderQuery when eager-loading is set.
 	Edges OrderEdges `json:"edges"`
@@ -61,7 +62,7 @@ func (*Order) scanValues() []interface{} {
 		&sql.NullInt64{},  // id
 		&sql.NullString{}, // order_state
 		&sql.NullInt64{},  // quantity
-		&sql.NullInt64{},  // updated_at
+		&sql.NullTime{},   // updated_at
 	}
 }
 
@@ -87,10 +88,10 @@ func (o *Order) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		o.Quantity = int(value.Int64)
 	}
-	if value, ok := values[2].(*sql.NullInt64); !ok {
+	if value, ok := values[2].(*sql.NullTime); !ok {
 		return fmt.Errorf("unexpected type %T for field updated_at", values[2])
 	} else if value.Valid {
-		o.UpdatedAt = value.Int64
+		o.UpdatedAt = value.Time
 	}
 	return nil
 }
@@ -133,7 +134,7 @@ func (o *Order) String() string {
 	builder.WriteString(", quantity=")
 	builder.WriteString(fmt.Sprintf("%v", o.Quantity))
 	builder.WriteString(", updated_at=")
-	builder.WriteString(fmt.Sprintf("%v", o.UpdatedAt))
+	builder.WriteString(o.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -149,22 +149,34 @@ func (r *mutationResolver) UpdateCustomerAddress(ctx context.Context, input mode
 func (r *mutationResolver) UpdateCustomerPaymentMethod(ctx context.Context, input *model.PaymentMethodInput) (int, error) {
 	kratosSessionUser := auth.ForContext(ctx)
 
-	currentUserPaymentMethod, err := r.EntClient.Customer.
+	currentUser, err := r.EntClient.Customer.
 		Query().
 		Where(customer.KratosID(kratosSessionUser.ID)).
-		QueryPaymentMethod().
+		WithPaymentMethod().
 		First(ctx)
 
 	if err != nil {
 		return -1, err
 	}
-	_, err = currentUserPaymentMethod.Update().
-		SetData(input.Data).
-		Save(ctx)
+	var paymentMethod *ent.PaymentMethod
+	if len(currentUser.Edges.PaymentMethod) == 0 {
+		paymentMethod, err = r.EntClient.PaymentMethod.Create().
+			SetData(input.Data).
+			Save(ctx)
+		if err != nil {
+			return -1, err
+		}
+		_, err = currentUser.Update().AddPaymentMethod(paymentMethod).Save(ctx)
+	} else {
+		paymentMethod = currentUser.Edges.PaymentMethod[0]
+		_, err = paymentMethod.Update().
+			SetData(input.Data).
+			Save(ctx)
+	}
 	if err != nil {
 		return -1, err
 	}
-	return currentUserPaymentMethod.ID, nil
+	return paymentMethod.ID, nil
 }
 
 func (r *mutationResolver) DeleteCustomerProfile(ctx context.Context) (int, error) {
@@ -499,7 +511,7 @@ func (r *mutationResolver) CreateProductRating(ctx context.Context, input model.
 		Where(customer.KratosID(kratosUser.ID)).
 		First(ctx)
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 	rating, err := r.EntClient.Rating.Create().
 		SetProductID(input.ProductID).
@@ -509,7 +521,7 @@ func (r *mutationResolver) CreateProductRating(ctx context.Context, input model.
 		Save(ctx)
 
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 
 	return rating.ID, nil
@@ -527,9 +539,9 @@ func (r *mutationResolver) UpdateProductRating(ctx context.Context, input model.
 }
 
 func (r *mutationResolver) DeleteRating(ctx context.Context, input int) (int, error) {
-	err := r.EntClient.Rating.DeleteOneID(input)
+	err := r.EntClient.Rating.DeleteOneID(input).Exec(ctx)
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 	return input, nil
 }
@@ -570,19 +582,19 @@ func (r *mutationResolver) CreateOrder(ctx context.Context, input *model.Registe
 		First(ctx)
 
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 
 	order, err := r.EntClient.Order.Create().
 		SetQuantity(input.Quantity).
 		SetOrderState(model.OrderStatePendingPayment.String()).
-		SetUpdatedAt(time.Now().UTC().Unix()).
+		SetUpdatedAt(time.Now().UTC()).
 		AddCustomer(currentCustomer).
 		AddProductIDs(input.ProductID).
 		Save(ctx)
 
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 
 	return order.ID, nil
@@ -597,7 +609,7 @@ func (r *mutationResolver) UpdateOrder(ctx context.Context, input *model.UpdateO
 		First(ctx)
 
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 
 	_, err = r.EntClient.Order.Update().
@@ -606,10 +618,11 @@ func (r *mutationResolver) UpdateOrder(ctx context.Context, input *model.UpdateO
 			order.IDEQ(input.OrderID),
 		).
 		SetOrderState(input.OrderState.String()).
+		SetUpdatedAt(time.Now().UTC()).
 		Save(ctx)
 
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 	return input.OrderID, nil
 }
@@ -628,6 +641,10 @@ func (r *orderResolver) OrderState(ctx context.Context, obj *ent.Order) (model.O
 	var model model.OrderState
 	err := model.UnmarshalGQL(obj.OrderState)
 	return model, err
+}
+
+func (r *orderResolver) UpdatedAt(ctx context.Context, obj *ent.Order) (int64, error) {
+	return obj.UpdatedAt.Unix(), nil
 }
 
 func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]string, error) {

@@ -17,7 +17,7 @@ func (Order) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("order_state"),
 		field.Int("quantity"),
-		field.Int64("updated_at").
+		field.Time("updated_at").
 			SchemaType(map[string]string{
 				dialect.Postgres: "timestamp",
 			}),

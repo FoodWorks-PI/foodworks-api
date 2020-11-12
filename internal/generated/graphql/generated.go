@@ -222,6 +222,8 @@ type OrderResolver interface {
 	Product(ctx context.Context, obj *ent.Order) (*ent.Product, error)
 	Customer(ctx context.Context, obj *ent.Order) (*ent.Customer, error)
 	OrderState(ctx context.Context, obj *ent.Order) (model.OrderState, error)
+
+	UpdatedAt(ctx context.Context, obj *ent.Order) (int64, error)
 }
 type ProductResolver interface {
 	Tags(ctx context.Context, obj *ent.Product) ([]string, error)
@@ -1259,7 +1261,6 @@ type Product {
 
 input RegisterOrderInput {
   productID: ID!
-  customerID: ID!
   quantity: Int!
 }
 
@@ -1271,13 +1272,14 @@ input UpdateOrderInput {
 input CancelOrder {
   orderID: ID!
 }
+scalar Int64
 type Order {
   ID: ID!
   product: Product!
   customer: Customer!
   orderState: OrderState!
   quantity: Int!
-  updatedAt: Int!
+  updatedAt: Int64!
 }
 
 input RegisterRatingInput {
@@ -3715,14 +3717,14 @@ func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.
 		Object:     "Order",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UpdatedAt, nil
+		return ec.resolvers.Order().UpdatedAt(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3736,7 +3738,7 @@ func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.
 	}
 	res := resTmp.(int64)
 	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
+	return ec.marshalNInt642int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PaymentMethod_data(ctx context.Context, field graphql.CollectedField, obj *ent.PaymentMethod) (ret graphql.Marshaler) {
@@ -6819,14 +6821,6 @@ func (ec *executionContext) unmarshalInputRegisterOrderInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "customerID":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customerID"))
-			it.CustomerID, err = ec.unmarshalNID2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "quantity":
 			var err error
 
@@ -7676,10 +7670,19 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
-			out.Values[i] = ec._Order_updatedAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_updatedAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8652,12 +8655,12 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
+func (ec *executionContext) unmarshalNInt642int64(ctx context.Context, v interface{}) (int64, error) {
 	res, err := graphql.UnmarshalInt64(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+func (ec *executionContext) marshalNInt642int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
 	res := graphql.MarshalInt64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {

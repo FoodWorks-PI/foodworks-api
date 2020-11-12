@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/bankingdata"
@@ -1722,8 +1723,7 @@ type OrderMutation struct {
 	order_state     *string
 	quantity        *int
 	addquantity     *int
-	updated_at      *int64
-	addupdated_at   *int64
+	updated_at      *time.Time
 	clearedFields   map[string]struct{}
 	product         map[int]struct{}
 	removedproduct  map[int]struct{}
@@ -1909,13 +1909,12 @@ func (m *OrderMutation) ResetQuantity() {
 }
 
 // SetUpdatedAt sets the updated_at field.
-func (m *OrderMutation) SetUpdatedAt(i int64) {
-	m.updated_at = &i
-	m.addupdated_at = nil
+func (m *OrderMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
 }
 
 // UpdatedAt returns the updated_at value in the mutation.
-func (m *OrderMutation) UpdatedAt() (r int64, exists bool) {
+func (m *OrderMutation) UpdatedAt() (r time.Time, exists bool) {
 	v := m.updated_at
 	if v == nil {
 		return
@@ -1927,7 +1926,7 @@ func (m *OrderMutation) UpdatedAt() (r int64, exists bool) {
 // If the Order object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *OrderMutation) OldUpdatedAt(ctx context.Context) (v int64, err error) {
+func (m *OrderMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldUpdatedAt is allowed only on UpdateOne operations")
 	}
@@ -1941,28 +1940,9 @@ func (m *OrderMutation) OldUpdatedAt(ctx context.Context) (v int64, err error) {
 	return oldValue.UpdatedAt, nil
 }
 
-// AddUpdatedAt adds i to updated_at.
-func (m *OrderMutation) AddUpdatedAt(i int64) {
-	if m.addupdated_at != nil {
-		*m.addupdated_at += i
-	} else {
-		m.addupdated_at = &i
-	}
-}
-
-// AddedUpdatedAt returns the value that was added to the updated_at field in this mutation.
-func (m *OrderMutation) AddedUpdatedAt() (r int64, exists bool) {
-	v := m.addupdated_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
 // ResetUpdatedAt reset all changes of the "updated_at" field.
 func (m *OrderMutation) ResetUpdatedAt() {
 	m.updated_at = nil
-	m.addupdated_at = nil
 }
 
 // AddProductIDs adds the product edge to Product by ids.
@@ -2148,7 +2128,7 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 		m.SetQuantity(v)
 		return nil
 	case order.FieldUpdatedAt:
-		v, ok := value.(int64)
+		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2165,9 +2145,6 @@ func (m *OrderMutation) AddedFields() []string {
 	if m.addquantity != nil {
 		fields = append(fields, order.FieldQuantity)
 	}
-	if m.addupdated_at != nil {
-		fields = append(fields, order.FieldUpdatedAt)
-	}
 	return fields
 }
 
@@ -2178,8 +2155,6 @@ func (m *OrderMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case order.FieldQuantity:
 		return m.AddedQuantity()
-	case order.FieldUpdatedAt:
-		return m.AddedUpdatedAt()
 	}
 	return nil, false
 }
@@ -2195,13 +2170,6 @@ func (m *OrderMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddQuantity(v)
-		return nil
-	case order.FieldUpdatedAt:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddUpdatedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Order numeric field %s", name)
