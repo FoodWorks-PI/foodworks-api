@@ -831,6 +831,9 @@ func (r *queryResolver) GetFeed(ctx context.Context) ([]*model.FeedItem, error) 
 	} else {
 		recProducts, err = r.EntClient.Product.Query().Limit(5).All(ctx)
 	}
+	if err != nil {
+		return nil, err
+	}
 	feedItems := make([]model.FeedCard, len(recProducts))
 	for i, recProduct := range recProducts {
 		feedItems[i] = model.FeedCard(recProduct)
