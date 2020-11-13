@@ -22,6 +22,8 @@ const (
 	EdgeRatings = "ratings"
 	// EdgeRestaurant holds the string denoting the restaurant edge name in mutations.
 	EdgeRestaurant = "restaurant"
+	// EdgeOrders holds the string denoting the orders edge name in mutations.
+	EdgeOrders = "orders"
 
 	// Table holds the table name of the product in the database.
 	Table = "products"
@@ -42,6 +44,11 @@ const (
 	// RestaurantInverseTable is the table name for the Restaurant entity.
 	// It exists in this package in order to avoid circular dependency with the "restaurant" package.
 	RestaurantInverseTable = "restaurants"
+	// OrdersTable is the table the holds the orders relation/edge. The primary key declared below.
+	OrdersTable = "product_orders"
+	// OrdersInverseTable is the table name for the Order entity.
+	// It exists in this package in order to avoid circular dependency with the "order" package.
+	OrdersInverseTable = "orders"
 )
 
 // Columns holds all SQL columns for product fields.
@@ -60,6 +67,9 @@ var (
 	// RestaurantPrimaryKey and RestaurantColumn2 are the table columns denoting the
 	// primary key for the restaurant relation (M2M).
 	RestaurantPrimaryKey = []string{"restaurant_id", "product_id"}
+	// OrdersPrimaryKey and OrdersColumn2 are the table columns denoting the
+	// primary key for the orders relation (M2M).
+	OrdersPrimaryKey = []string{"product_id", "order_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

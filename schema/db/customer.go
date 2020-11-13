@@ -29,6 +29,8 @@ func (Customer) Edges() []ent.Edge {
 		edge.To("address", Address.Type).
 			Unique(),
 		edge.To("ratings", Rating.Type),
+		edge.To("orders", Order.Type),
+		edge.To("payment_method", PaymentMethod.Type),
 	}
 }
 

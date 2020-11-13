@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -39,11 +40,13 @@ type Config struct {
 type ResolverRoot interface {
 	Customer() CustomerResolver
 	Mutation() MutationResolver
+	Order() OrderResolver
 	Product() ProductResolver
 	Query() QueryResolver
 	Rating() RatingResolver
 	Restaurant() RestaurantResolver
 	RestaurantOwner() RestaurantOwnerResolver
+	Subscription() SubscriptionResolver
 }
 
 type DirectiveRoot struct {
@@ -67,6 +70,8 @@ type ComplexityRoot struct {
 		ID            func(childComplexity int) int
 		LastName      func(childComplexity int) int
 		Name          func(childComplexity int) int
+		Orders        func(childComplexity int) int
+		PaymentMethod func(childComplexity int) int
 		Phone         func(childComplexity int) int
 		RatedProducts func(childComplexity int) int
 	}
@@ -78,6 +83,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateCustomerProfile            func(childComplexity int, input model.RegisterCustomerInput) int
+		CreateOrder                      func(childComplexity int, input *model.RegisterOrderInput) int
 		CreateProduct                    func(childComplexity int, input model.RegisterProductInput) int
 		CreateProductRating              func(childComplexity int, input model.RegisterRatingInput) int
 		CreateRestaurantOwnerProfile     func(childComplexity int, input model.RegisterRestaurantOwnerInput) int
@@ -88,10 +94,12 @@ type ComplexityRoot struct {
 		DeleteRating                     func(childComplexity int, input int) int
 		DeleteRestaurant                 func(childComplexity int, input int) int
 		DeleteRestaurantOwnerProfile     func(childComplexity int) int
-		DeleteRestuarantPhoto            func(childComplexity int, input model.DeleteImageInput) int
+		DeleteRestaurantPhoto            func(childComplexity int, input model.DeleteImageInput) int
 		ToggleProductStatus              func(childComplexity int, input int) int
 		UpdateCustomerAddress            func(childComplexity int, input model.RegisterAddressInput) int
+		UpdateCustomerPaymentMethod      func(childComplexity int, input *model.PaymentMethodInput) int
 		UpdateCustomerProfile            func(childComplexity int, input model.UpdateCustomerInput) int
+		UpdateOrder                      func(childComplexity int, input *model.UpdateOrderInput) int
 		UpdateProduct                    func(childComplexity int, input model.UpdateProductInput) int
 		UpdateProductRating              func(childComplexity int, input model.UpdateRatingInput) int
 		UpdateRestaurant                 func(childComplexity int, input model.RegisterRestaurantInput) int
@@ -100,6 +108,19 @@ type ComplexityRoot struct {
 		UploadPhotoDemo                  func(childComplexity int, input model.UploadImageInput) int
 		UploadProductPhoto               func(childComplexity int, input model.UploadImageInput) int
 		UploadRestaurantPhoto            func(childComplexity int, input model.UploadImageInput) int
+	}
+
+	Order struct {
+		Customer   func(childComplexity int) int
+		ID         func(childComplexity int) int
+		OrderState func(childComplexity int) int
+		Product    func(childComplexity int) int
+		Quantity   func(childComplexity int) int
+		UpdatedAt  func(childComplexity int) int
+	}
+
+	PaymentMethod struct {
+		Data func(childComplexity int) int
 	}
 
 	Product struct {
@@ -125,9 +146,11 @@ type ComplexityRoot struct {
 		GetClosestRestaurants        func(childComplexity int) int
 		GetCurrentCustomer           func(childComplexity int) int
 		GetCurrentRestaurantOwner    func(childComplexity int) int
+		GetCustomerOrders            func(childComplexity int) int
 		GetProductByID               func(childComplexity int, input int) int
 		GetProductsByRestaurantID    func(childComplexity int, input model.ProductsFilterByRestaurantInput) int
 		GetRestaurantByID            func(childComplexity int, input int) int
+		GetRestaurantOrders          func(childComplexity int) int
 		SearchProductsAndRestaurants func(childComplexity int, input model.ProductsByAllFieldsInput) int
 	}
 
@@ -145,6 +168,7 @@ type ComplexityRoot struct {
 		Distance        func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Name            func(childComplexity int) int
+		Orders          func(childComplexity int) int
 		Products        func(childComplexity int) int
 		RestaurantOwner func(childComplexity int) int
 		Tags            func(childComplexity int) int
@@ -159,17 +183,24 @@ type ComplexityRoot struct {
 		Phone      func(childComplexity int) int
 		Restaurant func(childComplexity int) int
 	}
+
+	Subscription struct {
+		OnOrderStateChange func(childComplexity int) int
+	}
 }
 
 type CustomerResolver interface {
 	Address(ctx context.Context, obj *ent.Customer) (*ent.Address, error)
 
 	RatedProducts(ctx context.Context, obj *ent.Customer) ([]*ent.Rating, error)
+	Orders(ctx context.Context, obj *ent.Customer) ([]*ent.Order, error)
+	PaymentMethod(ctx context.Context, obj *ent.Customer) (*ent.PaymentMethod, error)
 }
 type MutationResolver interface {
 	CreateCustomerProfile(ctx context.Context, input model.RegisterCustomerInput) (int, error)
 	UpdateCustomerProfile(ctx context.Context, input model.UpdateCustomerInput) (int, error)
 	UpdateCustomerAddress(ctx context.Context, input model.RegisterAddressInput) (int, error)
+	UpdateCustomerPaymentMethod(ctx context.Context, input *model.PaymentMethodInput) (int, error)
 	DeleteCustomerProfile(ctx context.Context) (int, error)
 	CreateRestaurantOwnerProfile(ctx context.Context, input model.RegisterRestaurantOwnerInput) (int, error)
 	UpdateRestaurantOwnerProfile(ctx context.Context, input model.UpdateRestaurantOwnerInput) (int, error)
@@ -183,13 +214,22 @@ type MutationResolver interface {
 	DeleteProduct(ctx context.Context, input int) (int, error)
 	UpdateRestaurant(ctx context.Context, input model.RegisterRestaurantInput) (int, error)
 	UploadRestaurantPhoto(ctx context.Context, input model.UploadImageInput) ([]string, error)
-	DeleteRestuarantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error)
+	DeleteRestaurantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error)
 	DeleteRestaurant(ctx context.Context, input int) (int, error)
 	CreateProductRating(ctx context.Context, input model.RegisterRatingInput) (int, error)
 	UpdateProductRating(ctx context.Context, input model.UpdateRatingInput) (int, error)
 	DeleteRating(ctx context.Context, input int) (int, error)
 	UploadPhotoDemo(ctx context.Context, input model.UploadImageInput) ([]string, error)
 	DeletePhotoDemo(ctx context.Context, input model.DeleteImageInput) ([]string, error)
+	CreateOrder(ctx context.Context, input *model.RegisterOrderInput) (int, error)
+	UpdateOrder(ctx context.Context, input *model.UpdateOrderInput) (int, error)
+}
+type OrderResolver interface {
+	Product(ctx context.Context, obj *ent.Order) (*ent.Product, error)
+	Customer(ctx context.Context, obj *ent.Order) (*ent.Customer, error)
+	OrderState(ctx context.Context, obj *ent.Order) (model.OrderState, error)
+
+	UpdatedAt(ctx context.Context, obj *ent.Order) (int64, error)
 }
 type ProductResolver interface {
 	Tags(ctx context.Context, obj *ent.Product) ([]string, error)
@@ -207,6 +247,8 @@ type QueryResolver interface {
 	GetProductsByRestaurantID(ctx context.Context, input model.ProductsFilterByRestaurantInput) ([]*ent.Product, error)
 	GetProductByID(ctx context.Context, input int) (*ent.Product, error)
 	SearchProductsAndRestaurants(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error)
+	GetCustomerOrders(ctx context.Context) ([]*ent.Order, error)
+	GetRestaurantOrders(ctx context.Context) ([]*ent.Order, error)
 	AutoCompleteTag(ctx context.Context, input string) ([]string, error)
 }
 type RatingResolver interface {
@@ -217,11 +259,15 @@ type RestaurantResolver interface {
 	Address(ctx context.Context, obj *ent.Restaurant) (*ent.Address, error)
 	Tags(ctx context.Context, obj *ent.Restaurant) ([]string, error)
 	Products(ctx context.Context, obj *ent.Restaurant) ([]*ent.Product, error)
+	Orders(ctx context.Context, obj *ent.Restaurant) ([]*ent.Order, error)
 	RestaurantOwner(ctx context.Context, obj *ent.Restaurant) (*ent.RestaurantOwner, error)
 }
 type RestaurantOwnerResolver interface {
 	Banking(ctx context.Context, obj *ent.RestaurantOwner) (*ent.BankingData, error)
 	Restaurant(ctx context.Context, obj *ent.RestaurantOwner) (*ent.Restaurant, error)
+}
+type SubscriptionResolver interface {
+	OnOrderStateChange(ctx context.Context) (<-chan int, error)
 }
 
 type executableSchema struct {
@@ -302,6 +348,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Customer.Name(childComplexity), true
 
+	case "Customer.orders":
+		if e.complexity.Customer.Orders == nil {
+			break
+		}
+
+		return e.complexity.Customer.Orders(childComplexity), true
+
+	case "Customer.paymentMethod":
+		if e.complexity.Customer.PaymentMethod == nil {
+			break
+		}
+
+		return e.complexity.Customer.PaymentMethod(childComplexity), true
+
 	case "Customer.phone":
 		if e.complexity.Customer.Phone == nil {
 			break
@@ -341,6 +401,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateCustomerProfile(childComplexity, args["input"].(model.RegisterCustomerInput)), true
+
+	case "Mutation.createOrder":
+		if e.complexity.Mutation.CreateOrder == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createOrder_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateOrder(childComplexity, args["input"].(*model.RegisterOrderInput)), true
 
 	case "Mutation.createProduct":
 		if e.complexity.Mutation.CreateProduct == nil {
@@ -452,17 +524,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteRestaurantOwnerProfile(childComplexity), true
 
-	case "Mutation.deleteRestuarantPhoto":
-		if e.complexity.Mutation.DeleteRestuarantPhoto == nil {
+	case "Mutation.deleteRestaurantPhoto":
+		if e.complexity.Mutation.DeleteRestaurantPhoto == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_deleteRestuarantPhoto_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_deleteRestaurantPhoto_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteRestuarantPhoto(childComplexity, args["input"].(model.DeleteImageInput)), true
+		return e.complexity.Mutation.DeleteRestaurantPhoto(childComplexity, args["input"].(model.DeleteImageInput)), true
 
 	case "Mutation.toggleProductStatus":
 		if e.complexity.Mutation.ToggleProductStatus == nil {
@@ -488,6 +560,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateCustomerAddress(childComplexity, args["input"].(model.RegisterAddressInput)), true
 
+	case "Mutation.updateCustomerPaymentMethod":
+		if e.complexity.Mutation.UpdateCustomerPaymentMethod == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateCustomerPaymentMethod_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateCustomerPaymentMethod(childComplexity, args["input"].(*model.PaymentMethodInput)), true
+
 	case "Mutation.updateCustomerProfile":
 		if e.complexity.Mutation.UpdateCustomerProfile == nil {
 			break
@@ -499,6 +583,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateCustomerProfile(childComplexity, args["input"].(model.UpdateCustomerInput)), true
+
+	case "Mutation.updateOrder":
+		if e.complexity.Mutation.UpdateOrder == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateOrder_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateOrder(childComplexity, args["input"].(*model.UpdateOrderInput)), true
 
 	case "Mutation.updateProduct":
 		if e.complexity.Mutation.UpdateProduct == nil {
@@ -595,6 +691,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UploadRestaurantPhoto(childComplexity, args["input"].(model.UploadImageInput)), true
+
+	case "Order.customer":
+		if e.complexity.Order.Customer == nil {
+			break
+		}
+
+		return e.complexity.Order.Customer(childComplexity), true
+
+	case "Order.ID":
+		if e.complexity.Order.ID == nil {
+			break
+		}
+
+		return e.complexity.Order.ID(childComplexity), true
+
+	case "Order.orderState":
+		if e.complexity.Order.OrderState == nil {
+			break
+		}
+
+		return e.complexity.Order.OrderState(childComplexity), true
+
+	case "Order.product":
+		if e.complexity.Order.Product == nil {
+			break
+		}
+
+		return e.complexity.Order.Product(childComplexity), true
+
+	case "Order.quantity":
+		if e.complexity.Order.Quantity == nil {
+			break
+		}
+
+		return e.complexity.Order.Quantity(childComplexity), true
+
+	case "Order.updatedAt":
+		if e.complexity.Order.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Order.UpdatedAt(childComplexity), true
+
+	case "PaymentMethod.data":
+		if e.complexity.PaymentMethod.Data == nil {
+			break
+		}
+
+		return e.complexity.PaymentMethod.Data(childComplexity), true
 
 	case "Product.active":
 		if e.complexity.Product.Active == nil {
@@ -713,6 +858,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetCurrentRestaurantOwner(childComplexity), true
 
+	case "Query.getCustomerOrders":
+		if e.complexity.Query.GetCustomerOrders == nil {
+			break
+		}
+
+		return e.complexity.Query.GetCustomerOrders(childComplexity), true
+
 	case "Query.getProductById":
 		if e.complexity.Query.GetProductByID == nil {
 			break
@@ -748,6 +900,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetRestaurantByID(childComplexity, args["input"].(int)), true
+
+	case "Query.getRestaurantOrders":
+		if e.complexity.Query.GetRestaurantOrders == nil {
+			break
+		}
+
+		return e.complexity.Query.GetRestaurantOrders(childComplexity), true
 
 	case "Query.searchProductsAndRestaurants":
 		if e.complexity.Query.SearchProductsAndRestaurants == nil {
@@ -831,6 +990,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Restaurant.Name(childComplexity), true
 
+	case "Restaurant.orders":
+		if e.complexity.Restaurant.Orders == nil {
+			break
+		}
+
+		return e.complexity.Restaurant.Orders(childComplexity), true
+
 	case "Restaurant.products":
 		if e.complexity.Restaurant.Products == nil {
 			break
@@ -901,6 +1067,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RestaurantOwner.Restaurant(childComplexity), true
 
+	case "Subscription.onOrderStateChange":
+		if e.complexity.Subscription.OnOrderStateChange == nil {
+			break
+		}
+
+		return e.complexity.Subscription.OnOrderStateChange(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -933,6 +1106,23 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			first = false
 			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Subscription:
+		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
+
+		var buf bytes.Buffer
+		return func(ctx context.Context) *graphql.Response {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
 			data.MarshalGQL(&buf)
 
 			return &graphql.Response{
@@ -984,6 +1174,14 @@ var sources = []*ast.Source{
    CUSTOMER
  }
 
+ enum OrderState {
+   PENDING_PAYMENT
+   PAID
+   COMPLETED
+   CANCELLED
+   ERROR
+ }
+
 #TODO: Image Upload/Download in: Product, Restaurant, Tag
 input RegisterAddressInput {
   latitude: Float!
@@ -1002,10 +1200,17 @@ input RegisterBankingInput {
   bankAccount: String!
 }
 
+input PaymentMethodInput {
+  data: String!
+}
+
 type BankingData {
   bankAccount: String!
 }
 
+type PaymentMethod {
+  data: String!
+}
 
 input RegisterCustomerInput {
   name: String!
@@ -1028,6 +1233,8 @@ type Customer {
   address: Address!
   phone: String!
   ratedProducts: [Rating!]!
+  orders: [Order!]!
+  paymentMethod: PaymentMethod!
   # favoriteProducts: [Product]
 }
 
@@ -1085,16 +1292,40 @@ type Product {
   # recurrence: Recurrence
 }
 
+input RegisterOrderInput {
+  productID: ID!
+  quantity: Int!
+}
+
+input UpdateOrderInput {
+  orderID: ID!
+  orderState: OrderState!
+}
+
+input CancelOrder {
+  orderID: ID!
+}
+scalar Int64
+type Order {
+  ID: ID!
+  product: Product!
+  customer: Customer!
+  orderState: OrderState!
+  quantity: Int!
+  updatedAt: Int64!
+}
+
 input RegisterRatingInput {
   productID : ID!
   rating: Int!
   comment: String
 }
- input UpdateRatingInput {
-   ID : ID!
-   rating: Int!
-   comment: String
- }
+
+input UpdateRatingInput {
+  ID : ID!
+  rating: Int!
+  comment: String
+}
 
 type Rating {
   ID: ID!
@@ -1118,6 +1349,7 @@ type Restaurant {
   address: Address!
   tags: [String!]!
   products: [Product!]!
+  orders: [Order!]!
   restaurantOwner: RestaurantOwner!
   distance: Float! @hasRole(role: CUSTOMER)
 }
@@ -1178,6 +1410,9 @@ type Query {
   getProductById(input: ID!): Product!
   searchProductsAndRestaurants(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
 
+  getCustomerOrders: [Order!]!
+  getRestaurantOrders: [Order!]!
+
   autoCompleteTag(input: String!): [String!]!
 }
 
@@ -1185,6 +1420,7 @@ type Mutation {
   createCustomerProfile(input: RegisterCustomerInput!): ID!
   updateCustomerProfile(input: UpdateCustomerInput!): ID!
   updateCustomerAddress(input: RegisterAddressInput!): ID!
+  updateCustomerPaymentMethod(input: PaymentMethodInput): ID!
   deleteCustomerProfile: ID!
 
   createRestaurantOwnerProfile(input: RegisterRestaurantOwnerInput!): ID!
@@ -1201,7 +1437,7 @@ type Mutation {
 
   updateRestaurant(input:RegisterRestaurantInput!): ID!
   uploadRestaurantPhoto(input: UploadImageInput!): [String!]!
-  deleteRestuarantPhoto(input: DeleteImageInput!): ID!
+  deleteRestaurantPhoto(input: DeleteImageInput!): ID!
   deleteRestaurant(input: ID!): ID!
 
   createProductRating(input: RegisterRatingInput!): ID!
@@ -1211,8 +1447,12 @@ type Mutation {
   uploadPhotoDemo(input:UploadImageInput!): [String!]!
   deletePhotoDemo(input:DeleteImageInput!): [String!]!
 
-  # createOrder(input: CreateOrderInput): CreateOrderPayload!
-  # updateOrder(input: UpdateOrderInput): UpdateOrderPayload!
+  createOrder(input: RegisterOrderInput): ID!
+  updateOrder(input: UpdateOrderInput): ID!
+}
+
+type Subscription {
+   onOrderStateChange: ID!
 }
 `, BuiltIn: false},
 }
@@ -1244,6 +1484,21 @@ func (ec *executionContext) field_Mutation_createCustomerProfile_args(ctx contex
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNRegisterCustomerInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterCustomerInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createOrder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.RegisterOrderInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalORegisterOrderInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterOrderInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1357,13 +1612,13 @@ func (ec *executionContext) field_Mutation_deleteRating_args(ctx context.Context
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteRestaurant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_deleteRestaurantPhoto_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
+	var arg0 model.DeleteImageInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		arg0, err = ec.unmarshalNDeleteImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐDeleteImageInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1372,13 +1627,13 @@ func (ec *executionContext) field_Mutation_deleteRestaurant_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteRestuarantPhoto_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_deleteRestaurant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.DeleteImageInput
+	var arg0 int
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNDeleteImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐDeleteImageInput(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1417,6 +1672,21 @@ func (ec *executionContext) field_Mutation_updateCustomerAddress_args(ctx contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateCustomerPaymentMethod_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.PaymentMethodInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOPaymentMethodInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐPaymentMethodInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateCustomerProfile_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1424,6 +1694,21 @@ func (ec *executionContext) field_Mutation_updateCustomerProfile_args(ctx contex
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNUpdateCustomerInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUpdateCustomerInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateOrder_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UpdateOrderInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOUpdateOrderInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUpdateOrderInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2065,6 +2350,76 @@ func (ec *executionContext) _Customer_ratedProducts(ctx context.Context, field g
 	return ec.marshalNRating2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRatingᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Customer_orders(ctx context.Context, field graphql.CollectedField, obj *ent.Customer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Customer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Customer().Orders(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Order)
+	fc.Result = res
+	return ec.marshalNOrder2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐOrderᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Customer_paymentMethod(ctx context.Context, field graphql.CollectedField, obj *ent.Customer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Customer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Customer().PaymentMethod(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.PaymentMethod)
+	fc.Result = res
+	return ec.marshalNPaymentMethod2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐPaymentMethod(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _GlobalSearchResult_restaurants(ctx context.Context, field graphql.CollectedField, obj *model.GlobalSearchResult) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2245,6 +2600,48 @@ func (ec *executionContext) _Mutation_updateCustomerAddress(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().UpdateCustomerAddress(rctx, args["input"].(model.RegisterAddressInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateCustomerPaymentMethod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateCustomerPaymentMethod_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateCustomerPaymentMethod(rctx, args["input"].(*model.PaymentMethodInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2793,7 +3190,7 @@ func (ec *executionContext) _Mutation_uploadRestaurantPhoto(ctx context.Context,
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteRestuarantPhoto(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_deleteRestaurantPhoto(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2810,7 +3207,7 @@ func (ec *executionContext) _Mutation_deleteRestuarantPhoto(ctx context.Context,
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteRestuarantPhoto_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_deleteRestaurantPhoto_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -2818,7 +3215,7 @@ func (ec *executionContext) _Mutation_deleteRestuarantPhoto(ctx context.Context,
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteRestuarantPhoto(rctx, args["input"].(model.DeleteImageInput))
+		return ec.resolvers.Mutation().DeleteRestaurantPhoto(rctx, args["input"].(model.DeleteImageInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3085,6 +3482,335 @@ func (ec *executionContext) _Mutation_deletePhotoDemo(ctx context.Context, field
 	res := resTmp.([]string)
 	fc.Result = res
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_createOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createOrder_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateOrder(rctx, args["input"].(*model.RegisterOrderInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateOrder_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateOrder(rctx, args["input"].(*model.UpdateOrderInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_ID(ctx context.Context, field graphql.CollectedField, obj *ent.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_product(ctx context.Context, field graphql.CollectedField, obj *ent.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().Product(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Product)
+	fc.Result = res
+	return ec.marshalNProduct2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐProduct(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_customer(ctx context.Context, field graphql.CollectedField, obj *ent.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().Customer(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Customer)
+	fc.Result = res
+	return ec.marshalNCustomer2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐCustomer(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_orderState(ctx context.Context, field graphql.CollectedField, obj *ent.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().OrderState(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.OrderState)
+	fc.Result = res
+	return ec.marshalNOrderState2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐOrderState(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_quantity(ctx context.Context, field graphql.CollectedField, obj *ent.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Quantity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().UpdatedAt(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt642int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaymentMethod_data(ctx context.Context, field graphql.CollectedField, obj *ent.PaymentMethod) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "PaymentMethod",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Product_ID(ctx context.Context, field graphql.CollectedField, obj *ent.Product) (ret graphql.Marshaler) {
@@ -3828,6 +4554,76 @@ func (ec *executionContext) _Query_searchProductsAndRestaurants(ctx context.Cont
 	return ec.marshalNGlobalSearchResult2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐGlobalSearchResult(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_getCustomerOrders(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetCustomerOrders(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Order)
+	fc.Result = res
+	return ec.marshalNOrder2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐOrderᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getRestaurantOrders(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetRestaurantOrders(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Order)
+	fc.Result = res
+	return ec.marshalNOrder2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐOrderᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_autoCompleteTag(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4323,6 +5119,41 @@ func (ec *executionContext) _Restaurant_products(ctx context.Context, field grap
 	return ec.marshalNProduct2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐProductᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Restaurant_orders(ctx context.Context, field graphql.CollectedField, obj *ent.Restaurant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Restaurant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Restaurant().Orders(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Order)
+	fc.Result = res
+	return ec.marshalNOrder2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐOrderᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Restaurant_restaurantOwner(ctx context.Context, field graphql.CollectedField, obj *ent.Restaurant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4660,6 +5491,51 @@ func (ec *executionContext) _RestaurantOwner_restaurant(ctx context.Context, fie
 	res := resTmp.(*ent.Restaurant)
 	fc.Result = res
 	return ec.marshalNRestaurant2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐRestaurant(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Subscription_onOrderStateChange(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().OnOrderStateChange(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan int)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNID2int(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -5749,6 +6625,26 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputCancelOrder(ctx context.Context, obj interface{}) (model.CancelOrder, error) {
+	var it model.CancelOrder
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "orderID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderID"))
+			it.OrderID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDeleteImageInput(ctx context.Context, obj interface{}) (model.DeleteImageInput, error) {
 	var it model.DeleteImageInput
 	var asMap = obj.(map[string]interface{})
@@ -5760,6 +6656,26 @@ func (ec *executionContext) unmarshalInputDeleteImageInput(ctx context.Context, 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileNames"))
 			it.FileNames, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPaymentMethodInput(ctx context.Context, obj interface{}) (model.PaymentMethodInput, error) {
+	var it model.PaymentMethodInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "data":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
+			it.Data, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5964,6 +6880,34 @@ func (ec *executionContext) unmarshalInputRegisterCustomerInput(ctx context.Cont
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
 			it.Address, err = ec.unmarshalNRegisterAddressInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterAddressInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRegisterOrderInput(ctx context.Context, obj interface{}) (model.RegisterOrderInput, error) {
+	var it model.RegisterOrderInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "productID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("productID"))
+			it.ProductID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "quantity":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quantity"))
+			it.Quantity, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6192,6 +7136,34 @@ func (ec *executionContext) unmarshalInputUpdateCustomerInput(ctx context.Contex
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("phone"))
 			it.Phone, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateOrderInput(ctx context.Context, obj interface{}) (model.UpdateOrderInput, error) {
+	var it model.UpdateOrderInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "orderID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderID"))
+			it.OrderID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "orderState":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderState"))
+			it.OrderState, err = ec.unmarshalNOrderState2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐOrderState(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6489,6 +7461,34 @@ func (ec *executionContext) _Customer(ctx context.Context, sel ast.SelectionSet,
 				}
 				return res
 			})
+		case "orders":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Customer_orders(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "paymentMethod":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Customer_paymentMethod(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6562,6 +7562,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "updateCustomerPaymentMethod":
+			out.Values[i] = ec._Mutation_updateCustomerPaymentMethod(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "deleteCustomerProfile":
 			out.Values[i] = ec._Mutation_deleteCustomerProfile(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -6627,8 +7632,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteRestuarantPhoto":
-			out.Values[i] = ec._Mutation_deleteRestuarantPhoto(ctx, field)
+		case "deleteRestaurantPhoto":
+			out.Values[i] = ec._Mutation_deleteRestaurantPhoto(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6659,6 +7664,131 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deletePhotoDemo":
 			out.Values[i] = ec._Mutation_deletePhotoDemo(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createOrder":
+			out.Values[i] = ec._Mutation_createOrder(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateOrder":
+			out.Values[i] = ec._Mutation_updateOrder(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var orderImplementors = []string{"Order"}
+
+func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *ent.Order) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, orderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Order")
+		case "ID":
+			out.Values[i] = ec._Order_ID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "product":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_product(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "customer":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_customer(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "orderState":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_orderState(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "quantity":
+			out.Values[i] = ec._Order_quantity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updatedAt":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_updatedAt(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var paymentMethodImplementors = []string{"PaymentMethod"}
+
+func (ec *executionContext) _PaymentMethod(ctx context.Context, sel ast.SelectionSet, obj *ent.PaymentMethod) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, paymentMethodImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaymentMethod")
+		case "data":
+			out.Values[i] = ec._PaymentMethod_data(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6935,6 +8065,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "getCustomerOrders":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getCustomerOrders(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "getRestaurantOrders":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getRestaurantOrders(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "autoCompleteTag":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7094,6 +8252,20 @@ func (ec *executionContext) _Restaurant(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
+		case "orders":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Restaurant_orders(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "restaurantOwner":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7197,6 +8369,26 @@ func (ec *executionContext) _RestaurantOwner(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 	return out
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "onOrderStateChange":
+		return ec._Subscription_onOrderStateChange(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -7563,6 +8755,92 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt642int64(ctx context.Context, v interface{}) (int64, error) {
+	res, err := graphql.UnmarshalInt64(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt642int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := graphql.MarshalInt64(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNOrder2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Order) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOrder2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐOrder(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNOrder2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐOrder(ctx context.Context, sel ast.SelectionSet, v *ent.Order) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Order(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNOrderState2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐOrderState(ctx context.Context, v interface{}) (model.OrderState, error) {
+	var res model.OrderState
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOrderState2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐOrderState(ctx context.Context, sel ast.SelectionSet, v model.OrderState) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNPaymentMethod2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐPaymentMethod(ctx context.Context, sel ast.SelectionSet, v ent.PaymentMethod) graphql.Marshaler {
+	return ec._PaymentMethod(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPaymentMethod2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐPaymentMethod(ctx context.Context, sel ast.SelectionSet, v *ent.PaymentMethod) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PaymentMethod(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNProduct2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐProduct(ctx context.Context, sel ast.SelectionSet, v ent.Product) graphql.Marshaler {
@@ -8193,11 +9471,27 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
+func (ec *executionContext) unmarshalOPaymentMethodInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐPaymentMethodInput(ctx context.Context, v interface{}) (*model.PaymentMethodInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPaymentMethodInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOProductsFilterConfigInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐProductsFilterConfigInput(ctx context.Context, v interface{}) (*model.ProductsFilterConfigInput, error) {
 	if v == nil {
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputProductsFilterConfigInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalORegisterOrderInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRegisterOrderInput(ctx context.Context, v interface{}) (*model.RegisterOrderInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputRegisterOrderInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -8223,6 +9517,14 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return graphql.MarshalString(*v)
+}
+
+func (ec *executionContext) unmarshalOUpdateOrderInput2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUpdateOrderInput(ctx context.Context, v interface{}) (*model.UpdateOrderInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUpdateOrderInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

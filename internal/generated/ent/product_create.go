@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"foodworks.ml/m/internal/generated/ent/order"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
@@ -97,6 +98,21 @@ func (pc *ProductCreate) AddRestaurant(r ...*Restaurant) *ProductCreate {
 		ids[i] = r[i].ID
 	}
 	return pc.AddRestaurantIDs(ids...)
+}
+
+// AddOrderIDs adds the orders edge to Order by ids.
+func (pc *ProductCreate) AddOrderIDs(ids ...int) *ProductCreate {
+	pc.mutation.AddOrderIDs(ids...)
+	return pc
+}
+
+// AddOrders adds the orders edges to Order.
+func (pc *ProductCreate) AddOrders(o ...*Order) *ProductCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return pc.AddOrderIDs(ids...)
 }
 
 // Mutation returns the ProductMutation object of the builder.
@@ -267,6 +283,25 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: restaurant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   product.OrdersTable,
+			Columns: product.OrdersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
 				},
 			},
 		}

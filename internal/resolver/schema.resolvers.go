@@ -7,10 +7,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/order"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/rating"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
@@ -29,6 +31,26 @@ func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (*ent
 func (r *customerResolver) RatedProducts(ctx context.Context, obj *ent.Customer) ([]*ent.Rating, error) {
 	ratings, err := r.EntClient.Customer.QueryRatings(obj).All(ctx)
 	return ratings, ent.MaskNotFound(err)
+}
+
+func (r *customerResolver) Orders(ctx context.Context, obj *ent.Customer) ([]*ent.Order, error) {
+	kratosUser := auth.ForContext(ctx)
+
+	orders, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		QueryOrders().
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+func (r *customerResolver) PaymentMethod(ctx context.Context, obj *ent.Customer) (*ent.PaymentMethod, error) {
+	product, err := obj.QueryPaymentMethod().First(ctx)
+	return product, ent.MaskNotFound(err)
 }
 
 func (r *mutationResolver) CreateCustomerProfile(ctx context.Context, input model.RegisterCustomerInput) (int, error) {
@@ -124,6 +146,39 @@ func (r *mutationResolver) UpdateCustomerAddress(ctx context.Context, input mode
 	return currentUser.ID, nil
 }
 
+func (r *mutationResolver) UpdateCustomerPaymentMethod(ctx context.Context, input *model.PaymentMethodInput) (int, error) {
+	kratosSessionUser := auth.ForContext(ctx)
+
+	currentUser, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosSessionUser.ID)).
+		WithPaymentMethod().
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+	var paymentMethod *ent.PaymentMethod
+	if len(currentUser.Edges.PaymentMethod) == 0 {
+		paymentMethod, err = r.EntClient.PaymentMethod.Create().
+			SetData(input.Data).
+			Save(ctx)
+		if err != nil {
+			return -1, err
+		}
+		_, err = currentUser.Update().AddPaymentMethod(paymentMethod).Save(ctx)
+	} else {
+		paymentMethod = currentUser.Edges.PaymentMethod[0]
+		_, err = paymentMethod.Update().
+			SetData(input.Data).
+			Save(ctx)
+	}
+	if err != nil {
+		return -1, err
+	}
+	return paymentMethod.ID, nil
+}
+
 func (r *mutationResolver) DeleteCustomerProfile(ctx context.Context) (int, error) {
 	kratosSessionUser := auth.ForContext(ctx)
 
@@ -169,6 +224,10 @@ func (r *mutationResolver) CreateRestaurantOwnerProfile(ctx context.Context, inp
 	}
 
 	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Restaurant.Tags, ctx)
+
+	if err != nil {
+		return -1, err
+	}
 
 	newRestaurant, err := r.EntClient.Restaurant.
 		Create().
@@ -295,6 +354,10 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Regist
 		return -1, err
 	}
 	tagEntities, err := GetOrCreateTagId(r.Resolver, input.Tags, ctx)
+
+	if err != nil {
+		return -1, err
+	}
 
 	newProduct, err := r.EntClient.Product.
 		Create().
@@ -426,7 +489,7 @@ func (r *mutationResolver) UploadRestaurantPhoto(ctx context.Context, input mode
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) DeleteRestuarantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error) {
+func (r *mutationResolver) DeleteRestaurantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -448,7 +511,7 @@ func (r *mutationResolver) CreateProductRating(ctx context.Context, input model.
 		Where(customer.KratosID(kratosUser.ID)).
 		First(ctx)
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 	rating, err := r.EntClient.Rating.Create().
 		SetProductID(input.ProductID).
@@ -458,7 +521,7 @@ func (r *mutationResolver) CreateProductRating(ctx context.Context, input model.
 		Save(ctx)
 
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 
 	return rating.ID, nil
@@ -476,9 +539,9 @@ func (r *mutationResolver) UpdateProductRating(ctx context.Context, input model.
 }
 
 func (r *mutationResolver) DeleteRating(ctx context.Context, input int) (int, error) {
-	err := r.EntClient.Rating.DeleteOneID(input)
+	err := r.EntClient.Rating.DeleteOneID(input).Exec(ctx)
 	if err != nil {
-		return -1, nil
+		return -1, err
 	}
 	return input, nil
 }
@@ -510,13 +573,87 @@ func (r *mutationResolver) DeletePhotoDemo(ctx context.Context, input model.Dele
 	return input.FileNames, nil
 }
 
+func (r *mutationResolver) CreateOrder(ctx context.Context, input *model.RegisterOrderInput) (int, error) {
+	kratosUser := auth.ForContext(ctx)
+
+	currentCustomer, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	order, err := r.EntClient.Order.Create().
+		SetQuantity(input.Quantity).
+		SetOrderState(model.OrderStatePendingPayment.String()).
+		SetUpdatedAt(time.Now().UTC()).
+		AddCustomer(currentCustomer).
+		AddProductIDs(input.ProductID).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return order.ID, nil
+}
+
+func (r *mutationResolver) UpdateOrder(ctx context.Context, input *model.UpdateOrderInput) (int, error) {
+	kratosUser := auth.ForContext(ctx)
+
+	currentCustomer, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = r.EntClient.Order.Update().
+		Where(
+			order.HasCustomerWith(customer.ID(currentCustomer.ID)),
+			order.IDEQ(input.OrderID),
+		).
+		SetOrderState(input.OrderState.String()).
+		SetUpdatedAt(time.Now().UTC()).
+		Save(ctx)
+
+	if err != nil {
+		return -1, err
+	}
+	return input.OrderID, nil
+}
+
+func (r *orderResolver) Product(ctx context.Context, obj *ent.Order) (*ent.Product, error) {
+	product, err := obj.QueryProduct().First(ctx)
+	return product, ent.MaskNotFound(err)
+}
+
+func (r *orderResolver) Customer(ctx context.Context, obj *ent.Order) (*ent.Customer, error) {
+	customer, err := obj.QueryCustomer().First(ctx)
+	return customer, ent.MaskNotFound(err)
+}
+
+func (r *orderResolver) OrderState(ctx context.Context, obj *ent.Order) (model.OrderState, error) {
+	var model model.OrderState
+	err := model.UnmarshalGQL(obj.OrderState)
+	return model, err
+}
+
+func (r *orderResolver) UpdatedAt(ctx context.Context, obj *ent.Order) (int64, error) {
+	return obj.UpdatedAt.Unix(), nil
+}
+
 func (r *productResolver) Tags(ctx context.Context, obj *ent.Product) ([]string, error) {
 	tags, err := r.EntClient.Product.QueryTags(obj).Select(tag.FieldName).Strings(ctx)
 	return tags, ent.MaskNotFound(err)
 }
 
 func (r *productResolver) Active(ctx context.Context, obj *ent.Product) (bool, error) {
-	panic(fmt.Errorf("not implemented"))
+	return obj.IsActive, nil
 }
 
 func (r *productResolver) AverageRating(ctx context.Context, obj *ent.Product) (float64, error) {
@@ -669,6 +806,38 @@ func (r *queryResolver) SearchProductsAndRestaurants(ctx context.Context, input 
 	return &result, nil
 }
 
+func (r *queryResolver) GetCustomerOrders(ctx context.Context) ([]*ent.Order, error) {
+	kratosUser := auth.ForContext(ctx)
+
+	orders, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		QueryOrders().
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+func (r *queryResolver) GetRestaurantOrders(ctx context.Context) ([]*ent.Order, error) {
+	kratosUser := auth.ForContext(ctx)
+
+	orders, err := r.EntClient.RestaurantOwner.
+		Query().
+		Where(restaurantowner.KratosID(kratosUser.ID)).
+		QueryRestaurant().
+		QueryProducts().
+		QueryOrders().
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
 func (r *queryResolver) AutoCompleteTag(ctx context.Context, input string) ([]string, error) {
 	jsonObj := gabs.New()
 	_, _ = jsonObj.SetP(1, "suggest.suggestion.completion.fuzzy.fuzziness")
@@ -721,6 +890,23 @@ func (r *restaurantResolver) Products(ctx context.Context, obj *ent.Restaurant) 
 	return products, ent.MaskNotFound(err)
 }
 
+func (r *restaurantResolver) Orders(ctx context.Context, obj *ent.Restaurant) ([]*ent.Order, error) {
+	kratosUser := auth.ForContext(ctx)
+
+	orders, err := r.EntClient.RestaurantOwner.
+		Query().
+		Where(restaurantowner.KratosID(kratosUser.ID)).
+		QueryRestaurant().
+		QueryProducts().
+		QueryOrders().
+		All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
 func (r *restaurantResolver) RestaurantOwner(ctx context.Context, obj *ent.Restaurant) (*ent.RestaurantOwner, error) {
 	restaurantOwner, err := r.EntClient.Restaurant.QueryOwner(obj).First(ctx)
 	return restaurantOwner, ent.MaskNotFound(err)
@@ -736,11 +922,18 @@ func (r *restaurantOwnerResolver) Restaurant(ctx context.Context, obj *ent.Resta
 	return restaurant, ent.MaskNotFound(err)
 }
 
+func (r *subscriptionResolver) OnOrderStateChange(ctx context.Context) (<-chan int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 // Customer returns generated.CustomerResolver implementation.
 func (r *Resolver) Customer() generated.CustomerResolver { return &customerResolver{r} }
 
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
+
+// Order returns generated.OrderResolver implementation.
+func (r *Resolver) Order() generated.OrderResolver { return &orderResolver{r} }
 
 // Product returns generated.ProductResolver implementation.
 func (r *Resolver) Product() generated.ProductResolver { return &productResolver{r} }
@@ -759,10 +952,25 @@ func (r *Resolver) RestaurantOwner() generated.RestaurantOwnerResolver {
 	return &restaurantOwnerResolver{r}
 }
 
+// Subscription returns generated.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+
 type customerResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
+type orderResolver struct{ *Resolver }
 type productResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type ratingResolver struct{ *Resolver }
 type restaurantResolver struct{ *Resolver }
 type restaurantOwnerResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *mutationResolver) DeleteRestuarantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error) {
+	panic(fmt.Errorf("not implemented"))
+}

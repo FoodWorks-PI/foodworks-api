@@ -22,6 +22,10 @@ const (
 	EdgeAddress = "address"
 	// EdgeRatings holds the string denoting the ratings edge name in mutations.
 	EdgeRatings = "ratings"
+	// EdgeOrders holds the string denoting the orders edge name in mutations.
+	EdgeOrders = "orders"
+	// EdgePaymentMethod holds the string denoting the payment_method edge name in mutations.
+	EdgePaymentMethod = "payment_method"
 
 	// Table holds the table name of the customer in the database.
 	Table = "customers"
@@ -39,6 +43,18 @@ const (
 	RatingsInverseTable = "ratings"
 	// RatingsColumn is the table column denoting the ratings relation/edge.
 	RatingsColumn = "customer_ratings"
+	// OrdersTable is the table the holds the orders relation/edge. The primary key declared below.
+	OrdersTable = "customer_orders"
+	// OrdersInverseTable is the table name for the Order entity.
+	// It exists in this package in order to avoid circular dependency with the "order" package.
+	OrdersInverseTable = "orders"
+	// PaymentMethodTable is the table the holds the payment_method relation/edge.
+	PaymentMethodTable = "payment_methods"
+	// PaymentMethodInverseTable is the table name for the PaymentMethod entity.
+	// It exists in this package in order to avoid circular dependency with the "paymentmethod" package.
+	PaymentMethodInverseTable = "payment_methods"
+	// PaymentMethodColumn is the table column denoting the payment_method relation/edge.
+	PaymentMethodColumn = "customer_payment_method"
 )
 
 // Columns holds all SQL columns for customer fields.
@@ -55,6 +71,12 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"customer_address",
 }
+
+var (
+	// OrdersPrimaryKey and OrdersColumn2 are the table columns denoting the
+	// primary key for the orders relation (M2M).
+	OrdersPrimaryKey = []string{"customer_id", "order_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

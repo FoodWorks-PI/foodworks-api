@@ -35,8 +35,10 @@ func main() {
 
 	api := api.API{}
 	api.SetupRoutes(client, db, rdb, dataStoreConfig, elasticClient, &fileHandler, recommender)
+	if os.Getenv("DUMMY_PAYMENTS") == "enabled" {
+		api.StartAutoPayment(client, db)
+	}
 	api.StartServer()
-
 	// Cleanup
 	log.Println("Closing")
 	db.Close()
