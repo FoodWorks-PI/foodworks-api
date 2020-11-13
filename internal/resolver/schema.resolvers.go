@@ -922,6 +922,10 @@ func (r *restaurantOwnerResolver) Restaurant(ctx context.Context, obj *ent.Resta
 	return restaurant, ent.MaskNotFound(err)
 }
 
+func (r *subscriptionResolver) OnOrderStateChange(ctx context.Context) (<-chan int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 // Customer returns generated.CustomerResolver implementation.
 func (r *Resolver) Customer() generated.CustomerResolver { return &customerResolver{r} }
 
@@ -948,6 +952,9 @@ func (r *Resolver) RestaurantOwner() generated.RestaurantOwnerResolver {
 	return &restaurantOwnerResolver{r}
 }
 
+// Subscription returns generated.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+
 type customerResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type orderResolver struct{ *Resolver }
@@ -956,6 +963,7 @@ type queryResolver struct{ *Resolver }
 type ratingResolver struct{ *Resolver }
 type restaurantResolver struct{ *Resolver }
 type restaurantOwnerResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }
 
 // !!! WARNING !!!
 // The code below was going to be deleted when updating resolvers. It has been copied here so you have

@@ -293,3 +293,7 @@ type Mutation {
   createOrder(input: RegisterOrderInput): ID!
   updateOrder(input: UpdateOrderInput): ID!
 }
+
+type Subscription {
+   onOrderStateChange: ID!
+}
