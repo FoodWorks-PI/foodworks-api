@@ -34,6 +34,7 @@ type DataStoreConfig struct {
 	RedisPass          string
 	ElasticsearchDBURL string
 	ElasticsearchURL   string
+	RecommenderURL     string
 }
 
 func NewElasticSearchClient(config DataStoreConfig) *elasticsearch6.Client {

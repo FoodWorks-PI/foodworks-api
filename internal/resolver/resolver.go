@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"foodworks.ml/m/internal/recommendations"
+
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent/customer"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
@@ -34,6 +36,7 @@ type Resolver struct {
 	DBClient      *sqlx.DB
 	ElasticClient *elasticsearch.Client
 	FileHandler   *filehandler.FileHandler
+	Recommender   recommendations.Reccomender
 }
 
 func GetOrCreateTagId(r *Resolver, tags []string, ctx context.Context) ([]*ent.Tag, error) {

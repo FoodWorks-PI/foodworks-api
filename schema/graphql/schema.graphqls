@@ -232,6 +232,17 @@ type ProductSearchResult {
  distance: Float!
 }
 
+ type TagCard {
+   tag: String!
+ }
+
+ union FeedCard = Restaurant | Product | TagCard
+
+ type FeedItem {
+   name: String!
+   cards: [FeedCard!]!
+ }
+
 scalar Upload
 
 input UploadImageInput{
@@ -252,6 +263,7 @@ type Query {
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getProductById(input: ID!): Product!
   searchProductsAndRestaurants(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
+  getFeed: [FeedItem!]! @hasRole(role:CUSTOMER)
 
   getCustomerOrders: [Order!]!
   getRestaurantOrders: [Order!]!

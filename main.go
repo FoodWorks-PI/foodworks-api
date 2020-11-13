@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 
+	"foodworks.ml/m/internal/recommendations"
+
 	"foodworks.ml/m/internal/platform/filehandler"
 
 	"foodworks.ml/m/internal/api"
@@ -20,6 +22,7 @@ func main() {
 		RedisPass:          os.Getenv("REDIS_PASS"),
 		ElasticsearchDBURL: os.Getenv("ELASTICSEARCH_DB_URL"),
 		ElasticsearchURL:   os.Getenv("ELASTICSEARCH_URL"),
+		RecommenderURL:     os.Getenv("RECOMMENDER_URL"),
 	}
 
 	elasticClient := platform.NewElasticSearchClient(dataStoreConfig)
@@ -28,14 +31,14 @@ func main() {
 	rdb := platform.NewRedisClient(dataStoreConfig)
 
 	fileHandler := filehandler.NewDiskUploader()
+	recommender := recommendations.NewRecommender(dataStoreConfig.RecommenderURL)
 
 	api := api.API{}
-	api.SetupRoutes(client, db, rdb, dataStoreConfig, elasticClient, &fileHandler)
-	api.StartAutoPayment(client, db)
+	api.SetupRoutes(client, db, rdb, dataStoreConfig, elasticClient, &fileHandler, recommender)
 	if os.Getenv("DUMMY_PAYMENTS") == "enabled" {
-		api.StartServer()
+		api.StartAutoPayment(client, db)
 	}
-
+	api.StartServer()
 	// Cleanup
 	log.Println("Closing")
 	db.Close()

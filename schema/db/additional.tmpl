@@ -6,6 +6,18 @@
     {{- end }}
 {{ end }}
 
+
+{{define "union"}}
+{{ $pkg := base $.Config.Package }}
+{{ template "header" $ }}
+{{ range $n := $.Nodes }}
+    {{- if eq $n.Name "Restaurant" "Product"}}
+        {{ $receiver := $n.Name }}
+        func ({{ $receiver }}) IsFeedCard() {}
+    {{- end }}
+{{ end }}
+{{end}}
+
 {{define "external"}}
 {{ $pkg := base $.Config.Package }}
 {{ template "header" $ }}

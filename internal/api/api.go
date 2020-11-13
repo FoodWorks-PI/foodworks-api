@@ -10,6 +10,7 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/order"
 	"foodworks.ml/m/internal/generated/graphql/model"
+	"foodworks.ml/m/internal/recommendations"
 
 	"foodworks.ml/m/internal/platform/filehandler"
 	"github.com/elastic/go-elasticsearch/v6"
@@ -43,8 +44,7 @@ type API struct {
 	Router *chi.Mux
 }
 
-func (a *API) SetupRoutes(entClient *ent.Client, dbClient *sqlx.DB, redisClient *redis.Client,
-	dataStoreConfig platform.DataStoreConfig, elasticClient *elasticsearch.Client, fileHandler *filehandler.FileHandler) {
+func (a *API) SetupRoutes(entClient *ent.Client, dbClient *sqlx.DB, redisClient *redis.Client, dataStoreConfig platform.DataStoreConfig, elasticClient *elasticsearch.Client, fileHandler *filehandler.FileHandler, recommender recommendations.Reccomender) {
 	localFileHandler := *fileHandler
 	// init server
 	router := chi.NewRouter()
@@ -76,7 +76,7 @@ func (a *API) SetupRoutes(entClient *ent.Client, dbClient *sqlx.DB, redisClient 
 		router.Route("/graphql", func(router chi.Router) {
 			config := generated.Config{
 				Resolvers: &resolver.Resolver{EntClient: entClient, Redis: redisClient, DBClient: dbClient,
-					ElasticClient: elasticClient, FileHandler: fileHandler}}
+					ElasticClient: elasticClient, FileHandler: fileHandler, Recommender: recommender}}
 			config.Directives.HasRole = resolver.HasRole(entClient)
 			srv := newGraphQLServer(generated.NewExecutableSchema(config))
 			router.Handle("/", srv)
