@@ -806,6 +806,10 @@ func (r *queryResolver) SearchProductsAndRestaurants(ctx context.Context, input 
 	return &result, nil
 }
 
+func (r *queryResolver) GetFeed(ctx context.Context) ([]*model.FeedItem, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *queryResolver) GetCustomerOrders(ctx context.Context) ([]*ent.Order, error) {
 	kratosUser := auth.ForContext(ctx)
 

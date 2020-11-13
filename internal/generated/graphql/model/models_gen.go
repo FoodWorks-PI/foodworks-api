@@ -11,12 +11,21 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+type FeedCard interface {
+	IsFeedCard()
+}
+
 type CancelOrder struct {
 	OrderID int `json:"orderID"`
 }
 
 type DeleteImageInput struct {
 	FileNames []string `json:"fileNames"`
+}
+
+type FeedItem struct {
+	Name  *string    `json:"name"`
+	Cards []FeedCard `json:"cards"`
 }
 
 type GlobalSearchResult struct {
@@ -103,6 +112,12 @@ type RegisterRestaurantOwnerInput struct {
 	Banking    *RegisterBankingInput    `json:"banking"`
 	Restaurant *RegisterRestaurantInput `json:"restaurant"`
 }
+
+type TagCard struct {
+	Tag *string `json:"tag"`
+}
+
+func (TagCard) IsFeedCard() {}
 
 type UpdateCustomerInput struct {
 	Name     string `json:"name"`

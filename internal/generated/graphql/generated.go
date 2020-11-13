@@ -76,6 +76,11 @@ type ComplexityRoot struct {
 		RatedProducts func(childComplexity int) int
 	}
 
+	FeedItem struct {
+		Cards func(childComplexity int) int
+		Name  func(childComplexity int) int
+	}
+
 	GlobalSearchResult struct {
 		Products    func(childComplexity int) int
 		Restaurants func(childComplexity int) int
@@ -147,6 +152,7 @@ type ComplexityRoot struct {
 		GetCurrentCustomer           func(childComplexity int) int
 		GetCurrentRestaurantOwner    func(childComplexity int) int
 		GetCustomerOrders            func(childComplexity int) int
+		GetFeed                      func(childComplexity int) int
 		GetProductByID               func(childComplexity int, input int) int
 		GetProductsByRestaurantID    func(childComplexity int, input model.ProductsFilterByRestaurantInput) int
 		GetRestaurantByID            func(childComplexity int, input int) int
@@ -186,6 +192,10 @@ type ComplexityRoot struct {
 
 	Subscription struct {
 		OnOrderStateChange func(childComplexity int) int
+	}
+
+	TagCard struct {
+		Tag func(childComplexity int) int
 	}
 }
 
@@ -247,6 +257,7 @@ type QueryResolver interface {
 	GetProductsByRestaurantID(ctx context.Context, input model.ProductsFilterByRestaurantInput) ([]*ent.Product, error)
 	GetProductByID(ctx context.Context, input int) (*ent.Product, error)
 	SearchProductsAndRestaurants(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error)
+	GetFeed(ctx context.Context) ([]*model.FeedItem, error)
 	GetCustomerOrders(ctx context.Context) ([]*ent.Order, error)
 	GetRestaurantOrders(ctx context.Context) ([]*ent.Order, error)
 	AutoCompleteTag(ctx context.Context, input string) ([]string, error)
@@ -375,6 +386,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Customer.RatedProducts(childComplexity), true
+
+	case "FeedItem.cards":
+		if e.complexity.FeedItem.Cards == nil {
+			break
+		}
+
+		return e.complexity.FeedItem.Cards(childComplexity), true
+
+	case "FeedItem.name":
+		if e.complexity.FeedItem.Name == nil {
+			break
+		}
+
+		return e.complexity.FeedItem.Name(childComplexity), true
 
 	case "GlobalSearchResult.products":
 		if e.complexity.GlobalSearchResult.Products == nil {
@@ -865,6 +890,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetCustomerOrders(childComplexity), true
 
+	case "Query.getFeed":
+		if e.complexity.Query.GetFeed == nil {
+			break
+		}
+
+		return e.complexity.Query.GetFeed(childComplexity), true
+
 	case "Query.getProductById":
 		if e.complexity.Query.GetProductByID == nil {
 			break
@@ -1073,6 +1105,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.OnOrderStateChange(childComplexity), true
+
+	case "TagCard.tag":
+		if e.complexity.TagCard.Tag == nil {
+			break
+		}
+
+		return e.complexity.TagCard.Tag(childComplexity), true
 
 	}
 	return 0, false
@@ -1389,6 +1428,17 @@ type ProductSearchResult {
  distance: Float!
 }
 
+ type TagCard {
+   tag: String
+ }
+
+ union FeedCard = Restaurant | Product | TagCard
+
+ type FeedItem {
+   name: String
+   cards: [FeedCard!]!
+ }
+
 scalar Upload
 
 input UploadImageInput{
@@ -1409,6 +1459,7 @@ type Query {
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getProductById(input: ID!): Product!
   searchProductsAndRestaurants(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
+  getFeed: [FeedItem!]! @hasRole(role:CUSTOMER)
 
   getCustomerOrders: [Order!]!
   getRestaurantOrders: [Order!]!
@@ -2418,6 +2469,73 @@ func (ec *executionContext) _Customer_paymentMethod(ctx context.Context, field g
 	res := resTmp.(*ent.PaymentMethod)
 	fc.Result = res
 	return ec.marshalNPaymentMethod2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐPaymentMethod(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedItem_name(ctx context.Context, field graphql.CollectedField, obj *model.FeedItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "FeedItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FeedItem_cards(ctx context.Context, field graphql.CollectedField, obj *model.FeedItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "FeedItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cards, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.FeedCard)
+	fc.Result = res
+	return ec.marshalNFeedCard2ᚕfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐFeedCardᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GlobalSearchResult_restaurants(ctx context.Context, field graphql.CollectedField, obj *model.GlobalSearchResult) (ret graphql.Marshaler) {
@@ -4554,6 +4672,65 @@ func (ec *executionContext) _Query_searchProductsAndRestaurants(ctx context.Cont
 	return ec.marshalNGlobalSearchResult2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐGlobalSearchResult(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_getFeed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().GetFeed(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐRole(ctx, "CUSTOMER")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.FeedItem); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*foodworks.ml/m/internal/generated/graphql/model.FeedItem`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.FeedItem)
+	fc.Result = res
+	return ec.marshalNFeedItem2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐFeedItemᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_getCustomerOrders(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5536,6 +5713,38 @@ func (ec *executionContext) _Subscription_onOrderStateChange(ctx context.Context
 			w.Write([]byte{'}'})
 		})
 	}
+}
+
+func (ec *executionContext) _TagCard_tag(ctx context.Context, field graphql.CollectedField, obj *model.TagCard) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TagCard",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tag, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -7329,6 +7538,36 @@ func (ec *executionContext) unmarshalInputUploadImageInput(ctx context.Context, 
 
 // region    ************************** interface.gotpl ***************************
 
+func (ec *executionContext) _FeedCard(ctx context.Context, sel ast.SelectionSet, obj model.FeedCard) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case ent.Restaurant:
+		return ec._Restaurant(ctx, sel, &obj)
+	case *ent.Restaurant:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Restaurant(ctx, sel, obj)
+	case ent.Product:
+		return ec._Product(ctx, sel, &obj)
+	case *ent.Product:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Product(ctx, sel, obj)
+	case model.TagCard:
+		return ec._TagCard(ctx, sel, &obj)
+	case *model.TagCard:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._TagCard(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -7489,6 +7728,35 @@ func (ec *executionContext) _Customer(ctx context.Context, sel ast.SelectionSet,
 				}
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var feedItemImplementors = []string{"FeedItem"}
+
+func (ec *executionContext) _FeedItem(ctx context.Context, sel ast.SelectionSet, obj *model.FeedItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, feedItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FeedItem")
+		case "name":
+			out.Values[i] = ec._FeedItem_name(ctx, field, obj)
+		case "cards":
+			out.Values[i] = ec._FeedItem_cards(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7803,7 +8071,7 @@ func (ec *executionContext) _PaymentMethod(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var productImplementors = []string{"Product"}
+var productImplementors = []string{"Product", "FeedCard"}
 
 func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, obj *ent.Product) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, productImplementors)
@@ -8065,6 +8333,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "getFeed":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getFeed(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "getCustomerOrders":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -8184,7 +8466,7 @@ func (ec *executionContext) _Rating(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
-var restaurantImplementors = []string{"Restaurant"}
+var restaurantImplementors = []string{"Restaurant", "FeedCard"}
 
 func (ec *executionContext) _Restaurant(ctx context.Context, sel ast.SelectionSet, obj *ent.Restaurant) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, restaurantImplementors)
@@ -8389,6 +8671,30 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
+}
+
+var tagCardImplementors = []string{"TagCard", "FeedCard"}
+
+func (ec *executionContext) _TagCard(ctx context.Context, sel ast.SelectionSet, obj *model.TagCard) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tagCardImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TagCard")
+		case "tag":
+			out.Values[i] = ec._TagCard_tag(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -8696,6 +9002,100 @@ func (ec *executionContext) marshalNCustomer2ᚖfoodworksᚗmlᚋmᚋinternalᚋ
 func (ec *executionContext) unmarshalNDeleteImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐDeleteImageInput(ctx context.Context, v interface{}) (model.DeleteImageInput, error) {
 	res, err := ec.unmarshalInputDeleteImageInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFeedCard2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐFeedCard(ctx context.Context, sel ast.SelectionSet, v model.FeedCard) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._FeedCard(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFeedCard2ᚕfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐFeedCardᚄ(ctx context.Context, sel ast.SelectionSet, v []model.FeedCard) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFeedCard2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐFeedCard(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNFeedItem2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐFeedItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FeedItem) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFeedItem2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐFeedItem(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNFeedItem2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐFeedItem(ctx context.Context, sel ast.SelectionSet, v *model.FeedItem) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._FeedItem(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
