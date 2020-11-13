@@ -24,7 +24,7 @@ type DeleteImageInput struct {
 }
 
 type FeedItem struct {
-	Name  *string    `json:"name"`
+	Name  string     `json:"name"`
 	Cards []FeedCard `json:"cards"`
 }
 
@@ -114,7 +114,7 @@ type RegisterRestaurantOwnerInput struct {
 }
 
 type TagCard struct {
-	Tag *string `json:"tag"`
+	Tag string `json:"tag"`
 }
 
 func (TagCard) IsFeedCard() {}

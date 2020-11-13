@@ -233,13 +233,13 @@ type ProductSearchResult {
 }
 
  type TagCard {
-   tag: String
+   tag: String!
  }
 
  union FeedCard = Restaurant | Product | TagCard
 
  type FeedItem {
-   name: String
+   name: String!
    cards: [FeedCard!]!
  }
 

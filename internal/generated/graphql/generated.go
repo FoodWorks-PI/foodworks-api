@@ -1429,13 +1429,13 @@ type ProductSearchResult {
 }
 
  type TagCard {
-   tag: String
+   tag: String!
  }
 
  union FeedCard = Restaurant | Product | TagCard
 
  type FeedItem {
-   name: String
+   name: String!
    cards: [FeedCard!]!
  }
 
@@ -2496,11 +2496,14 @@ func (ec *executionContext) _FeedItem_name(ctx context.Context, field graphql.Co
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FeedItem_cards(ctx context.Context, field graphql.CollectedField, obj *model.FeedItem) (ret graphql.Marshaler) {
@@ -5740,11 +5743,14 @@ func (ec *executionContext) _TagCard_tag(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -7752,6 +7758,9 @@ func (ec *executionContext) _FeedItem(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = graphql.MarshalString("FeedItem")
 		case "name":
 			out.Values[i] = ec._FeedItem_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "cards":
 			out.Values[i] = ec._FeedItem_cards(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8686,6 +8695,9 @@ func (ec *executionContext) _TagCard(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = graphql.MarshalString("TagCard")
 		case "tag":
 			out.Values[i] = ec._TagCard_tag(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

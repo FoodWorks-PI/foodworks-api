@@ -2,6 +2,7 @@ package recommendations
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,9 +17,12 @@ func NewRecommender(url string) Reccomender {
 }
 
 func (r Reccomender) GetUserRecommendations(userId int) ([]int, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/%d", r.url, userId))
+	resp, err := http.Get(fmt.Sprintf("%s/recommender/%d", r.url, userId))
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(fmt.Sprintf("%d", resp.StatusCode))
 	}
 	var ids []int
 	defer resp.Body.Close()

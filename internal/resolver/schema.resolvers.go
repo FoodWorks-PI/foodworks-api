@@ -807,7 +807,48 @@ func (r *queryResolver) SearchProductsAndRestaurants(ctx context.Context, input 
 }
 
 func (r *queryResolver) GetFeed(ctx context.Context) ([]*model.FeedItem, error) {
-	panic(fmt.Errorf("not implemented"))
+	kratosUser := auth.ForContext(ctx)
+
+	currentUser, err := r.EntClient.Customer.
+		Query().
+		Where(customer.KratosID(kratosUser.ID)).
+		First(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	feeds := make([]*model.FeedItem, 2)
+
+	rec, err := r.Recommender.GetUserRecommendations(currentUser.ID)
+
+	if err != nil {
+		return nil, err
+	}
+	var recProducts []*ent.Product
+	if len(rec) > 0 {
+		recProducts, err = r.EntClient.Product.Query().Where(product.IDIn(rec...)).All(ctx)
+	} else {
+		recProducts, err = r.EntClient.Product.Query().Limit(5).All(ctx)
+	}
+	feedItems := make([]model.FeedCard, len(recProducts))
+	for i, recProduct := range recProducts {
+		feedItems[i] = model.FeedCard(recProduct)
+	}
+	var recommended = model.FeedItem{Name: "Recommended Products", Cards: feedItems}
+	feeds[0] = &recommended
+
+	restaurants, err := r.GetClosestRestaurants(ctx)
+	if err != nil {
+		return nil, err
+	}
+	feedRestaurantItems := make([]model.FeedCard, len(restaurants))
+	for i, recRestaurant := range restaurants {
+		feedRestaurantItems[i] = model.FeedCard(recRestaurant)
+	}
+	var closestRestaurants = model.FeedItem{Name: "Closest restaurants", Cards: feedRestaurantItems}
+	feeds[1] = &closestRestaurants
+	return feeds, nil
 }
 
 func (r *queryResolver) GetCustomerOrders(ctx context.Context) ([]*ent.Order, error) {
