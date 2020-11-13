@@ -8,6 +8,8 @@ import (
 
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/order"
+	"foodworks.ml/m/internal/generated/ent/paymentmethod"
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"foodworks.ml/m/internal/generated/ent/rating"
 	"github.com/facebook/ent/dialect/sql"
@@ -93,6 +95,36 @@ func (cu *CustomerUpdate) AddRatings(r ...*Rating) *CustomerUpdate {
 	return cu.AddRatingIDs(ids...)
 }
 
+// AddOrderIDs adds the orders edge to Order by ids.
+func (cu *CustomerUpdate) AddOrderIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.AddOrderIDs(ids...)
+	return cu
+}
+
+// AddOrders adds the orders edges to Order.
+func (cu *CustomerUpdate) AddOrders(o ...*Order) *CustomerUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return cu.AddOrderIDs(ids...)
+}
+
+// AddPaymentMethodIDs adds the payment_method edge to PaymentMethod by ids.
+func (cu *CustomerUpdate) AddPaymentMethodIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.AddPaymentMethodIDs(ids...)
+	return cu
+}
+
+// AddPaymentMethod adds the payment_method edges to PaymentMethod.
+func (cu *CustomerUpdate) AddPaymentMethod(p ...*PaymentMethod) *CustomerUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cu.AddPaymentMethodIDs(ids...)
+}
+
 // Mutation returns the CustomerMutation object of the builder.
 func (cu *CustomerUpdate) Mutation() *CustomerMutation {
 	return cu.mutation
@@ -123,6 +155,48 @@ func (cu *CustomerUpdate) RemoveRatings(r ...*Rating) *CustomerUpdate {
 		ids[i] = r[i].ID
 	}
 	return cu.RemoveRatingIDs(ids...)
+}
+
+// ClearOrders clears all "orders" edges to type Order.
+func (cu *CustomerUpdate) ClearOrders() *CustomerUpdate {
+	cu.mutation.ClearOrders()
+	return cu
+}
+
+// RemoveOrderIDs removes the orders edge to Order by ids.
+func (cu *CustomerUpdate) RemoveOrderIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.RemoveOrderIDs(ids...)
+	return cu
+}
+
+// RemoveOrders removes orders edges to Order.
+func (cu *CustomerUpdate) RemoveOrders(o ...*Order) *CustomerUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return cu.RemoveOrderIDs(ids...)
+}
+
+// ClearPaymentMethod clears all "payment_method" edges to type PaymentMethod.
+func (cu *CustomerUpdate) ClearPaymentMethod() *CustomerUpdate {
+	cu.mutation.ClearPaymentMethod()
+	return cu
+}
+
+// RemovePaymentMethodIDs removes the payment_method edge to PaymentMethod by ids.
+func (cu *CustomerUpdate) RemovePaymentMethodIDs(ids ...int) *CustomerUpdate {
+	cu.mutation.RemovePaymentMethodIDs(ids...)
+	return cu
+}
+
+// RemovePaymentMethod removes payment_method edges to PaymentMethod.
+func (cu *CustomerUpdate) RemovePaymentMethod(p ...*PaymentMethod) *CustomerUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cu.RemovePaymentMethodIDs(ids...)
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -318,6 +392,114 @@ func (cu *CustomerUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if cu.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.OrdersTable,
+			Columns: customer.OrdersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !cu.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.OrdersTable,
+			Columns: customer.OrdersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.OrdersTable,
+			Columns: customer.OrdersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cu.mutation.PaymentMethodCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PaymentMethodTable,
+			Columns: []string{customer.PaymentMethodColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: paymentmethod.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.RemovedPaymentMethodIDs(); len(nodes) > 0 && !cu.mutation.PaymentMethodCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PaymentMethodTable,
+			Columns: []string{customer.PaymentMethodColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: paymentmethod.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.PaymentMethodIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PaymentMethodTable,
+			Columns: []string{customer.PaymentMethodColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: paymentmethod.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, cu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{customer.Label}
@@ -400,6 +582,36 @@ func (cuo *CustomerUpdateOne) AddRatings(r ...*Rating) *CustomerUpdateOne {
 	return cuo.AddRatingIDs(ids...)
 }
 
+// AddOrderIDs adds the orders edge to Order by ids.
+func (cuo *CustomerUpdateOne) AddOrderIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.AddOrderIDs(ids...)
+	return cuo
+}
+
+// AddOrders adds the orders edges to Order.
+func (cuo *CustomerUpdateOne) AddOrders(o ...*Order) *CustomerUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return cuo.AddOrderIDs(ids...)
+}
+
+// AddPaymentMethodIDs adds the payment_method edge to PaymentMethod by ids.
+func (cuo *CustomerUpdateOne) AddPaymentMethodIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.AddPaymentMethodIDs(ids...)
+	return cuo
+}
+
+// AddPaymentMethod adds the payment_method edges to PaymentMethod.
+func (cuo *CustomerUpdateOne) AddPaymentMethod(p ...*PaymentMethod) *CustomerUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cuo.AddPaymentMethodIDs(ids...)
+}
+
 // Mutation returns the CustomerMutation object of the builder.
 func (cuo *CustomerUpdateOne) Mutation() *CustomerMutation {
 	return cuo.mutation
@@ -430,6 +642,48 @@ func (cuo *CustomerUpdateOne) RemoveRatings(r ...*Rating) *CustomerUpdateOne {
 		ids[i] = r[i].ID
 	}
 	return cuo.RemoveRatingIDs(ids...)
+}
+
+// ClearOrders clears all "orders" edges to type Order.
+func (cuo *CustomerUpdateOne) ClearOrders() *CustomerUpdateOne {
+	cuo.mutation.ClearOrders()
+	return cuo
+}
+
+// RemoveOrderIDs removes the orders edge to Order by ids.
+func (cuo *CustomerUpdateOne) RemoveOrderIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.RemoveOrderIDs(ids...)
+	return cuo
+}
+
+// RemoveOrders removes orders edges to Order.
+func (cuo *CustomerUpdateOne) RemoveOrders(o ...*Order) *CustomerUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return cuo.RemoveOrderIDs(ids...)
+}
+
+// ClearPaymentMethod clears all "payment_method" edges to type PaymentMethod.
+func (cuo *CustomerUpdateOne) ClearPaymentMethod() *CustomerUpdateOne {
+	cuo.mutation.ClearPaymentMethod()
+	return cuo
+}
+
+// RemovePaymentMethodIDs removes the payment_method edge to PaymentMethod by ids.
+func (cuo *CustomerUpdateOne) RemovePaymentMethodIDs(ids ...int) *CustomerUpdateOne {
+	cuo.mutation.RemovePaymentMethodIDs(ids...)
+	return cuo
+}
+
+// RemovePaymentMethod removes payment_method edges to PaymentMethod.
+func (cuo *CustomerUpdateOne) RemovePaymentMethod(p ...*PaymentMethod) *CustomerUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return cuo.RemovePaymentMethodIDs(ids...)
 }
 
 // Save executes the query and returns the updated entity.
@@ -615,6 +869,114 @@ func (cuo *CustomerUpdateOne) sqlSave(ctx context.Context) (_node *Customer, err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: rating.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cuo.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.OrdersTable,
+			Columns: customer.OrdersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !cuo.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.OrdersTable,
+			Columns: customer.OrdersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   customer.OrdersTable,
+			Columns: customer.OrdersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cuo.mutation.PaymentMethodCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PaymentMethodTable,
+			Columns: []string{customer.PaymentMethodColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: paymentmethod.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.RemovedPaymentMethodIDs(); len(nodes) > 0 && !cuo.mutation.PaymentMethodCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PaymentMethodTable,
+			Columns: []string{customer.PaymentMethodColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: paymentmethod.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.PaymentMethodIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   customer.PaymentMethodTable,
+			Columns: []string{customer.PaymentMethodColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: paymentmethod.FieldID,
 				},
 			},
 		}

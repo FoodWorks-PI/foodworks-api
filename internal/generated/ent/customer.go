@@ -38,9 +38,13 @@ type CustomerEdges struct {
 	Address *Address
 	// Ratings holds the value of the ratings edge.
 	Ratings []*Rating
+	// Orders holds the value of the orders edge.
+	Orders []*Order
+	// PaymentMethod holds the value of the payment_method edge.
+	PaymentMethod []*PaymentMethod
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [4]bool
 }
 
 // AddressOrErr returns the Address value or an error if the edge
@@ -64,6 +68,24 @@ func (e CustomerEdges) RatingsOrErr() ([]*Rating, error) {
 		return e.Ratings, nil
 	}
 	return nil, &NotLoadedError{edge: "ratings"}
+}
+
+// OrdersOrErr returns the Orders value or an error if the edge
+// was not loaded in eager-loading.
+func (e CustomerEdges) OrdersOrErr() ([]*Order, error) {
+	if e.loadedTypes[2] {
+		return e.Orders, nil
+	}
+	return nil, &NotLoadedError{edge: "orders"}
+}
+
+// PaymentMethodOrErr returns the PaymentMethod value or an error if the edge
+// was not loaded in eager-loading.
+func (e CustomerEdges) PaymentMethodOrErr() ([]*PaymentMethod, error) {
+	if e.loadedTypes[3] {
+		return e.PaymentMethod, nil
+	}
+	return nil, &NotLoadedError{edge: "payment_method"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -142,6 +164,16 @@ func (c *Customer) QueryAddress() *AddressQuery {
 // QueryRatings queries the ratings edge of the Customer.
 func (c *Customer) QueryRatings() *RatingQuery {
 	return (&CustomerClient{config: c.config}).QueryRatings(c)
+}
+
+// QueryOrders queries the orders edge of the Customer.
+func (c *Customer) QueryOrders() *OrderQuery {
+	return (&CustomerClient{config: c.config}).QueryOrders(c)
+}
+
+// QueryPaymentMethod queries the payment_method edge of the Customer.
+func (c *Customer) QueryPaymentMethod() *PaymentMethodQuery {
+	return (&CustomerClient{config: c.config}).QueryPaymentMethod(c)
 }
 
 // Update returns a builder for updating this Customer.

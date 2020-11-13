@@ -1,10 +1,15 @@
 package api
 
 import (
+	"context"
 	"flag"
+	"math/rand"
 	"net/http"
 	"os"
 	"time"
+
+	"foodworks.ml/m/internal/generated/ent/order"
+	"foodworks.ml/m/internal/generated/graphql/model"
 
 	"foodworks.ml/m/internal/platform/filehandler"
 	"github.com/elastic/go-elasticsearch/v6"
@@ -88,6 +93,44 @@ func (a *API) StartServer() {
 	if err != nil {
 		log.Panic().Err(err)
 	}
+}
+
+func (a *API) StartAutoPayment(client *ent.Client, db *sqlx.DB) {
+	ticker := time.NewTicker(5 * time.Minute)
+	go func() {
+		for range ticker.C {
+			ctx := context.Background()
+			pendingOrders, err := client.Order.Query().Where(order.OrderStateEQ(model.OrderStatePendingPayment.String())).All(ctx)
+			paidOrders, err := client.Order.Query().Where(order.OrderStateEQ(model.OrderStatePaid.String())).All(ctx)
+			if err != nil {
+				log.Err(err).Msg("")
+			}
+			for _, order := range pendingOrders {
+				ind := rand.Float64()
+				var orderState model.OrderState
+				if ind < 0.80 {
+					orderState = model.OrderStatePaid
+				} else if ind < 0.95 {
+					orderState = model.OrderStateCancelled
+				} else {
+					orderState = model.OrderStateError
+				}
+				_, _ = order.Update().SetOrderState(orderState.String()).SetUpdatedAt(time.Now().UTC()).Save(ctx)
+			}
+			for _, order := range paidOrders {
+				ind := rand.Float64()
+				var orderState model.OrderState
+				if ind < 0.90 {
+					orderState = model.OrderStateCompleted
+				} else if ind < 0.95 {
+					orderState = model.OrderStateCancelled
+				} else {
+					orderState = model.OrderStateError
+				}
+				_, _ = order.Update().SetOrderState(orderState.String()).SetUpdatedAt(time.Now().UTC()).Save(ctx)
+			}
+		}
+	}()
 }
 
 // This is needed for using CORS with websockets
