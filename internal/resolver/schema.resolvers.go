@@ -600,6 +600,19 @@ func (r *mutationResolver) CreateOrder(ctx context.Context, input *model.Registe
 	return order.ID, nil
 }
 
+// TODO: Verify owner corresponds with restaurant
+func (r *mutationResolver) updateOrderAsRestaurantOwner(ctx context.Context, input *model.UpdateOrderInput, user *ent.RestaurantOwner) (int, error) {
+	_, err := r.EntClient.Order.Update().
+		Where(order.IDEQ(input.OrderID)).
+		SetOrderState(input.OrderState.String()).
+		SetUpdatedAt(time.Now().UTC()).
+		Save(ctx)
+	if err != nil {
+		return -1, err
+	}
+	return input.OrderID, nil
+}
+
 func (r *mutationResolver) UpdateOrder(ctx context.Context, input *model.UpdateOrderInput) (int, error) {
 	kratosUser := auth.ForContext(ctx)
 
@@ -607,6 +620,17 @@ func (r *mutationResolver) UpdateOrder(ctx context.Context, input *model.UpdateO
 		Query().
 		Where(customer.KratosID(kratosUser.ID)).
 		First(ctx)
+
+	if ent.IsNotFound(err) {
+		currentOwner, err := r.EntClient.RestaurantOwner.
+			Query().
+			Where(restaurantowner.KratosID(kratosUser.ID)).
+			First(ctx)
+		if err != nil {
+			return -1, err
+		}
+		return r.updateOrderAsRestaurantOwner(ctx, input, currentOwner)
+	}
 
 	if err != nil {
 		return -1, err
