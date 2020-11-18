@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"foodworks.ml/m/internal/generated/ent/imagepath"
 	"foodworks.ml/m/internal/generated/ent/order"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/rating"
@@ -113,6 +114,21 @@ func (pc *ProductCreate) AddOrders(o ...*Order) *ProductCreate {
 		ids[i] = o[i].ID
 	}
 	return pc.AddOrderIDs(ids...)
+}
+
+// AddImageIDs adds the images edge to ImagePath by ids.
+func (pc *ProductCreate) AddImageIDs(ids ...int) *ProductCreate {
+	pc.mutation.AddImageIDs(ids...)
+	return pc
+}
+
+// AddImages adds the images edges to ImagePath.
+func (pc *ProductCreate) AddImages(i ...*ImagePath) *ProductCreate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return pc.AddImageIDs(ids...)
 }
 
 // Mutation returns the ProductMutation object of the builder.
@@ -302,6 +318,25 @@ func (pc *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: order.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.ImagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   product.ImagesTable,
+			Columns: []string{product.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
 				},
 			},
 		}

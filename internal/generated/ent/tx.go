@@ -18,6 +18,8 @@ type Tx struct {
 	BankingData *BankingDataClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
+	// ImagePath is the client for interacting with the ImagePath builders.
+	ImagePath *ImagePathClient
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
 	// PaymentMethod is the client for interacting with the PaymentMethod builders.
@@ -170,6 +172,7 @@ func (tx *Tx) init() {
 	tx.Address = NewAddressClient(tx.config)
 	tx.BankingData = NewBankingDataClient(tx.config)
 	tx.Customer = NewCustomerClient(tx.config)
+	tx.ImagePath = NewImagePathClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.PaymentMethod = NewPaymentMethodClient(tx.config)
 	tx.Product = NewProductClient(tx.config)

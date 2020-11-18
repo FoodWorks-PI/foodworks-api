@@ -12,6 +12,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/bankingdata"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/imagepath"
 	"foodworks.ml/m/internal/generated/ent/order"
 	"foodworks.ml/m/internal/generated/ent/paymentmethod"
 	"foodworks.ml/m/internal/generated/ent/product"
@@ -36,6 +37,8 @@ type Client struct {
 	BankingData *BankingDataClient
 	// Customer is the client for interacting with the Customer builders.
 	Customer *CustomerClient
+	// ImagePath is the client for interacting with the ImagePath builders.
+	ImagePath *ImagePathClient
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
 	// PaymentMethod is the client for interacting with the PaymentMethod builders.
@@ -66,6 +69,7 @@ func (c *Client) init() {
 	c.Address = NewAddressClient(c.config)
 	c.BankingData = NewBankingDataClient(c.config)
 	c.Customer = NewCustomerClient(c.config)
+	c.ImagePath = NewImagePathClient(c.config)
 	c.Order = NewOrderClient(c.config)
 	c.PaymentMethod = NewPaymentMethodClient(c.config)
 	c.Product = NewProductClient(c.config)
@@ -108,6 +112,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Address:         NewAddressClient(cfg),
 		BankingData:     NewBankingDataClient(cfg),
 		Customer:        NewCustomerClient(cfg),
+		ImagePath:       NewImagePathClient(cfg),
 		Order:           NewOrderClient(cfg),
 		PaymentMethod:   NewPaymentMethodClient(cfg),
 		Product:         NewProductClient(cfg),
@@ -133,6 +138,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Address:         NewAddressClient(cfg),
 		BankingData:     NewBankingDataClient(cfg),
 		Customer:        NewCustomerClient(cfg),
+		ImagePath:       NewImagePathClient(cfg),
 		Order:           NewOrderClient(cfg),
 		PaymentMethod:   NewPaymentMethodClient(cfg),
 		Product:         NewProductClient(cfg),
@@ -171,6 +177,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Address.Use(hooks...)
 	c.BankingData.Use(hooks...)
 	c.Customer.Use(hooks...)
+	c.ImagePath.Use(hooks...)
 	c.Order.Use(hooks...)
 	c.PaymentMethod.Use(hooks...)
 	c.Product.Use(hooks...)
@@ -506,6 +513,142 @@ func (c *CustomerClient) QueryPaymentMethod(cu *Customer) *PaymentMethodQuery {
 // Hooks returns the client hooks.
 func (c *CustomerClient) Hooks() []Hook {
 	return c.hooks.Customer
+}
+
+// ImagePathClient is a client for the ImagePath schema.
+type ImagePathClient struct {
+	config
+}
+
+// NewImagePathClient returns a client for the ImagePath from the given config.
+func NewImagePathClient(c config) *ImagePathClient {
+	return &ImagePathClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `imagepath.Hooks(f(g(h())))`.
+func (c *ImagePathClient) Use(hooks ...Hook) {
+	c.hooks.ImagePath = append(c.hooks.ImagePath, hooks...)
+}
+
+// Create returns a create builder for ImagePath.
+func (c *ImagePathClient) Create() *ImagePathCreate {
+	mutation := newImagePathMutation(c.config, OpCreate)
+	return &ImagePathCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of ImagePath entities.
+func (c *ImagePathClient) CreateBulk(builders ...*ImagePathCreate) *ImagePathCreateBulk {
+	return &ImagePathCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ImagePath.
+func (c *ImagePathClient) Update() *ImagePathUpdate {
+	mutation := newImagePathMutation(c.config, OpUpdate)
+	return &ImagePathUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ImagePathClient) UpdateOne(ip *ImagePath) *ImagePathUpdateOne {
+	mutation := newImagePathMutation(c.config, OpUpdateOne, withImagePath(ip))
+	return &ImagePathUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ImagePathClient) UpdateOneID(id int) *ImagePathUpdateOne {
+	mutation := newImagePathMutation(c.config, OpUpdateOne, withImagePathID(id))
+	return &ImagePathUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ImagePath.
+func (c *ImagePathClient) Delete() *ImagePathDelete {
+	mutation := newImagePathMutation(c.config, OpDelete)
+	return &ImagePathDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ImagePathClient) DeleteOne(ip *ImagePath) *ImagePathDeleteOne {
+	return c.DeleteOneID(ip.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ImagePathClient) DeleteOneID(id int) *ImagePathDeleteOne {
+	builder := c.Delete().Where(imagepath.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ImagePathDeleteOne{builder}
+}
+
+// Query returns a query builder for ImagePath.
+func (c *ImagePathClient) Query() *ImagePathQuery {
+	return &ImagePathQuery{config: c.config}
+}
+
+// Get returns a ImagePath entity by its id.
+func (c *ImagePathClient) Get(ctx context.Context, id int) (*ImagePath, error) {
+	return c.Query().Where(imagepath.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ImagePathClient) GetX(ctx context.Context, id int) *ImagePath {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryProduct queries the product edge of a ImagePath.
+func (c *ImagePathClient) QueryProduct(ip *ImagePath) *ProductQuery {
+	query := &ProductQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ip.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(imagepath.Table, imagepath.FieldID, id),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, imagepath.ProductTable, imagepath.ProductColumn),
+		)
+		fromV = sqlgraph.Neighbors(ip.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRestaurant queries the restaurant edge of a ImagePath.
+func (c *ImagePathClient) QueryRestaurant(ip *ImagePath) *RestaurantQuery {
+	query := &RestaurantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ip.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(imagepath.Table, imagepath.FieldID, id),
+			sqlgraph.To(restaurant.Table, restaurant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, imagepath.RestaurantTable, imagepath.RestaurantColumn),
+		)
+		fromV = sqlgraph.Neighbors(ip.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTag queries the tag edge of a ImagePath.
+func (c *ImagePathClient) QueryTag(ip *ImagePath) *TagQuery {
+	query := &TagQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ip.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(imagepath.Table, imagepath.FieldID, id),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, imagepath.TagTable, imagepath.TagColumn),
+		)
+		fromV = sqlgraph.Neighbors(ip.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ImagePathClient) Hooks() []Hook {
+	return c.hooks.ImagePath
 }
 
 // OrderClient is a client for the Order schema.
@@ -863,6 +1006,22 @@ func (c *ProductClient) QueryOrders(pr *Product) *OrderQuery {
 	return query
 }
 
+// QueryImages queries the images edge of a Product.
+func (c *ProductClient) QueryImages(pr *Product) *ImagePathQuery {
+	query := &ImagePathQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, id),
+			sqlgraph.To(imagepath.Table, imagepath.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, product.ImagesTable, product.ImagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ProductClient) Hooks() []Hook {
 	return c.hooks.Product
@@ -1135,6 +1294,22 @@ func (c *RestaurantClient) QueryProducts(r *Restaurant) *ProductQuery {
 	return query
 }
 
+// QueryImages queries the images edge of a Restaurant.
+func (c *RestaurantClient) QueryImages(r *Restaurant) *ImagePathQuery {
+	query := &ImagePathQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(restaurant.Table, restaurant.FieldID, id),
+			sqlgraph.To(imagepath.Table, imagepath.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, restaurant.ImagesTable, restaurant.ImagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *RestaurantClient) Hooks() []Hook {
 	return c.hooks.Restaurant
@@ -1368,6 +1543,22 @@ func (c *TagClient) QueryRestaurant(t *Tag) *RestaurantQuery {
 			sqlgraph.From(tag.Table, tag.FieldID, id),
 			sqlgraph.To(restaurant.Table, restaurant.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, tag.RestaurantTable, tag.RestaurantPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryImages queries the images edge of a Tag.
+func (c *TagClient) QueryImages(t *Tag) *ImagePathQuery {
+	query := &ImagePathQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tag.Table, tag.FieldID, id),
+			sqlgraph.To(imagepath.Table, imagepath.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tag.ImagesTable, tag.ImagesColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil

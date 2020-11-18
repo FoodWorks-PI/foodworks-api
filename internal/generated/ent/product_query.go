@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 
+	"foodworks.ml/m/internal/generated/ent/imagepath"
 	"foodworks.ml/m/internal/generated/ent/order"
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"foodworks.ml/m/internal/generated/ent/product"
@@ -33,6 +34,7 @@ type ProductQuery struct {
 	withRatings    *RatingQuery
 	withRestaurant *RestaurantQuery
 	withOrders     *OrderQuery
+	withImages     *ImagePathQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -143,6 +145,28 @@ func (pq *ProductQuery) QueryOrders() *OrderQuery {
 			sqlgraph.From(product.Table, product.FieldID, selector),
 			sqlgraph.To(order.Table, order.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, product.OrdersTable, product.OrdersPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryImages chains the current query on the images edge.
+func (pq *ProductQuery) QueryImages() *ImagePathQuery {
+	query := &ImagePathQuery{config: pq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(product.Table, product.FieldID, selector),
+			sqlgraph.To(imagepath.Table, imagepath.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, product.ImagesTable, product.ImagesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -373,6 +397,17 @@ func (pq *ProductQuery) WithOrders(opts ...func(*OrderQuery)) *ProductQuery {
 	return pq
 }
 
+//  WithImages tells the query-builder to eager-loads the nodes that are connected to
+// the "images" edge. The optional arguments used to configure the query builder of the edge.
+func (pq *ProductQuery) WithImages(opts ...func(*ImagePathQuery)) *ProductQuery {
+	query := &ImagePathQuery{config: pq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withImages = query
+	return pq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -439,11 +474,12 @@ func (pq *ProductQuery) sqlAll(ctx context.Context) ([]*Product, error) {
 	var (
 		nodes       = []*Product{}
 		_spec       = pq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			pq.withTags != nil,
 			pq.withRatings != nil,
 			pq.withRestaurant != nil,
 			pq.withOrders != nil,
+			pq.withImages != nil,
 		}
 	)
 	_spec.ScanValues = func() []interface{} {
@@ -681,6 +717,34 @@ func (pq *ProductQuery) sqlAll(ctx context.Context) ([]*Product, error) {
 			for i := range nodes {
 				nodes[i].Edges.Orders = append(nodes[i].Edges.Orders, n)
 			}
+		}
+	}
+
+	if query := pq.withImages; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Product)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.ImagePath(func(s *sql.Selector) {
+			s.Where(sql.InValues(product.ImagesColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.product_images
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "product_images" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "product_images" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Images = append(node.Edges.Images, n)
 		}
 	}
 

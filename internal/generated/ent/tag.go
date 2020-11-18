@@ -28,9 +28,11 @@ type TagEdges struct {
 	Product []*Product
 	// Restaurant holds the value of the restaurant edge.
 	Restaurant []*Restaurant
+	// Images holds the value of the images edge.
+	Images []*ImagePath
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // ProductOrErr returns the Product value or an error if the edge
@@ -49,6 +51,15 @@ func (e TagEdges) RestaurantOrErr() ([]*Restaurant, error) {
 		return e.Restaurant, nil
 	}
 	return nil, &NotLoadedError{edge: "restaurant"}
+}
+
+// ImagesOrErr returns the Images value or an error if the edge
+// was not loaded in eager-loading.
+func (e TagEdges) ImagesOrErr() ([]*ImagePath, error) {
+	if e.loadedTypes[2] {
+		return e.Images, nil
+	}
+	return nil, &NotLoadedError{edge: "images"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -87,6 +98,11 @@ func (t *Tag) QueryProduct() *ProductQuery {
 // QueryRestaurant queries the restaurant edge of the Tag.
 func (t *Tag) QueryRestaurant() *RestaurantQuery {
 	return (&TagClient{config: t.config}).QueryRestaurant(t)
+}
+
+// QueryImages queries the images edge of the Tag.
+func (t *Tag) QueryImages() *ImagePathQuery {
+	return (&TagClient{config: t.config}).QueryImages(t)
 }
 
 // Update returns a builder for updating this Tag.

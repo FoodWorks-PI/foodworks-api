@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"foodworks.ml/m/internal/generated/ent/address"
+	"foodworks.ml/m/internal/generated/ent/imagepath"
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
@@ -121,6 +122,21 @@ func (ru *RestaurantUpdate) AddProducts(p ...*Product) *RestaurantUpdate {
 	return ru.AddProductIDs(ids...)
 }
 
+// AddImageIDs adds the images edge to ImagePath by ids.
+func (ru *RestaurantUpdate) AddImageIDs(ids ...int) *RestaurantUpdate {
+	ru.mutation.AddImageIDs(ids...)
+	return ru
+}
+
+// AddImages adds the images edges to ImagePath.
+func (ru *RestaurantUpdate) AddImages(i ...*ImagePath) *RestaurantUpdate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return ru.AddImageIDs(ids...)
+}
+
 // Mutation returns the RestaurantMutation object of the builder.
 func (ru *RestaurantUpdate) Mutation() *RestaurantMutation {
 	return ru.mutation
@@ -193,6 +209,27 @@ func (ru *RestaurantUpdate) RemoveProducts(p ...*Product) *RestaurantUpdate {
 		ids[i] = p[i].ID
 	}
 	return ru.RemoveProductIDs(ids...)
+}
+
+// ClearImages clears all "images" edges to type ImagePath.
+func (ru *RestaurantUpdate) ClearImages() *RestaurantUpdate {
+	ru.mutation.ClearImages()
+	return ru
+}
+
+// RemoveImageIDs removes the images edge to ImagePath by ids.
+func (ru *RestaurantUpdate) RemoveImageIDs(ids ...int) *RestaurantUpdate {
+	ru.mutation.RemoveImageIDs(ids...)
+	return ru
+}
+
+// RemoveImages removes images edges to ImagePath.
+func (ru *RestaurantUpdate) RemoveImages(i ...*ImagePath) *RestaurantUpdate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return ru.RemoveImageIDs(ids...)
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -481,6 +518,60 @@ func (ru *RestaurantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if ru.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   restaurant.ImagesTable,
+			Columns: []string{restaurant.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedImagesIDs(); len(nodes) > 0 && !ru.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   restaurant.ImagesTable,
+			Columns: []string{restaurant.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.ImagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   restaurant.ImagesTable,
+			Columns: []string{restaurant.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{restaurant.Label}
@@ -589,6 +680,21 @@ func (ruo *RestaurantUpdateOne) AddProducts(p ...*Product) *RestaurantUpdateOne 
 	return ruo.AddProductIDs(ids...)
 }
 
+// AddImageIDs adds the images edge to ImagePath by ids.
+func (ruo *RestaurantUpdateOne) AddImageIDs(ids ...int) *RestaurantUpdateOne {
+	ruo.mutation.AddImageIDs(ids...)
+	return ruo
+}
+
+// AddImages adds the images edges to ImagePath.
+func (ruo *RestaurantUpdateOne) AddImages(i ...*ImagePath) *RestaurantUpdateOne {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return ruo.AddImageIDs(ids...)
+}
+
 // Mutation returns the RestaurantMutation object of the builder.
 func (ruo *RestaurantUpdateOne) Mutation() *RestaurantMutation {
 	return ruo.mutation
@@ -661,6 +767,27 @@ func (ruo *RestaurantUpdateOne) RemoveProducts(p ...*Product) *RestaurantUpdateO
 		ids[i] = p[i].ID
 	}
 	return ruo.RemoveProductIDs(ids...)
+}
+
+// ClearImages clears all "images" edges to type ImagePath.
+func (ruo *RestaurantUpdateOne) ClearImages() *RestaurantUpdateOne {
+	ruo.mutation.ClearImages()
+	return ruo
+}
+
+// RemoveImageIDs removes the images edge to ImagePath by ids.
+func (ruo *RestaurantUpdateOne) RemoveImageIDs(ids ...int) *RestaurantUpdateOne {
+	ruo.mutation.RemoveImageIDs(ids...)
+	return ruo
+}
+
+// RemoveImages removes images edges to ImagePath.
+func (ruo *RestaurantUpdateOne) RemoveImages(i ...*ImagePath) *RestaurantUpdateOne {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return ruo.RemoveImageIDs(ids...)
 }
 
 // Save executes the query and returns the updated entity.
@@ -939,6 +1066,60 @@ func (ruo *RestaurantUpdateOne) sqlSave(ctx context.Context) (_node *Restaurant,
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ruo.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   restaurant.ImagesTable,
+			Columns: []string{restaurant.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedImagesIDs(); len(nodes) > 0 && !ruo.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   restaurant.ImagesTable,
+			Columns: []string{restaurant.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.ImagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   restaurant.ImagesTable,
+			Columns: []string{restaurant.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
 				},
 			},
 		}

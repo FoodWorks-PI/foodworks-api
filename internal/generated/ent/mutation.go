@@ -11,6 +11,7 @@ import (
 	"foodworks.ml/m/internal/generated/ent/address"
 	"foodworks.ml/m/internal/generated/ent/bankingdata"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/imagepath"
 	"foodworks.ml/m/internal/generated/ent/order"
 	"foodworks.ml/m/internal/generated/ent/paymentmethod"
 	"foodworks.ml/m/internal/generated/ent/product"
@@ -34,6 +35,7 @@ const (
 	TypeAddress         = "Address"
 	TypeBankingData     = "BankingData"
 	TypeCustomer        = "Customer"
+	TypeImagePath       = "ImagePath"
 	TypeOrder           = "Order"
 	TypePaymentMethod   = "PaymentMethod"
 	TypeProduct         = "Product"
@@ -1713,6 +1715,486 @@ func (m *CustomerMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Customer edge %s", name)
 }
 
+// ImagePathMutation represents an operation that mutate the ImagePaths
+// nodes in the graph.
+type ImagePathMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int
+	_path             *string
+	clearedFields     map[string]struct{}
+	product           *int
+	clearedproduct    bool
+	restaurant        *int
+	clearedrestaurant bool
+	tag               *int
+	clearedtag        bool
+	done              bool
+	oldValue          func(context.Context) (*ImagePath, error)
+}
+
+var _ ent.Mutation = (*ImagePathMutation)(nil)
+
+// imagepathOption allows to manage the mutation configuration using functional options.
+type imagepathOption func(*ImagePathMutation)
+
+// newImagePathMutation creates new mutation for $n.Name.
+func newImagePathMutation(c config, op Op, opts ...imagepathOption) *ImagePathMutation {
+	m := &ImagePathMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeImagePath,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withImagePathID sets the id field of the mutation.
+func withImagePathID(id int) imagepathOption {
+	return func(m *ImagePathMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ImagePath
+		)
+		m.oldValue = func(ctx context.Context) (*ImagePath, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ImagePath.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withImagePath sets the old ImagePath of the mutation.
+func withImagePath(node *ImagePath) imagepathOption {
+	return func(m *ImagePathMutation) {
+		m.oldValue = func(context.Context) (*ImagePath, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ImagePathMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ImagePathMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *ImagePathMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetPath sets the path field.
+func (m *ImagePathMutation) SetPath(s string) {
+	m._path = &s
+}
+
+// Path returns the path value in the mutation.
+func (m *ImagePathMutation) Path() (r string, exists bool) {
+	v := m._path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPath returns the old path value of the ImagePath.
+// If the ImagePath object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ImagePathMutation) OldPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldPath is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPath: %w", err)
+	}
+	return oldValue.Path, nil
+}
+
+// ResetPath reset all changes of the "path" field.
+func (m *ImagePathMutation) ResetPath() {
+	m._path = nil
+}
+
+// SetProductID sets the product edge to Product by id.
+func (m *ImagePathMutation) SetProductID(id int) {
+	m.product = &id
+}
+
+// ClearProduct clears the product edge to Product.
+func (m *ImagePathMutation) ClearProduct() {
+	m.clearedproduct = true
+}
+
+// ProductCleared returns if the edge product was cleared.
+func (m *ImagePathMutation) ProductCleared() bool {
+	return m.clearedproduct
+}
+
+// ProductID returns the product id in the mutation.
+func (m *ImagePathMutation) ProductID() (id int, exists bool) {
+	if m.product != nil {
+		return *m.product, true
+	}
+	return
+}
+
+// ProductIDs returns the product ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// ProductID instead. It exists only for internal usage by the builders.
+func (m *ImagePathMutation) ProductIDs() (ids []int) {
+	if id := m.product; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProduct reset all changes of the "product" edge.
+func (m *ImagePathMutation) ResetProduct() {
+	m.product = nil
+	m.clearedproduct = false
+}
+
+// SetRestaurantID sets the restaurant edge to Restaurant by id.
+func (m *ImagePathMutation) SetRestaurantID(id int) {
+	m.restaurant = &id
+}
+
+// ClearRestaurant clears the restaurant edge to Restaurant.
+func (m *ImagePathMutation) ClearRestaurant() {
+	m.clearedrestaurant = true
+}
+
+// RestaurantCleared returns if the edge restaurant was cleared.
+func (m *ImagePathMutation) RestaurantCleared() bool {
+	return m.clearedrestaurant
+}
+
+// RestaurantID returns the restaurant id in the mutation.
+func (m *ImagePathMutation) RestaurantID() (id int, exists bool) {
+	if m.restaurant != nil {
+		return *m.restaurant, true
+	}
+	return
+}
+
+// RestaurantIDs returns the restaurant ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// RestaurantID instead. It exists only for internal usage by the builders.
+func (m *ImagePathMutation) RestaurantIDs() (ids []int) {
+	if id := m.restaurant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRestaurant reset all changes of the "restaurant" edge.
+func (m *ImagePathMutation) ResetRestaurant() {
+	m.restaurant = nil
+	m.clearedrestaurant = false
+}
+
+// SetTagID sets the tag edge to Tag by id.
+func (m *ImagePathMutation) SetTagID(id int) {
+	m.tag = &id
+}
+
+// ClearTag clears the tag edge to Tag.
+func (m *ImagePathMutation) ClearTag() {
+	m.clearedtag = true
+}
+
+// TagCleared returns if the edge tag was cleared.
+func (m *ImagePathMutation) TagCleared() bool {
+	return m.clearedtag
+}
+
+// TagID returns the tag id in the mutation.
+func (m *ImagePathMutation) TagID() (id int, exists bool) {
+	if m.tag != nil {
+		return *m.tag, true
+	}
+	return
+}
+
+// TagIDs returns the tag ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// TagID instead. It exists only for internal usage by the builders.
+func (m *ImagePathMutation) TagIDs() (ids []int) {
+	if id := m.tag; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTag reset all changes of the "tag" edge.
+func (m *ImagePathMutation) ResetTag() {
+	m.tag = nil
+	m.clearedtag = false
+}
+
+// Op returns the operation name.
+func (m *ImagePathMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (ImagePath).
+func (m *ImagePathMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *ImagePathMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m._path != nil {
+		fields = append(fields, imagepath.FieldPath)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *ImagePathMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case imagepath.FieldPath:
+		return m.Path()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *ImagePathMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case imagepath.FieldPath:
+		return m.OldPath(ctx)
+	}
+	return nil, fmt.Errorf("unknown ImagePath field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *ImagePathMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case imagepath.FieldPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPath(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ImagePath field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *ImagePathMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *ImagePathMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *ImagePathMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ImagePath numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *ImagePathMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *ImagePathMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ImagePathMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ImagePath nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *ImagePathMutation) ResetField(name string) error {
+	switch name {
+	case imagepath.FieldPath:
+		m.ResetPath()
+		return nil
+	}
+	return fmt.Errorf("unknown ImagePath field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *ImagePathMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.product != nil {
+		edges = append(edges, imagepath.EdgeProduct)
+	}
+	if m.restaurant != nil {
+		edges = append(edges, imagepath.EdgeRestaurant)
+	}
+	if m.tag != nil {
+		edges = append(edges, imagepath.EdgeTag)
+	}
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *ImagePathMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case imagepath.EdgeProduct:
+		if id := m.product; id != nil {
+			return []ent.Value{*id}
+		}
+	case imagepath.EdgeRestaurant:
+		if id := m.restaurant; id != nil {
+			return []ent.Value{*id}
+		}
+	case imagepath.EdgeTag:
+		if id := m.tag; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *ImagePathMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *ImagePathMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *ImagePathMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedproduct {
+		edges = append(edges, imagepath.EdgeProduct)
+	}
+	if m.clearedrestaurant {
+		edges = append(edges, imagepath.EdgeRestaurant)
+	}
+	if m.clearedtag {
+		edges = append(edges, imagepath.EdgeTag)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *ImagePathMutation) EdgeCleared(name string) bool {
+	switch name {
+	case imagepath.EdgeProduct:
+		return m.clearedproduct
+	case imagepath.EdgeRestaurant:
+		return m.clearedrestaurant
+	case imagepath.EdgeTag:
+		return m.clearedtag
+	}
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *ImagePathMutation) ClearEdge(name string) error {
+	switch name {
+	case imagepath.EdgeProduct:
+		m.ClearProduct()
+		return nil
+	case imagepath.EdgeRestaurant:
+		m.ClearRestaurant()
+		return nil
+	case imagepath.EdgeTag:
+		m.ClearTag()
+		return nil
+	}
+	return fmt.Errorf("unknown ImagePath unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *ImagePathMutation) ResetEdge(name string) error {
+	switch name {
+	case imagepath.EdgeProduct:
+		m.ResetProduct()
+		return nil
+	case imagepath.EdgeRestaurant:
+		m.ResetRestaurant()
+		return nil
+	case imagepath.EdgeTag:
+		m.ResetTag()
+		return nil
+	}
+	return fmt.Errorf("unknown ImagePath edge %s", name)
+}
+
 // OrderMutation represents an operation that mutate the Orders
 // nodes in the graph.
 type OrderMutation struct {
@@ -2644,6 +3126,9 @@ type ProductMutation struct {
 	orders            map[int]struct{}
 	removedorders     map[int]struct{}
 	clearedorders     bool
+	images            map[int]struct{}
+	removedimages     map[int]struct{}
+	clearedimages     bool
 	done              bool
 	oldValue          func(context.Context) (*Product, error)
 }
@@ -3120,6 +3605,59 @@ func (m *ProductMutation) ResetOrders() {
 	m.removedorders = nil
 }
 
+// AddImageIDs adds the images edge to ImagePath by ids.
+func (m *ProductMutation) AddImageIDs(ids ...int) {
+	if m.images == nil {
+		m.images = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.images[ids[i]] = struct{}{}
+	}
+}
+
+// ClearImages clears the images edge to ImagePath.
+func (m *ProductMutation) ClearImages() {
+	m.clearedimages = true
+}
+
+// ImagesCleared returns if the edge images was cleared.
+func (m *ProductMutation) ImagesCleared() bool {
+	return m.clearedimages
+}
+
+// RemoveImageIDs removes the images edge to ImagePath by ids.
+func (m *ProductMutation) RemoveImageIDs(ids ...int) {
+	if m.removedimages == nil {
+		m.removedimages = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedimages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedImages returns the removed ids of images.
+func (m *ProductMutation) RemovedImagesIDs() (ids []int) {
+	for id := range m.removedimages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ImagesIDs returns the images ids in the mutation.
+func (m *ProductMutation) ImagesIDs() (ids []int) {
+	for id := range m.images {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetImages reset all changes of the "images" edge.
+func (m *ProductMutation) ResetImages() {
+	m.images = nil
+	m.clearedimages = false
+	m.removedimages = nil
+}
+
 // Op returns the operation name.
 func (m *ProductMutation) Op() Op {
 	return m.op
@@ -3310,7 +3848,7 @@ func (m *ProductMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *ProductMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.tags != nil {
 		edges = append(edges, product.EdgeTags)
 	}
@@ -3322,6 +3860,9 @@ func (m *ProductMutation) AddedEdges() []string {
 	}
 	if m.orders != nil {
 		edges = append(edges, product.EdgeOrders)
+	}
+	if m.images != nil {
+		edges = append(edges, product.EdgeImages)
 	}
 	return edges
 }
@@ -3354,6 +3895,12 @@ func (m *ProductMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case product.EdgeImages:
+		ids := make([]ent.Value, 0, len(m.images))
+		for id := range m.images {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -3361,7 +3908,7 @@ func (m *ProductMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *ProductMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedtags != nil {
 		edges = append(edges, product.EdgeTags)
 	}
@@ -3373,6 +3920,9 @@ func (m *ProductMutation) RemovedEdges() []string {
 	}
 	if m.removedorders != nil {
 		edges = append(edges, product.EdgeOrders)
+	}
+	if m.removedimages != nil {
+		edges = append(edges, product.EdgeImages)
 	}
 	return edges
 }
@@ -3405,6 +3955,12 @@ func (m *ProductMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case product.EdgeImages:
+		ids := make([]ent.Value, 0, len(m.removedimages))
+		for id := range m.removedimages {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -3412,7 +3968,7 @@ func (m *ProductMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *ProductMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedtags {
 		edges = append(edges, product.EdgeTags)
 	}
@@ -3424,6 +3980,9 @@ func (m *ProductMutation) ClearedEdges() []string {
 	}
 	if m.clearedorders {
 		edges = append(edges, product.EdgeOrders)
+	}
+	if m.clearedimages {
+		edges = append(edges, product.EdgeImages)
 	}
 	return edges
 }
@@ -3440,6 +3999,8 @@ func (m *ProductMutation) EdgeCleared(name string) bool {
 		return m.clearedrestaurant
 	case product.EdgeOrders:
 		return m.clearedorders
+	case product.EdgeImages:
+		return m.clearedimages
 	}
 	return false
 }
@@ -3468,6 +4029,9 @@ func (m *ProductMutation) ResetEdge(name string) error {
 		return nil
 	case product.EdgeOrders:
 		m.ResetOrders()
+		return nil
+	case product.EdgeImages:
+		m.ResetImages()
 		return nil
 	}
 	return fmt.Errorf("unknown Product edge %s", name)
@@ -4006,6 +4570,9 @@ type RestaurantMutation struct {
 	products        map[int]struct{}
 	removedproducts map[int]struct{}
 	clearedproducts bool
+	images          map[int]struct{}
+	removedimages   map[int]struct{}
+	clearedimages   bool
 	done            bool
 	oldValue        func(context.Context) (*Restaurant, error)
 }
@@ -4374,6 +4941,59 @@ func (m *RestaurantMutation) ResetProducts() {
 	m.removedproducts = nil
 }
 
+// AddImageIDs adds the images edge to ImagePath by ids.
+func (m *RestaurantMutation) AddImageIDs(ids ...int) {
+	if m.images == nil {
+		m.images = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.images[ids[i]] = struct{}{}
+	}
+}
+
+// ClearImages clears the images edge to ImagePath.
+func (m *RestaurantMutation) ClearImages() {
+	m.clearedimages = true
+}
+
+// ImagesCleared returns if the edge images was cleared.
+func (m *RestaurantMutation) ImagesCleared() bool {
+	return m.clearedimages
+}
+
+// RemoveImageIDs removes the images edge to ImagePath by ids.
+func (m *RestaurantMutation) RemoveImageIDs(ids ...int) {
+	if m.removedimages == nil {
+		m.removedimages = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedimages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedImages returns the removed ids of images.
+func (m *RestaurantMutation) RemovedImagesIDs() (ids []int) {
+	for id := range m.removedimages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ImagesIDs returns the images ids in the mutation.
+func (m *RestaurantMutation) ImagesIDs() (ids []int) {
+	for id := range m.images {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetImages reset all changes of the "images" edge.
+func (m *RestaurantMutation) ResetImages() {
+	m.images = nil
+	m.clearedimages = false
+	m.removedimages = nil
+}
+
 // Op returns the operation name.
 func (m *RestaurantMutation) Op() Op {
 	return m.op
@@ -4515,7 +5135,7 @@ func (m *RestaurantMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *RestaurantMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.address != nil {
 		edges = append(edges, restaurant.EdgeAddress)
 	}
@@ -4527,6 +5147,9 @@ func (m *RestaurantMutation) AddedEdges() []string {
 	}
 	if m.products != nil {
 		edges = append(edges, restaurant.EdgeProducts)
+	}
+	if m.images != nil {
+		edges = append(edges, restaurant.EdgeImages)
 	}
 	return edges
 }
@@ -4557,6 +5180,12 @@ func (m *RestaurantMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case restaurant.EdgeImages:
+		ids := make([]ent.Value, 0, len(m.images))
+		for id := range m.images {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -4564,7 +5193,7 @@ func (m *RestaurantMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *RestaurantMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedtags != nil {
 		edges = append(edges, restaurant.EdgeTags)
 	}
@@ -4573,6 +5202,9 @@ func (m *RestaurantMutation) RemovedEdges() []string {
 	}
 	if m.removedproducts != nil {
 		edges = append(edges, restaurant.EdgeProducts)
+	}
+	if m.removedimages != nil {
+		edges = append(edges, restaurant.EdgeImages)
 	}
 	return edges
 }
@@ -4599,6 +5231,12 @@ func (m *RestaurantMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case restaurant.EdgeImages:
+		ids := make([]ent.Value, 0, len(m.removedimages))
+		for id := range m.removedimages {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -4606,7 +5244,7 @@ func (m *RestaurantMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *RestaurantMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedaddress {
 		edges = append(edges, restaurant.EdgeAddress)
 	}
@@ -4618,6 +5256,9 @@ func (m *RestaurantMutation) ClearedEdges() []string {
 	}
 	if m.clearedproducts {
 		edges = append(edges, restaurant.EdgeProducts)
+	}
+	if m.clearedimages {
+		edges = append(edges, restaurant.EdgeImages)
 	}
 	return edges
 }
@@ -4634,6 +5275,8 @@ func (m *RestaurantMutation) EdgeCleared(name string) bool {
 		return m.clearedowner
 	case restaurant.EdgeProducts:
 		return m.clearedproducts
+	case restaurant.EdgeImages:
+		return m.clearedimages
 	}
 	return false
 }
@@ -4665,6 +5308,9 @@ func (m *RestaurantMutation) ResetEdge(name string) error {
 		return nil
 	case restaurant.EdgeProducts:
 		m.ResetProducts()
+		return nil
+	case restaurant.EdgeImages:
+		m.ResetImages()
 		return nil
 	}
 	return fmt.Errorf("unknown Restaurant edge %s", name)
@@ -5326,6 +5972,9 @@ type TagMutation struct {
 	restaurant        map[int]struct{}
 	removedrestaurant map[int]struct{}
 	clearedrestaurant bool
+	images            map[int]struct{}
+	removedimages     map[int]struct{}
+	clearedimages     bool
 	done              bool
 	oldValue          func(context.Context) (*Tag, error)
 }
@@ -5552,6 +6201,59 @@ func (m *TagMutation) ResetRestaurant() {
 	m.removedrestaurant = nil
 }
 
+// AddImageIDs adds the images edge to ImagePath by ids.
+func (m *TagMutation) AddImageIDs(ids ...int) {
+	if m.images == nil {
+		m.images = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.images[ids[i]] = struct{}{}
+	}
+}
+
+// ClearImages clears the images edge to ImagePath.
+func (m *TagMutation) ClearImages() {
+	m.clearedimages = true
+}
+
+// ImagesCleared returns if the edge images was cleared.
+func (m *TagMutation) ImagesCleared() bool {
+	return m.clearedimages
+}
+
+// RemoveImageIDs removes the images edge to ImagePath by ids.
+func (m *TagMutation) RemoveImageIDs(ids ...int) {
+	if m.removedimages == nil {
+		m.removedimages = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedimages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedImages returns the removed ids of images.
+func (m *TagMutation) RemovedImagesIDs() (ids []int) {
+	for id := range m.removedimages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ImagesIDs returns the images ids in the mutation.
+func (m *TagMutation) ImagesIDs() (ids []int) {
+	for id := range m.images {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetImages reset all changes of the "images" edge.
+func (m *TagMutation) ResetImages() {
+	m.images = nil
+	m.clearedimages = false
+	m.removedimages = nil
+}
+
 // Op returns the operation name.
 func (m *TagMutation) Op() Op {
 	return m.op
@@ -5667,12 +6369,15 @@ func (m *TagMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *TagMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.product != nil {
 		edges = append(edges, tag.EdgeProduct)
 	}
 	if m.restaurant != nil {
 		edges = append(edges, tag.EdgeRestaurant)
+	}
+	if m.images != nil {
+		edges = append(edges, tag.EdgeImages)
 	}
 	return edges
 }
@@ -5693,6 +6398,12 @@ func (m *TagMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case tag.EdgeImages:
+		ids := make([]ent.Value, 0, len(m.images))
+		for id := range m.images {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -5700,12 +6411,15 @@ func (m *TagMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *TagMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedproduct != nil {
 		edges = append(edges, tag.EdgeProduct)
 	}
 	if m.removedrestaurant != nil {
 		edges = append(edges, tag.EdgeRestaurant)
+	}
+	if m.removedimages != nil {
+		edges = append(edges, tag.EdgeImages)
 	}
 	return edges
 }
@@ -5726,6 +6440,12 @@ func (m *TagMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case tag.EdgeImages:
+		ids := make([]ent.Value, 0, len(m.removedimages))
+		for id := range m.removedimages {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -5733,12 +6453,15 @@ func (m *TagMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *TagMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedproduct {
 		edges = append(edges, tag.EdgeProduct)
 	}
 	if m.clearedrestaurant {
 		edges = append(edges, tag.EdgeRestaurant)
+	}
+	if m.clearedimages {
+		edges = append(edges, tag.EdgeImages)
 	}
 	return edges
 }
@@ -5751,6 +6474,8 @@ func (m *TagMutation) EdgeCleared(name string) bool {
 		return m.clearedproduct
 	case tag.EdgeRestaurant:
 		return m.clearedrestaurant
+	case tag.EdgeImages:
+		return m.clearedimages
 	}
 	return false
 }
@@ -5773,6 +6498,9 @@ func (m *TagMutation) ResetEdge(name string) error {
 		return nil
 	case tag.EdgeRestaurant:
 		m.ResetRestaurant()
+		return nil
+	case tag.EdgeImages:
+		m.ResetImages()
 		return nil
 	}
 	return fmt.Errorf("unknown Tag edge %s", name)

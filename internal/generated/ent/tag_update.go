@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"foodworks.ml/m/internal/generated/ent/imagepath"
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
@@ -65,6 +66,21 @@ func (tu *TagUpdate) AddRestaurant(r ...*Restaurant) *TagUpdate {
 	return tu.AddRestaurantIDs(ids...)
 }
 
+// AddImageIDs adds the images edge to ImagePath by ids.
+func (tu *TagUpdate) AddImageIDs(ids ...int) *TagUpdate {
+	tu.mutation.AddImageIDs(ids...)
+	return tu
+}
+
+// AddImages adds the images edges to ImagePath.
+func (tu *TagUpdate) AddImages(i ...*ImagePath) *TagUpdate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return tu.AddImageIDs(ids...)
+}
+
 // Mutation returns the TagMutation object of the builder.
 func (tu *TagUpdate) Mutation() *TagMutation {
 	return tu.mutation
@@ -110,6 +126,27 @@ func (tu *TagUpdate) RemoveRestaurant(r ...*Restaurant) *TagUpdate {
 		ids[i] = r[i].ID
 	}
 	return tu.RemoveRestaurantIDs(ids...)
+}
+
+// ClearImages clears all "images" edges to type ImagePath.
+func (tu *TagUpdate) ClearImages() *TagUpdate {
+	tu.mutation.ClearImages()
+	return tu
+}
+
+// RemoveImageIDs removes the images edge to ImagePath by ids.
+func (tu *TagUpdate) RemoveImageIDs(ids ...int) *TagUpdate {
+	tu.mutation.RemoveImageIDs(ids...)
+	return tu
+}
+
+// RemoveImages removes images edges to ImagePath.
+func (tu *TagUpdate) RemoveImages(i ...*ImagePath) *TagUpdate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return tu.RemoveImageIDs(ids...)
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -296,6 +333,60 @@ func (tu *TagUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tu.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tag.ImagesTable,
+			Columns: []string{tag.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedImagesIDs(); len(nodes) > 0 && !tu.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tag.ImagesTable,
+			Columns: []string{tag.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.ImagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tag.ImagesTable,
+			Columns: []string{tag.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tag.Label}
@@ -350,6 +441,21 @@ func (tuo *TagUpdateOne) AddRestaurant(r ...*Restaurant) *TagUpdateOne {
 	return tuo.AddRestaurantIDs(ids...)
 }
 
+// AddImageIDs adds the images edge to ImagePath by ids.
+func (tuo *TagUpdateOne) AddImageIDs(ids ...int) *TagUpdateOne {
+	tuo.mutation.AddImageIDs(ids...)
+	return tuo
+}
+
+// AddImages adds the images edges to ImagePath.
+func (tuo *TagUpdateOne) AddImages(i ...*ImagePath) *TagUpdateOne {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return tuo.AddImageIDs(ids...)
+}
+
 // Mutation returns the TagMutation object of the builder.
 func (tuo *TagUpdateOne) Mutation() *TagMutation {
 	return tuo.mutation
@@ -395,6 +501,27 @@ func (tuo *TagUpdateOne) RemoveRestaurant(r ...*Restaurant) *TagUpdateOne {
 		ids[i] = r[i].ID
 	}
 	return tuo.RemoveRestaurantIDs(ids...)
+}
+
+// ClearImages clears all "images" edges to type ImagePath.
+func (tuo *TagUpdateOne) ClearImages() *TagUpdateOne {
+	tuo.mutation.ClearImages()
+	return tuo
+}
+
+// RemoveImageIDs removes the images edge to ImagePath by ids.
+func (tuo *TagUpdateOne) RemoveImageIDs(ids ...int) *TagUpdateOne {
+	tuo.mutation.RemoveImageIDs(ids...)
+	return tuo
+}
+
+// RemoveImages removes images edges to ImagePath.
+func (tuo *TagUpdateOne) RemoveImages(i ...*ImagePath) *TagUpdateOne {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return tuo.RemoveImageIDs(ids...)
 }
 
 // Save executes the query and returns the updated entity.
@@ -571,6 +698,60 @@ func (tuo *TagUpdateOne) sqlSave(ctx context.Context) (_node *Tag, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: restaurant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tuo.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tag.ImagesTable,
+			Columns: []string{tag.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedImagesIDs(); len(nodes) > 0 && !tuo.mutation.ImagesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tag.ImagesTable,
+			Columns: []string{tag.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.ImagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   tag.ImagesTable,
+			Columns: []string{tag.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
 				},
 			},
 		}

@@ -67,6 +67,43 @@ var (
 			},
 		},
 	}
+	// ImagePathsColumns holds the columns for the "image_paths" table.
+	ImagePathsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "path", Type: field.TypeString},
+		{Name: "product_images", Type: field.TypeInt, Nullable: true},
+		{Name: "restaurant_images", Type: field.TypeInt, Nullable: true},
+		{Name: "tag_images", Type: field.TypeInt, Nullable: true},
+	}
+	// ImagePathsTable holds the schema information for the "image_paths" table.
+	ImagePathsTable = &schema.Table{
+		Name:       "image_paths",
+		Columns:    ImagePathsColumns,
+		PrimaryKey: []*schema.Column{ImagePathsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "image_paths_products_images",
+				Columns: []*schema.Column{ImagePathsColumns[2]},
+
+				RefColumns: []*schema.Column{ProductsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:  "image_paths_restaurants_images",
+				Columns: []*schema.Column{ImagePathsColumns[3]},
+
+				RefColumns: []*schema.Column{RestaurantsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:  "image_paths_tags_images",
+				Columns: []*schema.Column{ImagePathsColumns[4]},
+
+				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// OrdersColumns holds the columns for the "orders" table.
 	OrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -361,6 +398,7 @@ var (
 		AddressesTable,
 		BankingDataTable,
 		CustomersTable,
+		ImagePathsTable,
 		OrdersTable,
 		PaymentMethodsTable,
 		ProductsTable,
@@ -378,6 +416,9 @@ var (
 
 func init() {
 	CustomersTable.ForeignKeys[0].RefTable = AddressesTable
+	ImagePathsTable.ForeignKeys[0].RefTable = ProductsTable
+	ImagePathsTable.ForeignKeys[1].RefTable = RestaurantsTable
+	ImagePathsTable.ForeignKeys[2].RefTable = TagsTable
 	PaymentMethodsTable.ForeignKeys[0].RefTable = CustomersTable
 	RatingsTable.ForeignKeys[0].RefTable = CustomersTable
 	RatingsTable.ForeignKeys[1].RefTable = ProductsTable

@@ -39,9 +39,11 @@ type RestaurantEdges struct {
 	Owner []*RestaurantOwner
 	// Products holds the value of the products edge.
 	Products []*Product
+	// Images holds the value of the images edge.
+	Images []*ImagePath
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // AddressOrErr returns the Address value or an error if the edge
@@ -83,6 +85,15 @@ func (e RestaurantEdges) ProductsOrErr() ([]*Product, error) {
 		return e.Products, nil
 	}
 	return nil, &NotLoadedError{edge: "products"}
+}
+
+// ImagesOrErr returns the Images value or an error if the edge
+// was not loaded in eager-loading.
+func (e RestaurantEdges) ImagesOrErr() ([]*ImagePath, error) {
+	if e.loadedTypes[4] {
+		return e.Images, nil
+	}
+	return nil, &NotLoadedError{edge: "images"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -153,6 +164,11 @@ func (r *Restaurant) QueryOwner() *RestaurantOwnerQuery {
 // QueryProducts queries the products edge of the Restaurant.
 func (r *Restaurant) QueryProducts() *ProductQuery {
 	return (&RestaurantClient{config: r.config}).QueryProducts(r)
+}
+
+// QueryImages queries the images edge of the Restaurant.
+func (r *Restaurant) QueryImages() *ImagePathQuery {
+	return (&RestaurantClient{config: r.config}).QueryImages(r)
 }
 
 // Update returns a builder for updating this Restaurant.
