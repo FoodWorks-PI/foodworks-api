@@ -32,5 +32,6 @@ func (Restaurant) Edges() []ent.Edge {
 		edge.To("tags", Tag.Type),
 		edge.From("owner", RestaurantOwner.Type).Ref("restaurant"),
 		edge.To("products", Product.Type),
+		edge.To("images", ImagePath.Type),
 	}
 }

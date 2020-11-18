@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"foodworks.ml/m/internal/recommendations"
 
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/order"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
 
 	"foodworks.ml/m/internal/generated/graphql/model"
@@ -185,4 +187,16 @@ func P(c2 string) *sql.Predicate {
 	return sql.P(func(b *sql.Builder) {
 		b.WriteString(c2)
 	})
+}
+
+func (r *mutationResolver) updateOrderAsRestaurantOwner(ctx context.Context, input *model.UpdateOrderInput, user *ent.RestaurantOwner) (int, error) {
+	_, err := r.EntClient.Order.Update().
+		Where(order.IDEQ(input.OrderID)).
+		SetOrderState(input.OrderState.String()).
+		SetUpdatedAt(time.Now().UTC()).
+		Save(ctx)
+	if err != nil {
+		return -1, err
+	}
+	return input.OrderID, nil
 }

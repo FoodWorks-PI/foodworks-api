@@ -10,6 +10,7 @@ import (
 	"math"
 
 	"foodworks.ml/m/internal/generated/ent/address"
+	"foodworks.ml/m/internal/generated/ent/imagepath"
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
@@ -33,6 +34,7 @@ type RestaurantQuery struct {
 	withTags     *TagQuery
 	withOwner    *RestaurantOwnerQuery
 	withProducts *ProductQuery
+	withImages   *ImagePathQuery
 	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -144,6 +146,28 @@ func (rq *RestaurantQuery) QueryProducts() *ProductQuery {
 			sqlgraph.From(restaurant.Table, restaurant.FieldID, selector),
 			sqlgraph.To(product.Table, product.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, restaurant.ProductsTable, restaurant.ProductsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryImages chains the current query on the images edge.
+func (rq *RestaurantQuery) QueryImages() *ImagePathQuery {
+	query := &ImagePathQuery{config: rq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(restaurant.Table, restaurant.FieldID, selector),
+			sqlgraph.To(imagepath.Table, imagepath.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, restaurant.ImagesTable, restaurant.ImagesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -374,6 +398,17 @@ func (rq *RestaurantQuery) WithProducts(opts ...func(*ProductQuery)) *Restaurant
 	return rq
 }
 
+//  WithImages tells the query-builder to eager-loads the nodes that are connected to
+// the "images" edge. The optional arguments used to configure the query builder of the edge.
+func (rq *RestaurantQuery) WithImages(opts ...func(*ImagePathQuery)) *RestaurantQuery {
+	query := &ImagePathQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withImages = query
+	return rq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -441,11 +476,12 @@ func (rq *RestaurantQuery) sqlAll(ctx context.Context) ([]*Restaurant, error) {
 		nodes       = []*Restaurant{}
 		withFKs     = rq.withFKs
 		_spec       = rq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			rq.withAddress != nil,
 			rq.withTags != nil,
 			rq.withOwner != nil,
 			rq.withProducts != nil,
+			rq.withImages != nil,
 		}
 	)
 	if rq.withAddress != nil {
@@ -654,6 +690,34 @@ func (rq *RestaurantQuery) sqlAll(ctx context.Context) ([]*Restaurant, error) {
 			for i := range nodes {
 				nodes[i].Edges.Products = append(nodes[i].Edges.Products, n)
 			}
+		}
+	}
+
+	if query := rq.withImages; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Restaurant)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.ImagePath(func(s *sql.Selector) {
+			s.Where(sql.InValues(restaurant.ImagesColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.restaurant_images
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "restaurant_images" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "restaurant_images" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Images = append(node.Edges.Images, n)
 		}
 	}
 

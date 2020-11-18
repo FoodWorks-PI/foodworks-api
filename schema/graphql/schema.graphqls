@@ -131,6 +131,7 @@ type Product {
   ratings: [Rating!]!
   restaurant: Restaurant! # Es necesario?
   distance: Float! @hasRole(role: CUSTOMER)
+  image: String!
   # quantity: Int!
   # recurrence: Recurrence
 }
@@ -195,6 +196,7 @@ type Restaurant {
   orders: [Order!]!
   restaurantOwner: RestaurantOwner!
   distance: Float! @hasRole(role: CUSTOMER)
+  image: String!
 }
 
 input RegisterRestaurantOwnerInput {
@@ -234,6 +236,7 @@ type ProductSearchResult {
 
  type TagCard {
    tag: String!
+   image: String!
  }
 
  union FeedCard = Restaurant | Product | TagCard
@@ -245,12 +248,18 @@ type ProductSearchResult {
 
 scalar Upload
 
-input UploadImageInput{
-  files: [Upload!]!
-}
+ input UploadProductImageInput{
+   ID: ID!
+   file: Upload!
+ }
+
+ input UploadRestaurantImageInput{
+   ID: ID!
+   file: Upload!
+ }
 
 input DeleteImageInput {
-  fileNames: [String!]!
+  filePath: String!
 }
 
 type Query {
@@ -262,6 +271,7 @@ type Query {
 
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getProductById(input: ID!): Product!
+  getProductByTag(input: String!): [Product!]!
   searchProductsAndRestaurants(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
   getFeed: [FeedItem!]! @hasRole(role:CUSTOMER)
 
@@ -286,21 +296,18 @@ type Mutation {
   createProduct(input: RegisterProductInput!): ID!
   updateProduct(input: UpdateProductInput!): ID!
   toggleProductStatus(input: ID!): Boolean!
-  uploadProductPhoto(input: UploadImageInput!): [String!]!
-  deleteProductPhoto(input: [String!]!): ID!
+  uploadProductPhoto(input: UploadProductImageInput!): String!
   deleteProduct(input: ID!): ID!
 
   updateRestaurant(input:RegisterRestaurantInput!): ID!
-  uploadRestaurantPhoto(input: UploadImageInput!): [String!]!
-  deleteRestaurantPhoto(input: DeleteImageInput!): ID!
+  uploadRestaurantPhoto(input: UploadRestaurantImageInput!): String!
   deleteRestaurant(input: ID!): ID!
+
+  deletePhoto(input: DeleteImageInput!): ID!
 
   createProductRating(input: RegisterRatingInput!): ID!
   updateProductRating(input: UpdateRatingInput!): ID!
   deleteRating(input: ID!): ID!
-
-  uploadPhotoDemo(input:UploadImageInput!): [String!]!
-  deletePhotoDemo(input:DeleteImageInput!): [String!]!
 
   createOrder(input: RegisterOrderInput): ID!
   updateOrder(input: UpdateOrderInput): ID!

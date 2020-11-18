@@ -93,13 +93,11 @@ type ComplexityRoot struct {
 		CreateProductRating              func(childComplexity int, input model.RegisterRatingInput) int
 		CreateRestaurantOwnerProfile     func(childComplexity int, input model.RegisterRestaurantOwnerInput) int
 		DeleteCustomerProfile            func(childComplexity int) int
-		DeletePhotoDemo                  func(childComplexity int, input model.DeleteImageInput) int
+		DeletePhoto                      func(childComplexity int, input model.DeleteImageInput) int
 		DeleteProduct                    func(childComplexity int, input int) int
-		DeleteProductPhoto               func(childComplexity int, input []string) int
 		DeleteRating                     func(childComplexity int, input int) int
 		DeleteRestaurant                 func(childComplexity int, input int) int
 		DeleteRestaurantOwnerProfile     func(childComplexity int) int
-		DeleteRestaurantPhoto            func(childComplexity int, input model.DeleteImageInput) int
 		ToggleProductStatus              func(childComplexity int, input int) int
 		UpdateCustomerAddress            func(childComplexity int, input model.RegisterAddressInput) int
 		UpdateCustomerPaymentMethod      func(childComplexity int, input *model.PaymentMethodInput) int
@@ -110,9 +108,8 @@ type ComplexityRoot struct {
 		UpdateRestaurant                 func(childComplexity int, input model.RegisterRestaurantInput) int
 		UpdateRestaurantOwnerBankingData func(childComplexity int, input model.RegisterBankingInput) int
 		UpdateRestaurantOwnerProfile     func(childComplexity int, input model.UpdateRestaurantOwnerInput) int
-		UploadPhotoDemo                  func(childComplexity int, input model.UploadImageInput) int
-		UploadProductPhoto               func(childComplexity int, input model.UploadImageInput) int
-		UploadRestaurantPhoto            func(childComplexity int, input model.UploadImageInput) int
+		UploadProductPhoto               func(childComplexity int, input model.UploadProductImageInput) int
+		UploadRestaurantPhoto            func(childComplexity int, input model.UploadRestaurantImageInput) int
 	}
 
 	Order struct {
@@ -135,6 +132,7 @@ type ComplexityRoot struct {
 		Description   func(childComplexity int) int
 		Distance      func(childComplexity int) int
 		ID            func(childComplexity int) int
+		Image         func(childComplexity int) int
 		Name          func(childComplexity int) int
 		Ratings       func(childComplexity int) int
 		Restaurant    func(childComplexity int) int
@@ -154,6 +152,7 @@ type ComplexityRoot struct {
 		GetCustomerOrders            func(childComplexity int) int
 		GetFeed                      func(childComplexity int) int
 		GetProductByID               func(childComplexity int, input int) int
+		GetProductByTag              func(childComplexity int, input string) int
 		GetProductsByRestaurantID    func(childComplexity int, input model.ProductsFilterByRestaurantInput) int
 		GetRestaurantByID            func(childComplexity int, input int) int
 		GetRestaurantOrders          func(childComplexity int) int
@@ -173,6 +172,7 @@ type ComplexityRoot struct {
 		Description     func(childComplexity int) int
 		Distance        func(childComplexity int) int
 		ID              func(childComplexity int) int
+		Image           func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Orders          func(childComplexity int) int
 		Products        func(childComplexity int) int
@@ -195,7 +195,8 @@ type ComplexityRoot struct {
 	}
 
 	TagCard struct {
-		Tag func(childComplexity int) int
+		Image func(childComplexity int) int
+		Tag   func(childComplexity int) int
 	}
 }
 
@@ -219,18 +220,15 @@ type MutationResolver interface {
 	CreateProduct(ctx context.Context, input model.RegisterProductInput) (int, error)
 	UpdateProduct(ctx context.Context, input model.UpdateProductInput) (int, error)
 	ToggleProductStatus(ctx context.Context, input int) (bool, error)
-	UploadProductPhoto(ctx context.Context, input model.UploadImageInput) ([]string, error)
-	DeleteProductPhoto(ctx context.Context, input []string) (int, error)
+	UploadProductPhoto(ctx context.Context, input model.UploadProductImageInput) (string, error)
 	DeleteProduct(ctx context.Context, input int) (int, error)
 	UpdateRestaurant(ctx context.Context, input model.RegisterRestaurantInput) (int, error)
-	UploadRestaurantPhoto(ctx context.Context, input model.UploadImageInput) ([]string, error)
-	DeleteRestaurantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error)
+	UploadRestaurantPhoto(ctx context.Context, input model.UploadRestaurantImageInput) (string, error)
 	DeleteRestaurant(ctx context.Context, input int) (int, error)
+	DeletePhoto(ctx context.Context, input model.DeleteImageInput) (int, error)
 	CreateProductRating(ctx context.Context, input model.RegisterRatingInput) (int, error)
 	UpdateProductRating(ctx context.Context, input model.UpdateRatingInput) (int, error)
 	DeleteRating(ctx context.Context, input int) (int, error)
-	UploadPhotoDemo(ctx context.Context, input model.UploadImageInput) ([]string, error)
-	DeletePhotoDemo(ctx context.Context, input model.DeleteImageInput) ([]string, error)
 	CreateOrder(ctx context.Context, input *model.RegisterOrderInput) (int, error)
 	UpdateOrder(ctx context.Context, input *model.UpdateOrderInput) (int, error)
 }
@@ -248,6 +246,8 @@ type ProductResolver interface {
 	AverageRating(ctx context.Context, obj *ent.Product) (float64, error)
 	Ratings(ctx context.Context, obj *ent.Product) ([]*ent.Rating, error)
 	Restaurant(ctx context.Context, obj *ent.Product) (*ent.Restaurant, error)
+
+	Image(ctx context.Context, obj *ent.Product) (string, error)
 }
 type QueryResolver interface {
 	GetCurrentCustomer(ctx context.Context) (*ent.Customer, error)
@@ -256,6 +256,7 @@ type QueryResolver interface {
 	GetClosestRestaurants(ctx context.Context) ([]*ent.Restaurant, error)
 	GetProductsByRestaurantID(ctx context.Context, input model.ProductsFilterByRestaurantInput) ([]*ent.Product, error)
 	GetProductByID(ctx context.Context, input int) (*ent.Product, error)
+	GetProductByTag(ctx context.Context, input string) ([]*ent.Product, error)
 	SearchProductsAndRestaurants(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error)
 	GetFeed(ctx context.Context) ([]*model.FeedItem, error)
 	GetCustomerOrders(ctx context.Context) ([]*ent.Order, error)
@@ -272,6 +273,8 @@ type RestaurantResolver interface {
 	Products(ctx context.Context, obj *ent.Restaurant) ([]*ent.Product, error)
 	Orders(ctx context.Context, obj *ent.Restaurant) ([]*ent.Order, error)
 	RestaurantOwner(ctx context.Context, obj *ent.Restaurant) (*ent.RestaurantOwner, error)
+
+	Image(ctx context.Context, obj *ent.Restaurant) (string, error)
 }
 type RestaurantOwnerResolver interface {
 	Banking(ctx context.Context, obj *ent.RestaurantOwner) (*ent.BankingData, error)
@@ -482,17 +485,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteCustomerProfile(childComplexity), true
 
-	case "Mutation.deletePhotoDemo":
-		if e.complexity.Mutation.DeletePhotoDemo == nil {
+	case "Mutation.deletePhoto":
+		if e.complexity.Mutation.DeletePhoto == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_deletePhotoDemo_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_deletePhoto_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeletePhotoDemo(childComplexity, args["input"].(model.DeleteImageInput)), true
+		return e.complexity.Mutation.DeletePhoto(childComplexity, args["input"].(model.DeleteImageInput)), true
 
 	case "Mutation.deleteProduct":
 		if e.complexity.Mutation.DeleteProduct == nil {
@@ -505,18 +508,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteProduct(childComplexity, args["input"].(int)), true
-
-	case "Mutation.deleteProductPhoto":
-		if e.complexity.Mutation.DeleteProductPhoto == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteProductPhoto_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteProductPhoto(childComplexity, args["input"].([]string)), true
 
 	case "Mutation.deleteRating":
 		if e.complexity.Mutation.DeleteRating == nil {
@@ -548,18 +539,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteRestaurantOwnerProfile(childComplexity), true
-
-	case "Mutation.deleteRestaurantPhoto":
-		if e.complexity.Mutation.DeleteRestaurantPhoto == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteRestaurantPhoto_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteRestaurantPhoto(childComplexity, args["input"].(model.DeleteImageInput)), true
 
 	case "Mutation.toggleProductStatus":
 		if e.complexity.Mutation.ToggleProductStatus == nil {
@@ -681,18 +660,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateRestaurantOwnerProfile(childComplexity, args["input"].(model.UpdateRestaurantOwnerInput)), true
 
-	case "Mutation.uploadPhotoDemo":
-		if e.complexity.Mutation.UploadPhotoDemo == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_uploadPhotoDemo_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.UploadPhotoDemo(childComplexity, args["input"].(model.UploadImageInput)), true
-
 	case "Mutation.uploadProductPhoto":
 		if e.complexity.Mutation.UploadProductPhoto == nil {
 			break
@@ -703,7 +670,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UploadProductPhoto(childComplexity, args["input"].(model.UploadImageInput)), true
+		return e.complexity.Mutation.UploadProductPhoto(childComplexity, args["input"].(model.UploadProductImageInput)), true
 
 	case "Mutation.uploadRestaurantPhoto":
 		if e.complexity.Mutation.UploadRestaurantPhoto == nil {
@@ -715,7 +682,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UploadRestaurantPhoto(childComplexity, args["input"].(model.UploadImageInput)), true
+		return e.complexity.Mutation.UploadRestaurantPhoto(childComplexity, args["input"].(model.UploadRestaurantImageInput)), true
 
 	case "Order.customer":
 		if e.complexity.Order.Customer == nil {
@@ -807,6 +774,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Product.ID(childComplexity), true
+
+	case "Product.image":
+		if e.complexity.Product.Image == nil {
+			break
+		}
+
+		return e.complexity.Product.Image(childComplexity), true
 
 	case "Product.name":
 		if e.complexity.Product.Name == nil {
@@ -908,6 +882,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetProductByID(childComplexity, args["input"].(int)), true
+
+	case "Query.getProductByTag":
+		if e.complexity.Query.GetProductByTag == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getProductByTag_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetProductByTag(childComplexity, args["input"].(string)), true
 
 	case "Query.getProductsByRestaurantID":
 		if e.complexity.Query.GetProductsByRestaurantID == nil {
@@ -1015,6 +1001,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Restaurant.ID(childComplexity), true
 
+	case "Restaurant.image":
+		if e.complexity.Restaurant.Image == nil {
+			break
+		}
+
+		return e.complexity.Restaurant.Image(childComplexity), true
+
 	case "Restaurant.name":
 		if e.complexity.Restaurant.Name == nil {
 			break
@@ -1105,6 +1098,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.OnOrderStateChange(childComplexity), true
+
+	case "TagCard.image":
+		if e.complexity.TagCard.Image == nil {
+			break
+		}
+
+		return e.complexity.TagCard.Image(childComplexity), true
 
 	case "TagCard.tag":
 		if e.complexity.TagCard.Tag == nil {
@@ -1327,6 +1327,7 @@ type Product {
   ratings: [Rating!]!
   restaurant: Restaurant! # Es necesario?
   distance: Float! @hasRole(role: CUSTOMER)
+  image: String!
   # quantity: Int!
   # recurrence: Recurrence
 }
@@ -1391,6 +1392,7 @@ type Restaurant {
   orders: [Order!]!
   restaurantOwner: RestaurantOwner!
   distance: Float! @hasRole(role: CUSTOMER)
+  image: String!
 }
 
 input RegisterRestaurantOwnerInput {
@@ -1430,6 +1432,7 @@ type ProductSearchResult {
 
  type TagCard {
    tag: String!
+   image: String!
  }
 
  union FeedCard = Restaurant | Product | TagCard
@@ -1441,12 +1444,18 @@ type ProductSearchResult {
 
 scalar Upload
 
-input UploadImageInput{
-  files: [Upload!]!
-}
+ input UploadProductImageInput{
+   ID: ID!
+   file: Upload!
+ }
+
+ input UploadRestaurantImageInput{
+   ID: ID!
+   file: Upload!
+ }
 
 input DeleteImageInput {
-  fileNames: [String!]!
+  filePath: String!
 }
 
 type Query {
@@ -1458,6 +1467,7 @@ type Query {
 
   getProductsByRestaurantID(input: ProductsFilterByRestaurantInput!): [Product!]!
   getProductById(input: ID!): Product!
+  getProductByTag(input: String!): [Product!]!
   searchProductsAndRestaurants(input: ProductsByAllFieldsInput!): GlobalSearchResult! @hasRole(role: CUSTOMER)
   getFeed: [FeedItem!]! @hasRole(role:CUSTOMER)
 
@@ -1482,21 +1492,18 @@ type Mutation {
   createProduct(input: RegisterProductInput!): ID!
   updateProduct(input: UpdateProductInput!): ID!
   toggleProductStatus(input: ID!): Boolean!
-  uploadProductPhoto(input: UploadImageInput!): [String!]!
-  deleteProductPhoto(input: [String!]!): ID!
+  uploadProductPhoto(input: UploadProductImageInput!): String!
   deleteProduct(input: ID!): ID!
 
   updateRestaurant(input:RegisterRestaurantInput!): ID!
-  uploadRestaurantPhoto(input: UploadImageInput!): [String!]!
-  deleteRestaurantPhoto(input: DeleteImageInput!): ID!
+  uploadRestaurantPhoto(input: UploadRestaurantImageInput!): String!
   deleteRestaurant(input: ID!): ID!
+
+  deletePhoto(input: DeleteImageInput!): ID!
 
   createProductRating(input: RegisterRatingInput!): ID!
   updateProductRating(input: UpdateRatingInput!): ID!
   deleteRating(input: ID!): ID!
-
-  uploadPhotoDemo(input:UploadImageInput!): [String!]!
-  deletePhotoDemo(input:DeleteImageInput!): [String!]!
 
   createOrder(input: RegisterOrderInput): ID!
   updateOrder(input: UpdateOrderInput): ID!
@@ -1603,28 +1610,13 @@ func (ec *executionContext) field_Mutation_createRestaurantOwnerProfile_args(ctx
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deletePhotoDemo_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_deletePhoto_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 model.DeleteImageInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNDeleteImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐDeleteImageInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteProductPhoto_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 []string
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1655,21 +1647,6 @@ func (ec *executionContext) field_Mutation_deleteRating_args(ctx context.Context
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteRestaurantPhoto_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.DeleteImageInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNDeleteImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐDeleteImageInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1843,28 +1820,13 @@ func (ec *executionContext) field_Mutation_updateRestaurant_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_uploadPhotoDemo_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.UploadImageInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNUploadImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUploadImageInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_uploadProductPhoto_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.UploadImageInput
+	var arg0 model.UploadProductImageInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNUploadImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUploadImageInput(ctx, tmp)
+		arg0, err = ec.unmarshalNUploadProductImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUploadProductImageInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1876,10 +1838,10 @@ func (ec *executionContext) field_Mutation_uploadProductPhoto_args(ctx context.C
 func (ec *executionContext) field_Mutation_uploadRestaurantPhoto_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.UploadImageInput
+	var arg0 model.UploadRestaurantImageInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNUploadImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUploadImageInput(ctx, tmp)
+		arg0, err = ec.unmarshalNUploadRestaurantImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUploadRestaurantImageInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1925,6 +1887,21 @@ func (ec *executionContext) field_Query_getProductById_args(ctx context.Context,
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getProductByTag_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3126,7 +3103,7 @@ func (ec *executionContext) _Mutation_uploadProductPhoto(ctx context.Context, fi
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UploadProductPhoto(rctx, args["input"].(model.UploadImageInput))
+		return ec.resolvers.Mutation().UploadProductPhoto(rctx, args["input"].(model.UploadProductImageInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3138,51 +3115,9 @@ func (ec *executionContext) _Mutation_uploadProductPhoto(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_deleteProductPhoto(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteProductPhoto_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteProductPhoto(rctx, args["input"].([]string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteProduct(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3294,7 +3229,7 @@ func (ec *executionContext) _Mutation_uploadRestaurantPhoto(ctx context.Context,
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UploadRestaurantPhoto(rctx, args["input"].(model.UploadImageInput))
+		return ec.resolvers.Mutation().UploadRestaurantPhoto(rctx, args["input"].(model.UploadRestaurantImageInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3306,51 +3241,9 @@ func (ec *executionContext) _Mutation_uploadRestaurantPhoto(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_deleteRestaurantPhoto(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteRestaurantPhoto_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteRestaurantPhoto(rctx, args["input"].(model.DeleteImageInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_deleteRestaurant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3379,6 +3272,48 @@ func (ec *executionContext) _Mutation_deleteRestaurant(ctx context.Context, fiel
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().DeleteRestaurant(rctx, args["input"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deletePhoto(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deletePhoto_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeletePhoto(rctx, args["input"].(model.DeleteImageInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3519,90 +3454,6 @@ func (ec *executionContext) _Mutation_deleteRating(ctx context.Context, field gr
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNID2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_uploadPhotoDemo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_uploadPhotoDemo_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UploadPhotoDemo(rctx, args["input"].(model.UploadImageInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_deletePhotoDemo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deletePhotoDemo_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeletePhotoDemo(rctx, args["input"].(model.DeleteImageInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4308,6 +4159,41 @@ func (ec *executionContext) _Product_distance(ctx context.Context, field graphql
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Product_image(ctx context.Context, field graphql.CollectedField, obj *ent.Product) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Product",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Product().Image(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ProductSearchResult_product(ctx context.Context, field graphql.CollectedField, obj *model.ProductSearchResult) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4607,6 +4493,48 @@ func (ec *executionContext) _Query_getProductById(ctx context.Context, field gra
 	res := resTmp.(*ent.Product)
 	fc.Result = res
 	return ec.marshalNProduct2ᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐProduct(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getProductByTag(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getProductByTag_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetProductByTag(rctx, args["input"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Product)
+	fc.Result = res
+	return ec.marshalNProduct2ᚕᚖfoodworksᚗmlᚋmᚋinternalᚋgeneratedᚋentᚐProductᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_searchProductsAndRestaurants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5428,6 +5356,41 @@ func (ec *executionContext) _Restaurant_distance(ctx context.Context, field grap
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Restaurant_image(ctx context.Context, field graphql.CollectedField, obj *ent.Restaurant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Restaurant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Restaurant().Image(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _RestaurantOwner_ID(ctx context.Context, field graphql.CollectedField, obj *ent.RestaurantOwner) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5737,6 +5700,41 @@ func (ec *executionContext) _TagCard_tag(ctx context.Context, field graphql.Coll
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Tag, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TagCard_image(ctx context.Context, field graphql.CollectedField, obj *model.TagCard) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "TagCard",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Image, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6866,11 +6864,11 @@ func (ec *executionContext) unmarshalInputDeleteImageInput(ctx context.Context, 
 
 	for k, v := range asMap {
 		switch k {
-		case "fileNames":
+		case "filePath":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileNames"))
-			it.FileNames, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filePath"))
+			it.FilePath, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7520,17 +7518,53 @@ func (ec *executionContext) unmarshalInputUpdateRestaurantOwnerInput(ctx context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUploadImageInput(ctx context.Context, obj interface{}) (model.UploadImageInput, error) {
-	var it model.UploadImageInput
+func (ec *executionContext) unmarshalInputUploadProductImageInput(ctx context.Context, obj interface{}) (model.UploadProductImageInput, error) {
+	var it model.UploadProductImageInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "files":
+		case "ID":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("files"))
-			it.Files, err = ec.unmarshalNUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ID"))
+			it.ID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "file":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("file"))
+			it.File, err = ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUploadRestaurantImageInput(ctx context.Context, obj interface{}) (model.UploadRestaurantImageInput, error) {
+	var it model.UploadRestaurantImageInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "ID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ID"))
+			it.ID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "file":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("file"))
+			it.File, err = ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7889,11 +7923,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteProductPhoto":
-			out.Values[i] = ec._Mutation_deleteProductPhoto(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "deleteProduct":
 			out.Values[i] = ec._Mutation_deleteProduct(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -7909,13 +7938,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteRestaurantPhoto":
-			out.Values[i] = ec._Mutation_deleteRestaurantPhoto(ctx, field)
+		case "deleteRestaurant":
+			out.Values[i] = ec._Mutation_deleteRestaurant(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleteRestaurant":
-			out.Values[i] = ec._Mutation_deleteRestaurant(ctx, field)
+		case "deletePhoto":
+			out.Values[i] = ec._Mutation_deletePhoto(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7931,16 +7960,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteRating":
 			out.Values[i] = ec._Mutation_deleteRating(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "uploadPhotoDemo":
-			out.Values[i] = ec._Mutation_uploadPhotoDemo(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "deletePhotoDemo":
-			out.Values[i] = ec._Mutation_deletePhotoDemo(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -8186,6 +8205,20 @@ func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "image":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Product_image(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8323,6 +8356,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getProductById(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "getProductByTag":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getProductByTag(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -8576,6 +8623,20 @@ func (ec *executionContext) _Restaurant(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "image":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Restaurant_image(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8695,6 +8756,11 @@ func (ec *executionContext) _TagCard(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = graphql.MarshalString("TagCard")
 		case "tag":
 			out.Values[i] = ec._TagCard_tag(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "image":
+			out.Values[i] = ec._TagCard_image(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -9574,49 +9640,13 @@ func (ec *executionContext) unmarshalNUpdateRestaurantOwnerInput2foodworksᚗml�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx context.Context, v interface{}) ([]*graphql.Upload, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*graphql.Upload, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql.Upload) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, sel, v[i])
-	}
-
-	return ret
-}
-
-func (ec *executionContext) unmarshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (*graphql.Upload, error) {
+func (ec *executionContext) unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (graphql.Upload, error) {
 	res, err := graphql.UnmarshalUpload(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v *graphql.Upload) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := graphql.MarshalUpload(*v)
+func (ec *executionContext) marshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v graphql.Upload) graphql.Marshaler {
+	res := graphql.MarshalUpload(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -9625,8 +9655,13 @@ func (ec *executionContext) marshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgen�
 	return res
 }
 
-func (ec *executionContext) unmarshalNUploadImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUploadImageInput(ctx context.Context, v interface{}) (model.UploadImageInput, error) {
-	res, err := ec.unmarshalInputUploadImageInput(ctx, v)
+func (ec *executionContext) unmarshalNUploadProductImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUploadProductImageInput(ctx context.Context, v interface{}) (model.UploadProductImageInput, error) {
+	res, err := ec.unmarshalInputUploadProductImageInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUploadRestaurantImageInput2foodworksᚗmlᚋmᚋinternalᚋgeneratedᚋgraphqlᚋmodelᚐUploadRestaurantImageInput(ctx context.Context, v interface{}) (model.UploadRestaurantImageInput, error) {
+	res, err := ec.unmarshalInputUploadRestaurantImageInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

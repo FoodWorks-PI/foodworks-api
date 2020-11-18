@@ -265,6 +265,34 @@ func HasRestaurantWith(preds ...predicate.Restaurant) predicate.Tag {
 	})
 }
 
+// HasImages applies the HasEdge predicate on the "images" edge.
+func HasImages() predicate.Tag {
+	return predicate.Tag(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ImagesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ImagesTable, ImagesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasImagesWith applies the HasEdge predicate on the "images" edge with a given conditions (other predicates).
+func HasImagesWith(preds ...predicate.ImagePath) predicate.Tag {
+	return predicate.Tag(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ImagesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ImagesTable, ImagesColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups list of predicates with the AND operator between them.
 func And(predicates ...predicate.Tag) predicate.Tag {
 	return predicate.Tag(func(s *sql.Selector) {

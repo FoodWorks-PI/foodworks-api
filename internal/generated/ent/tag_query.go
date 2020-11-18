@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 
+	"foodworks.ml/m/internal/generated/ent/imagepath"
 	"foodworks.ml/m/internal/generated/ent/predicate"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
@@ -29,6 +30,7 @@ type TagQuery struct {
 	// eager-loading edges.
 	withProduct    *ProductQuery
 	withRestaurant *RestaurantQuery
+	withImages     *ImagePathQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -95,6 +97,28 @@ func (tq *TagQuery) QueryRestaurant() *RestaurantQuery {
 			sqlgraph.From(tag.Table, tag.FieldID, selector),
 			sqlgraph.To(restaurant.Table, restaurant.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, tag.RestaurantTable, tag.RestaurantPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryImages chains the current query on the images edge.
+func (tq *TagQuery) QueryImages() *ImagePathQuery {
+	query := &ImagePathQuery{config: tq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tag.Table, tag.FieldID, selector),
+			sqlgraph.To(imagepath.Table, imagepath.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tag.ImagesTable, tag.ImagesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -303,6 +327,17 @@ func (tq *TagQuery) WithRestaurant(opts ...func(*RestaurantQuery)) *TagQuery {
 	return tq
 }
 
+//  WithImages tells the query-builder to eager-loads the nodes that are connected to
+// the "images" edge. The optional arguments used to configure the query builder of the edge.
+func (tq *TagQuery) WithImages(opts ...func(*ImagePathQuery)) *TagQuery {
+	query := &ImagePathQuery{config: tq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withImages = query
+	return tq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -369,9 +404,10 @@ func (tq *TagQuery) sqlAll(ctx context.Context) ([]*Tag, error) {
 	var (
 		nodes       = []*Tag{}
 		_spec       = tq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			tq.withProduct != nil,
 			tq.withRestaurant != nil,
+			tq.withImages != nil,
 		}
 	)
 	_spec.ScanValues = func() []interface{} {
@@ -518,6 +554,34 @@ func (tq *TagQuery) sqlAll(ctx context.Context) ([]*Tag, error) {
 			for i := range nodes {
 				nodes[i].Edges.Restaurant = append(nodes[i].Edges.Restaurant, n)
 			}
+		}
+	}
+
+	if query := tq.withImages; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Tag)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.ImagePath(func(s *sql.Selector) {
+			s.Where(sql.InValues(tag.ImagesColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.tag_images
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "tag_images" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "tag_images" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Images = append(node.Edges.Images, n)
 		}
 	}
 

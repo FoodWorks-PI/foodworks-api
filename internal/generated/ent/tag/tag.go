@@ -14,6 +14,8 @@ const (
 	EdgeProduct = "product"
 	// EdgeRestaurant holds the string denoting the restaurant edge name in mutations.
 	EdgeRestaurant = "restaurant"
+	// EdgeImages holds the string denoting the images edge name in mutations.
+	EdgeImages = "images"
 
 	// Table holds the table name of the tag in the database.
 	Table = "tags"
@@ -27,6 +29,13 @@ const (
 	// RestaurantInverseTable is the table name for the Restaurant entity.
 	// It exists in this package in order to avoid circular dependency with the "restaurant" package.
 	RestaurantInverseTable = "restaurants"
+	// ImagesTable is the table the holds the images relation/edge.
+	ImagesTable = "image_paths"
+	// ImagesInverseTable is the table name for the ImagePath entity.
+	// It exists in this package in order to avoid circular dependency with the "imagepath" package.
+	ImagesInverseTable = "image_paths"
+	// ImagesColumn is the table column denoting the images relation/edge.
+	ImagesColumn = "tag_images"
 )
 
 // Columns holds all SQL columns for tag fields.

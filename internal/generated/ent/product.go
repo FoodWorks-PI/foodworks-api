@@ -41,9 +41,11 @@ type ProductEdges struct {
 	Restaurant []*Restaurant
 	// Orders holds the value of the orders edge.
 	Orders []*Order
+	// Images holds the value of the images edge.
+	Images []*ImagePath
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -80,6 +82,15 @@ func (e ProductEdges) OrdersOrErr() ([]*Order, error) {
 		return e.Orders, nil
 	}
 	return nil, &NotLoadedError{edge: "orders"}
+}
+
+// ImagesOrErr returns the Images value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProductEdges) ImagesOrErr() ([]*ImagePath, error) {
+	if e.loadedTypes[4] {
+		return e.Images, nil
+	}
+	return nil, &NotLoadedError{edge: "images"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -147,6 +158,11 @@ func (pr *Product) QueryRestaurant() *RestaurantQuery {
 // QueryOrders queries the orders edge of the Product.
 func (pr *Product) QueryOrders() *OrderQuery {
 	return (&ProductClient{config: pr.config}).QueryOrders(pr)
+}
+
+// QueryImages queries the images edge of the Product.
+func (pr *Product) QueryImages() *ImagePathQuery {
+	return (&ProductClient{config: pr.config}).QueryImages(pr)
 }
 
 // Update returns a builder for updating this Product.

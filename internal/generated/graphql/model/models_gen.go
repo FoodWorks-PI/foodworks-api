@@ -20,7 +20,7 @@ type CancelOrder struct {
 }
 
 type DeleteImageInput struct {
-	FileNames []string `json:"fileNames"`
+	FilePath string `json:"filePath"`
 }
 
 type FeedItem struct {
@@ -114,7 +114,8 @@ type RegisterRestaurantOwnerInput struct {
 }
 
 type TagCard struct {
-	Tag string `json:"tag"`
+	Tag   string `json:"tag"`
+	Image string `json:"image"`
 }
 
 func (TagCard) IsFeedCard() {}
@@ -151,8 +152,14 @@ type UpdateRestaurantOwnerInput struct {
 	Phone    string `json:"phone"`
 }
 
-type UploadImageInput struct {
-	Files []*graphql.Upload `json:"files"`
+type UploadProductImageInput struct {
+	ID   int            `json:"ID"`
+	File graphql.Upload `json:"file"`
+}
+
+type UploadRestaurantImageInput struct {
+	ID   int            `json:"ID"`
+	File graphql.Upload `json:"file"`
 }
 
 type OrderState string

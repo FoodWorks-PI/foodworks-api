@@ -15,6 +15,9 @@ type BankingData func(*sql.Selector)
 // Customer is the predicate function for customer builders.
 type Customer func(*sql.Selector)
 
+// ImagePath is the predicate function for imagepath builders.
+type ImagePath func(*sql.Selector)
+
 // Order is the predicate function for order builders.
 type Order func(*sql.Selector)
 

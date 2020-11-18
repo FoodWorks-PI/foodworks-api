@@ -48,6 +48,19 @@ func (f CustomerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return f(ctx, mv)
 }
 
+// The ImagePathFunc type is an adapter to allow the use of ordinary
+// function as ImagePath mutator.
+type ImagePathFunc func(context.Context, *ent.ImagePathMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ImagePathFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ImagePathMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ImagePathMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The OrderFunc type is an adapter to allow the use of ordinary
 // function as Order mutator.
 type OrderFunc func(context.Context, *ent.OrderMutation) (ent.Value, error)

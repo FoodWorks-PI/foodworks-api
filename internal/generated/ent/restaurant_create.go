@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"foodworks.ml/m/internal/generated/ent/address"
+	"foodworks.ml/m/internal/generated/ent/imagepath"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/restaurant"
 	"foodworks.ml/m/internal/generated/ent/restaurantowner"
@@ -105,6 +106,21 @@ func (rc *RestaurantCreate) AddProducts(p ...*Product) *RestaurantCreate {
 		ids[i] = p[i].ID
 	}
 	return rc.AddProductIDs(ids...)
+}
+
+// AddImageIDs adds the images edge to ImagePath by ids.
+func (rc *RestaurantCreate) AddImageIDs(ids ...int) *RestaurantCreate {
+	rc.mutation.AddImageIDs(ids...)
+	return rc
+}
+
+// AddImages adds the images edges to ImagePath.
+func (rc *RestaurantCreate) AddImages(i ...*ImagePath) *RestaurantCreate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return rc.AddImageIDs(ids...)
 }
 
 // Mutation returns the RestaurantMutation object of the builder.
@@ -272,6 +288,25 @@ func (rc *RestaurantCreate) createSpec() (*Restaurant, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: product.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.ImagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   restaurant.ImagesTable,
+			Columns: []string{restaurant.ImagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: imagepath.FieldID,
 				},
 			},
 		}

@@ -12,6 +12,7 @@ import (
 	"foodworks.ml/m/internal/auth"
 	"foodworks.ml/m/internal/generated/ent"
 	"foodworks.ml/m/internal/generated/ent/customer"
+	"foodworks.ml/m/internal/generated/ent/imagepath"
 	"foodworks.ml/m/internal/generated/ent/order"
 	"foodworks.ml/m/internal/generated/ent/product"
 	"foodworks.ml/m/internal/generated/ent/rating"
@@ -422,12 +423,17 @@ func (r *mutationResolver) ToggleProductStatus(ctx context.Context, input int) (
 	return updatedProduct.IsActive, nil
 }
 
-func (r *mutationResolver) UploadProductPhoto(ctx context.Context, input model.UploadImageInput) ([]string, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *mutationResolver) DeleteProductPhoto(ctx context.Context, input []string) (int, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) UploadProductPhoto(ctx context.Context, input model.UploadProductImageInput) (string, error) {
+	fileHandler := *r.FileHandler
+	path, err := fileHandler.Upload(&input.File)
+	if err != nil {
+		return "", err
+	}
+	_, err = r.EntClient.ImagePath.Create().SetProductID(input.ID).SetPath(path).Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
 }
 
 func (r *mutationResolver) DeleteProduct(ctx context.Context, input int) (int, error) {
@@ -485,12 +491,17 @@ func (r *mutationResolver) UpdateRestaurant(ctx context.Context, input model.Reg
 	return currentUserRestaurant.ID, nil
 }
 
-func (r *mutationResolver) UploadRestaurantPhoto(ctx context.Context, input model.UploadImageInput) ([]string, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *mutationResolver) DeleteRestaurantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) UploadRestaurantPhoto(ctx context.Context, input model.UploadRestaurantImageInput) (string, error) {
+	fileHandler := *r.FileHandler
+	path, err := fileHandler.Upload(&input.File)
+	if err != nil {
+		return "", err
+	}
+	_, err = r.EntClient.ImagePath.Create().SetRestaurantID(input.ID).SetPath(path).Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
 }
 
 func (r *mutationResolver) DeleteRestaurant(ctx context.Context, input int) (int, error) {
@@ -501,6 +512,19 @@ func (r *mutationResolver) DeleteRestaurant(ctx context.Context, input int) (int
 	}
 
 	return input, nil
+}
+
+func (r *mutationResolver) DeletePhoto(ctx context.Context, input model.DeleteImageInput) (int, error) {
+	fileHandler := *r.FileHandler
+	err := fileHandler.Delete(input.FilePath)
+	if err != nil {
+		return -1, err
+	}
+	_, err = r.EntClient.ImagePath.Delete().Where(imagepath.PathEQ(input.FilePath)).Exec(ctx)
+	if err != nil {
+		return -1, err
+	}
+	return -1, nil
 }
 
 func (r *mutationResolver) CreateProductRating(ctx context.Context, input model.RegisterRatingInput) (int, error) {
@@ -546,33 +570,6 @@ func (r *mutationResolver) DeleteRating(ctx context.Context, input int) (int, er
 	return input, nil
 }
 
-func (r *mutationResolver) UploadPhotoDemo(ctx context.Context, input model.UploadImageInput) ([]string, error) {
-	// TODO: Why do we need to dereference to a variable?
-	fileHandler := *r.FileHandler
-	paths := make([]string, len(input.Files))
-	for i, image := range input.Files {
-		path, err := fileHandler.Upload(image)
-		if err != nil {
-			return nil, err
-		}
-		paths[i] = path
-	}
-
-	return paths, nil
-}
-
-func (r *mutationResolver) DeletePhotoDemo(ctx context.Context, input model.DeleteImageInput) ([]string, error) {
-	fileHandler := *r.FileHandler
-	for _, image := range input.FileNames {
-		err := fileHandler.Delete(image)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return input.FileNames, nil
-}
-
 func (r *mutationResolver) CreateOrder(ctx context.Context, input *model.RegisterOrderInput) (int, error) {
 	kratosUser := auth.ForContext(ctx)
 
@@ -598,19 +595,6 @@ func (r *mutationResolver) CreateOrder(ctx context.Context, input *model.Registe
 	}
 
 	return order.ID, nil
-}
-
-// TODO: Verify owner corresponds with restaurant
-func (r *mutationResolver) updateOrderAsRestaurantOwner(ctx context.Context, input *model.UpdateOrderInput, user *ent.RestaurantOwner) (int, error) {
-	_, err := r.EntClient.Order.Update().
-		Where(order.IDEQ(input.OrderID)).
-		SetOrderState(input.OrderState.String()).
-		SetUpdatedAt(time.Now().UTC()).
-		Save(ctx)
-	if err != nil {
-		return -1, err
-	}
-	return input.OrderID, nil
 }
 
 func (r *mutationResolver) UpdateOrder(ctx context.Context, input *model.UpdateOrderInput) (int, error) {
@@ -697,6 +681,11 @@ func (r *productResolver) Ratings(ctx context.Context, obj *ent.Product) ([]*ent
 func (r *productResolver) Restaurant(ctx context.Context, obj *ent.Product) (*ent.Restaurant, error) {
 	restaurant, err := r.EntClient.Product.QueryRestaurant(obj).First(ctx)
 	return restaurant, ent.MaskNotFound(err)
+}
+
+func (r *productResolver) Image(ctx context.Context, obj *ent.Product) (string, error) {
+	image, err := r.EntClient.Product.QueryImages(obj).First(ctx)
+	return image.Path, ent.MaskNotFound(err)
 }
 
 func (r *queryResolver) GetCurrentCustomer(ctx context.Context) (*ent.Customer, error) {
@@ -788,6 +777,14 @@ func (r *queryResolver) GetProductByID(ctx context.Context, input int) (*ent.Pro
 		return nil, err
 	}
 	return res, nil
+}
+
+func (r *queryResolver) GetProductByTag(ctx context.Context, input string) ([]*ent.Product, error) {
+	products, err := r.EntClient.Tag.Query().Where(tag.Name(input)).QueryProduct().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
 }
 
 func (r *queryResolver) SearchProductsAndRestaurants(ctx context.Context, input model.ProductsByAllFieldsInput) (*model.GlobalSearchResult, error) {
@@ -984,6 +981,11 @@ func (r *restaurantResolver) RestaurantOwner(ctx context.Context, obj *ent.Resta
 	return restaurantOwner, ent.MaskNotFound(err)
 }
 
+func (r *restaurantResolver) Image(ctx context.Context, obj *ent.Restaurant) (string, error) {
+	image, err := r.EntClient.Restaurant.QueryImages(obj).First(ctx)
+	return image.Path, ent.MaskNotFound(err)
+}
+
 func (r *restaurantOwnerResolver) Banking(ctx context.Context, obj *ent.RestaurantOwner) (*ent.BankingData, error) {
 	banking, err := r.EntClient.RestaurantOwner.QueryBankingData(obj).First(ctx)
 	return banking, ent.MaskNotFound(err)
@@ -1043,6 +1045,21 @@ type subscriptionResolver struct{ *Resolver }
 //  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //    it when you're done.
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *mutationResolver) DeleteProductPhoto(ctx context.Context, input model.DeleteImageInput) (int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+func (r *mutationResolver) DeleteRestaurantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error) {
+	fileHandler := *r.FileHandler
+	err := fileHandler.Delete(input.FilePath)
+	if err != nil {
+		return -1, err
+	}
+	_, err = r.EntClient.ImagePath.Delete().Where(imagepath.PathEQ(input.FilePath)).Exec(ctx)
+	if err != nil {
+		return -1, err
+	}
+	return -1, nil
+}
 func (r *mutationResolver) DeleteRestuarantPhoto(ctx context.Context, input model.DeleteImageInput) (int, error) {
 	panic(fmt.Errorf("not implemented"))
 }

@@ -27,6 +27,7 @@ type hooks struct {
 	Address         []ent.Hook
 	BankingData     []ent.Hook
 	Customer        []ent.Hook
+	ImagePath       []ent.Hook
 	Order           []ent.Hook
 	PaymentMethod   []ent.Hook
 	Product         []ent.Hook
