@@ -685,6 +685,12 @@ func (r *productResolver) Restaurant(ctx context.Context, obj *ent.Product) (*en
 
 func (r *productResolver) Image(ctx context.Context, obj *ent.Product) (string, error) {
 	image, err := r.EntClient.Product.QueryImages(obj).First(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return "", nil
+		}
+		return "", err
+	}
 	return image.Path, ent.MaskNotFound(err)
 }
 
@@ -983,6 +989,12 @@ func (r *restaurantResolver) RestaurantOwner(ctx context.Context, obj *ent.Resta
 
 func (r *restaurantResolver) Image(ctx context.Context, obj *ent.Restaurant) (string, error) {
 	image, err := r.EntClient.Restaurant.QueryImages(obj).First(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return "", nil
+		}
+		return "", err
+	}
 	return image.Path, ent.MaskNotFound(err)
 }
 
