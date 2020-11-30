@@ -429,6 +429,7 @@ func (r *mutationResolver) UploadProductPhoto(ctx context.Context, input model.U
 	if err != nil {
 		return "", err
 	}
+	_, _ = r.EntClient.ImagePath.Delete().Where(imagepath.HasProductWith(product.ID(input.ID))).Exec(ctx)
 	_, err = r.EntClient.ImagePath.Create().SetProductID(input.ID).SetPath(path).Save(ctx)
 	if err != nil {
 		return "", err
@@ -497,6 +498,7 @@ func (r *mutationResolver) UploadRestaurantPhoto(ctx context.Context, input mode
 	if err != nil {
 		return "", err
 	}
+	_, _ = r.EntClient.ImagePath.Delete().Where(imagepath.HasRestaurantWith(restaurant.ID(input.ID))).Exec(ctx)
 	_, err = r.EntClient.ImagePath.Create().SetRestaurantID(input.ID).SetPath(path).Save(ctx)
 	if err != nil {
 		return "", err
@@ -665,12 +667,15 @@ func (r *productResolver) Active(ctx context.Context, obj *ent.Product) (bool, e
 }
 
 func (r *productResolver) AverageRating(ctx context.Context, obj *ent.Product) (float64, error) {
-	var avg float64
+	var v []struct {
+		ProductRatings int     `json:"product_ratings"`
+		Avg            float64 `json:"avg"`
+	}
 	err := r.EntClient.Product.QueryRatings(obj).
-		GroupBy(rating.EdgeProduct).
+		GroupBy(rating.ProductColumn).
 		Aggregate(ent.Mean(rating.FieldRating)).
-		Scan(ctx, &avg)
-	return avg, ent.MaskNotFound(err)
+		Scan(ctx, &v)
+	return v[0].Avg, ent.MaskNotFound(err)
 }
 
 func (r *productResolver) Ratings(ctx context.Context, obj *ent.Product) ([]*ent.Rating, error) {
@@ -684,7 +689,7 @@ func (r *productResolver) Restaurant(ctx context.Context, obj *ent.Product) (*en
 }
 
 func (r *productResolver) Image(ctx context.Context, obj *ent.Product) (string, error) {
-	image, err := r.EntClient.Product.QueryImages(obj).First(ctx)
+	image, err := r.EntClient.ImagePath.Query().Where(imagepath.HasProductWith(product.ID(obj.ID))).First(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return "", nil
@@ -988,7 +993,7 @@ func (r *restaurantResolver) RestaurantOwner(ctx context.Context, obj *ent.Resta
 }
 
 func (r *restaurantResolver) Image(ctx context.Context, obj *ent.Restaurant) (string, error) {
-	image, err := r.EntClient.Restaurant.QueryImages(obj).First(ctx)
+	image, err := r.EntClient.ImagePath.Query().Where(imagepath.HasRestaurantWith(restaurant.ID(obj.ID))).First(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return "", nil
