@@ -665,12 +665,15 @@ func (r *productResolver) Active(ctx context.Context, obj *ent.Product) (bool, e
 }
 
 func (r *productResolver) AverageRating(ctx context.Context, obj *ent.Product) (float64, error) {
-	var avg float64
+	var v []struct {
+		ProductRatings int     `json:"product_ratings"`
+		Avg            float64 `json:"avg"`
+	}
 	err := r.EntClient.Product.QueryRatings(obj).
-		GroupBy(rating.EdgeProduct).
+		GroupBy(rating.ProductColumn).
 		Aggregate(ent.Mean(rating.FieldRating)).
-		Scan(ctx, &avg)
-	return avg, ent.MaskNotFound(err)
+		Scan(ctx, &v)
+	return v[0].Avg, ent.MaskNotFound(err)
 }
 
 func (r *productResolver) Ratings(ctx context.Context, obj *ent.Product) ([]*ent.Rating, error) {
