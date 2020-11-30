@@ -160,7 +160,7 @@ func seed(db *sqlx.DB) error {
 	}
 	// Reset Indexes
 	tables = []string{tag.Table, address.Table, product.Table, restaurant.Table,
-		customer.Table, bankingdata.Table, restaurantowner.Table,
+		customer.Table, bankingdata.Table, restaurantowner.Table, rating.Table,
 	}
 	for _, table := range tables {
 		stmt = fmt.Sprintf(`
