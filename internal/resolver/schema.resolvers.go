@@ -22,6 +22,7 @@ import (
 	generated "foodworks.ml/m/internal/generated/graphql"
 	"foodworks.ml/m/internal/generated/graphql/model"
 	gabs "github.com/Jeffail/gabs/v2"
+	"github.com/rs/zerolog/log"
 )
 
 func (r *customerResolver) Address(ctx context.Context, obj *ent.Customer) (*ent.Address, error) {
@@ -847,6 +848,7 @@ func (r *queryResolver) GetFeed(ctx context.Context) ([]*model.FeedItem, error) 
 		First(ctx)
 
 	if err != nil {
+		log.Err(err).Msg("")
 		return nil, err
 	}
 
@@ -855,6 +857,7 @@ func (r *queryResolver) GetFeed(ctx context.Context) ([]*model.FeedItem, error) 
 	rec, err := r.Recommender.GetUserRecommendations(currentUser.ID)
 
 	if err != nil {
+		log.Err(err).Msg("")
 		return nil, err
 	}
 	var recProducts []*ent.Product
@@ -864,6 +867,7 @@ func (r *queryResolver) GetFeed(ctx context.Context) ([]*model.FeedItem, error) 
 		recProducts, err = r.EntClient.Product.Query().Limit(5).All(ctx)
 	}
 	if err != nil {
+		log.Err(err).Msg("")
 		return nil, err
 	}
 	feedItems := make([]model.FeedCard, len(recProducts))
@@ -875,6 +879,7 @@ func (r *queryResolver) GetFeed(ctx context.Context) ([]*model.FeedItem, error) 
 
 	restaurants, err := r.GetClosestRestaurants(ctx)
 	if err != nil {
+		log.Err(err).Msg("")
 		return nil, err
 	}
 	feedRestaurantItems := make([]model.FeedCard, len(restaurants))
